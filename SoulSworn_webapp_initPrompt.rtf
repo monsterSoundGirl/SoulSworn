@@ -1,0 +1,541 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2821
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 .SFNS-Regular;\f1\froman\fcharset0 TimesNewRomanPSMT;\f2\fswiss\fcharset0 Helvetica;
+\f3\fnil\fcharset0 .SFNS-Bold;\f4\fmodern\fcharset0 Courier;\f5\fnil\fcharset0 HelveticaNeue-Bold;
+\f6\fnil\fcharset0 .AppleSystemUIFontMonospaced-Regular;\f7\fmodern\fcharset0 Courier-Oblique;\f8\fnil\fcharset0 .SFNS-RegularItalic;
+}
+{\colortbl;\red255\green255\blue255;\red14\green14\blue14;\red155\green162\blue177;\red81\green156\blue233;
+\red184\green93\blue213;\red214\green85\blue98;\red197\green136\blue83;\red136\green185\blue102;\red74\green80\blue93;
+}
+{\*\expandedcolortbl;;\cssrgb\c6700\c6700\c6700;\cssrgb\c67059\c69804\c74902;\cssrgb\c38039\c68235\c93333;
+\cssrgb\c77647\c47059\c86667;\cssrgb\c87843\c42353\c45882;\cssrgb\c81961\c60392\c40000;\cssrgb\c59608\c76471\c47451;\cssrgb\c36078\c38824\c43922;
+}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f0\fs28 \cf2 Yes, you can absolutely build a web-based version and embed it into your existing Wix site\'97no Apple Developer license required. This also makes your game accessible on any device (desktop, mobile, tablet) with a modern browser. Below is a high-level approach to building a simple web app that handles:\
+\pard\tqr\tx260\tx420\li420\fi-420\sl324\slmult1\sb240\partightenfactor0
+
+\f1 \cf2 	1.	Multiple players\
+	2.	Shuffling/dealing cards\
+	3.	Displaying card images (your JPG assets)\
+	4.	Basic dice rolling\
+\
+You can do this in pure HTML/CSS/JavaScript (often called a \'93vanilla\'94 web stack) or use a framework like React/Vue/Angular. I\'92ll outline a plain JS approach first since that\'92s simpler to get started.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f2\fs24 \cf0 \
+\uc0\u11835 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f0\fs28 \cf2 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f3\b\fs34 \cf2 1. Setup a Basic Web Page
+\f0\b0\fs28 \
+\
+Your minimal file structure could look like this (either locally or in a separate hosting environment that you then embed in Wix):
+\f2\fs24 \cf0 \
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f4\fs28 \cf3 my-ttrpg-webapp/\
+\uc0\u9500 \u9472 \u9472  index.html\
+\uc0\u9500 \u9472 \u9472  style.css\
+\uc0\u9492 \u9472 \u9472  script.js
+\f2\fs24 \cf0 \
+\
+\pard\tqr\tx100\tx260\li260\fi-260\sl324\slmult1\sb240\partightenfactor0
+
+\f0\fs28 \cf2 	\'95	
+\f5\b index.html
+\f0\b0 : Contains the overall HTML structure and references the stylesheet and JavaScript.\
+	\'95	
+\f5\b style.css
+\f0\b0 : Basic styling (optional).\
+	\'95	
+\f5\b script.js
+\f0\b0 : Holds your deck, game logic, and UI updates.\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f3\b\fs30 \cf2 index.html
+\f2\b0\fs24 \cf0 \
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f4\fs28 \cf4 <!DOCTYPE \cf5 html\cf4 >\cf3 \
+<\cf6 html\cf3  \cf7 lang\cf3 =\cf8 "en"\cf3 >\
+<\cf6 head\cf3 >\
+  <\cf6 meta\cf3  \cf7 charset\cf3 =\cf8 "UTF-8"\cf3  />\
+  <\cf6 title\cf3 >My TTRPG Card Game</\cf6 title\cf3 >\
+  <\cf6 link\cf3  \cf7 rel\cf3 =\cf8 "stylesheet"\cf3  \cf7 href\cf3 =\cf8 "style.css"\cf3  />\
+</\cf6 head\cf3 >\
+<\cf6 body\cf3 >\
+\
+  <\cf6 h1\cf3 >Soul Sworn Web App (Demo)</\cf6 h1\cf3 >\
+\
+  <\cf6 div\cf3  \cf7 id\cf3 =\cf8 "setup"\cf3 >\
+    <\cf6 label\cf3  \cf7 for\cf3 =\cf8 "playerCount"\cf3 >Number of Players:</\cf6 label\cf3 >\
+    <\cf6 input\cf3  \cf7 type\cf3 =\cf8 "number"\cf3  \cf7 id\cf3 =\cf8 "playerCount"\cf3  \cf7 min\cf3 =\cf8 "1"\cf3  \cf7 value\cf3 =\cf8 "1"\cf3  />\
+    <\cf6 button\cf3  \cf7 id\cf3 =\cf8 "startGameBtn"\cf3 >Start Game</\cf6 button\cf3 >\
+  </\cf6 div\cf3 >\
+\
+  <\cf6 div\cf3  \cf7 id\cf3 =\cf8 "gameArea"\cf3  \cf7 style\cf3 =\cf8 "display:none;"\cf3 >\
+    <\cf6 div\cf3 >\
+      <\cf6 button\cf3  \cf7 id\cf3 =\cf8 "shuffleBtn"\cf3 >Shuffle Deck</\cf6 button\cf3 >\
+      <\cf6 button\cf3  \cf7 id\cf3 =\cf8 "dealBtn"\cf3 >Deal Card(s)</\cf6 button\cf3 >\
+      <\cf6 button\cf3  \cf7 id\cf3 =\cf8 "rollDieBtn"\cf3 >Roll d20</\cf6 button\cf3 >\
+    </\cf6 div\cf3 >\
+\
+    <\cf6 p\cf3  \cf7 id\cf3 =\cf8 "rollResult"\cf3 ></\cf6 p\cf3 >\
+\
+    <\cf6 div\cf3  \cf7 id\cf3 =\cf8 "playerHands"\cf3 ></\cf6 div\cf3 >\
+  </\cf6 div\cf3 >\
+\
+  <\cf6 script\cf3  \cf7 src\cf3 =\cf8 "script.js"\cf3 ></\cf6 script\cf3 >\
+</\cf6 body\cf3 >\
+</\cf6 html\cf3 >
+\f2\fs24 \cf0 \
+\
+\pard\tqr\tx100\tx260\li260\fi-260\sl324\slmult1\sb240\partightenfactor0
+
+\f0\fs28 \cf2 	\'95	
+\f5\b Key elements
+\f0\b0 :\
+\pard\tqr\tx500\tx660\li660\fi-660\sl324\slmult1\sb240\partightenfactor0
+\cf2 	\'95	
+\f6 #setup
+\f0  area: lets you input the number of players and start the game.\
+	\'95	
+\f6 #gameArea
+\f0 : the main game interface (shuffle, deal cards, roll dice). Hidden at first, made visible once the game starts.\
+	\'95	
+\f6 #playerHands
+\f0 : where we\'92ll dynamically insert each player\'92s hand.\
+	\'95	
+\f6 #rollResult
+\f0 : an area to display the result of a dice roll.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f2\fs24 \cf0 \
+\uc0\u11835 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f0\fs28 \cf2 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f3\b\fs34 \cf2 2. Define Your Card Data (script.js)
+\f0\b0\fs28 \
+\
+You can store your deck in an array. Each card object can reference the image file/path you already have.
+\f2\fs24 \cf0 \
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f7\i\fs28 \cf9 // Example card data
+\f4\i0 \cf3 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf5 const\cf3  deck = [\
+  \{\
+    \cf7 id\cf3 : \cf7 1\cf3 ,\
+    \cf7 name\cf3 : \cf8 "Echoing Alley"\cf3 ,\
+    \cf7 description\cf3 : \cf8 "Whispers follow you, echoing secrets\'97or leading to doom."\cf3 ,\
+    \cf7 imageUrl\cf3 : \cf8 "images/echoing_alley.jpg"\cf3 \
+  \},\
+  \{\
+    \cf7 id\cf3 : \cf7 2\cf3 ,\
+    \cf7 name\cf3 : \cf8 "Veiled Market"\cf3 ,\
+    \cf7 description\cf3 : \cf8 "Hidden bargains, cursed treasures\'97every deal has a price."\cf3 ,\
+    \cf7 imageUrl\cf3 : \cf8 "images/veiled_market.jpg"\cf3 \
+  \},\
+  
+\f7\i \cf9 // ... add more cards as needed
+\f4\i0 \cf3 \
+];
+\f2\fs24 \cf0 \
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f0\fs28 \cf2 If you have 50+ cards, you might prefer to keep them in a separate JSON file or import them from a separate module. For a small MVP, an array in 
+\f6 script.js
+\f0  is fine.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f2\fs24 \cf0 \
+\uc0\u11835 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f0\fs28 \cf2 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f3\b\fs34 \cf2 3. Basic JavaScript Game Logic
+\f0\b0\fs28 \
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f5\b \cf2 Fisher-Yates shuffle
+\f0\b0  is the standard algorithm for shuffling an array:
+\f2\fs24 \cf0 \
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f4\fs28 \cf5 function\cf3  shuffleArray(arr) \{\
+  \cf5 for\cf3  (\cf5 let\cf3  i = arr.length - \cf7 1\cf3 ; i > \cf7 0\cf3 ; i--) \{\
+    \cf5 const\cf3  j = Math.floor(Math.random() * (i + \cf7 1\cf3 ));\
+    [arr[i], arr[j]] = [arr[j], arr[i]];\
+  \}\
+  \cf5 return\cf3  arr;\
+\}
+\f2\fs24 \cf0 \
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f0\fs28 \cf2 We\'92ll also track:\
+\pard\tqr\tx100\tx260\li260\fi-260\sl324\slmult1\sb240\partightenfactor0
+\cf2 	\'95	
+\f5\b Number of players
+\f0\b0 \
+	\'95	An array of 
+\f8\i player hands
+\f0\i0  (each hand is an array of card objects)\
+\
+And we\'92ll provide functions to:\
+\pard\tqr\tx260\tx420\li420\fi-420\sl324\slmult1\sb240\partightenfactor0
+
+\f1 \cf2 	1.	
+\f5\b Initialize the game
+\f0\b0  (create empty hands based on the player count).\
+
+\f1 	2.	
+\f5\b Shuffle
+\f0\b0  the deck in place.\
+
+\f1 	3.	
+\f5\b Deal
+\f0\b0  one or more cards to each player.\
+
+\f1 	4.	
+\f5\b Roll
+\f0\b0  a d20.\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f3\b\fs30 \cf2 script.js (Complete Example)
+\f2\b0\fs24 \cf0 \
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f7\i\fs28 \cf9 // Your card data
+\f4\i0 \cf3 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf5 const\cf3  deck = [\
+  \{\
+    \cf7 id\cf3 : \cf7 1\cf3 ,\
+    \cf7 name\cf3 : \cf8 "Echoing Alley"\cf3 ,\
+    \cf7 description\cf3 : \cf8 "Whispers follow you, echoing secrets\'97or leading to doom."\cf3 ,\
+    \cf7 imageUrl\cf3 : \cf8 "images/echoing_alley.jpg"\cf3 \
+  \},\
+  \{\
+    \cf7 id\cf3 : \cf7 2\cf3 ,\
+    \cf7 name\cf3 : \cf8 "Veiled Market"\cf3 ,\
+    \cf7 description\cf3 : \cf8 "Hidden bargains, cursed treasures\'97every deal has a price."\cf3 ,\
+    \cf7 imageUrl\cf3 : \cf8 "images/veiled_market.jpg"\cf3 \
+  \},\
+  
+\f7\i \cf9 // ... Add as many as you want
+\f4\i0 \cf3 \
+];\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f7\i \cf9 // Global state
+\f4\i0 \cf3 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+\cf5 let\cf3  playerCount = \cf7 1\cf3 ;\
+\cf5 let\cf3  playerHands = []; 
+\f7\i \cf9 // array of arrays
+\f4\i0 \cf3 \
+\
+\cf5 function\cf3  shuffleArray(arr) \{\
+  \cf5 for\cf3  (\cf5 let\cf3  i = arr.length - \cf7 1\cf3 ; i > \cf7 0\cf3 ; i--) \{\
+    \cf5 const\cf3  j = Math.floor(Math.random() * (i + \cf7 1\cf3 ));\
+    [arr[i], arr[j]] = [arr[j], arr[i]];\
+  \}\
+  \cf5 return\cf3  arr;\
+\}\
+\
+\cf5 function\cf3  startGame() \{\
+  
+\f7\i \cf9 // Read number of players
+\f4\i0 \cf3 \
+  playerCount = parseInt(document.getElementById(\cf8 "playerCount"\cf3 ).value, \cf7 10\cf3 );\
+  \cf5 if\cf3  (playerCount < \cf7 1\cf3 ) playerCount = \cf7 1\cf3 ;\
+\
+  
+\f7\i \cf9 // Initialize empty hands
+\f4\i0 \cf3 \
+  playerHands = [];\
+  \cf5 for\cf3  (\cf5 let\cf3  i = \cf7 0\cf3 ; i < playerCount; i++) \{\
+    playerHands.push([]);\
+  \}\
+\
+  
+\f7\i \cf9 // Hide setup, show game area
+\f4\i0 \cf3 \
+  document.getElementById(\cf8 "setup"\cf3 ).style.display = \cf8 "none"\cf3 ;\
+  document.getElementById(\cf8 "gameArea"\cf3 ).style.display = \cf8 "block"\cf3 ;\
+\
+  
+\f7\i \cf9 // (Optional) Shuffle deck at game start
+\f4\i0 \cf3 \
+  shuffleDeck();\
+  
+\f7\i \cf9 // (Optional) Immediately deal some initial cards?
+\f4\i0 \cf3 \
+  
+\f7\i \cf9 // dealCards(5);
+\f4\i0 \cf3 \
+  renderHands();\
+\}\
+\
+\cf5 function\cf3  shuffleDeck() \{\
+  shuffleArray(deck);\
+  alert(\cf8 "Deck shuffled!"\cf3 );\
+\}\
+\
+\cf5 function\cf3  dealCards(cardsPerPlayer = \cf7 1\cf3 ) \{\
+  
+\f7\i \cf9 // For each player, draw `cardsPerPlayer` from the top of the deck (if available)
+\f4\i0 \cf3 \
+  \cf5 for\cf3  (\cf5 let\cf3  p = \cf7 0\cf3 ; p < playerCount; p++) \{\
+    \cf5 for\cf3  (\cf5 let\cf3  c = \cf7 0\cf3 ; c < cardsPerPlayer; c++) \{\
+      \cf5 if\cf3  (deck.length > \cf7 0\cf3 ) \{\
+        \cf5 const\cf3  card = deck.shift();\
+        playerHands[p].push(card);\
+      \} \cf5 else\cf3  \{\
+        alert(\cf8 "No more cards in the deck!"\cf3 );\
+        \cf5 return\cf3 ;\
+      \}\
+    \}\
+  \}\
+  renderHands();\
+\}\
+\
+\cf5 function\cf3  rollD20() \{\
+  \cf5 const\cf3  result = Math.floor(Math.random() * \cf7 20\cf3 ) + \cf7 1\cf3 ;\
+  document.getElementById(\cf8 "rollResult"\cf3 ).textContent = \cf8 "You rolled a "\cf3  + result;\
+\}\
+\
+\cf5 function\cf3  renderHands() \{\
+  \cf5 const\cf3  container = document.getElementById(\cf8 "playerHands"\cf3 );\
+  container.innerHTML = \cf8 ""\cf3 ; 
+\f7\i \cf9 // Clear previous
+\f4\i0 \cf3 \
+\
+  
+\f7\i \cf9 // For each player, create a section
+\f4\i0 \cf3 \
+  \cf5 for\cf3  (\cf5 let\cf3  p = \cf7 0\cf3 ; p < playerCount; p++) \{\
+    \cf5 const\cf3  playerDiv = document.createElement(\cf8 "div"\cf3 );\
+    playerDiv.className = \cf8 "player-hand"\cf3 ;\
+    playerDiv.innerHTML = \cf8 `<h3>Player \cf6 $\{p + \cf7 1\cf6 \}\cf8 </h3>`\cf3 ;\
+\
+    
+\f7\i \cf9 // For each card in that player\'92s hand, show a thumbnail
+\f4\i0 \cf3 \
+    playerHands[p].forEach(card => \{\
+      \cf5 const\cf3  cardDiv = document.createElement(\cf8 "div"\cf3 );\
+      cardDiv.className = \cf8 "card"\cf3 ;\
+\
+      cardDiv.innerHTML = \cf8 `\
+        <img src="\cf6 $\{card.imageUrl\}\cf8 " alt="\cf6 $\{card.name\}\cf8 " class="card-img" />\
+        <h4>\cf6 $\{card.name\}\cf8 </h4>\
+        <p>\cf6 $\{card.description\}\cf8 </p>\
+      `\cf3 ;\
+\
+      playerDiv.appendChild(cardDiv);\
+    \});\
+\
+    container.appendChild(playerDiv);\
+  \}\
+\}\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f7\i \cf9 // Hook up DOM events
+\f4\i0 \cf3 \
+window.addEventListener(\cf8 "DOMContentLoaded"\cf3 , () => \{\
+  document.getElementById(\cf8 "startGameBtn"\cf3 ).addEventListener(\cf8 "click"\cf3 , startGame);\
+  document.getElementById(\cf8 "shuffleBtn"\cf3 ).addEventListener(\cf8 "click"\cf3 , shuffleDeck);\
+  document.getElementById(\cf8 "dealBtn"\cf3 ).addEventListener(\cf8 "click"\cf3 , () => dealCards(\cf7 1\cf3 ));\
+  document.getElementById(\cf8 "rollDieBtn"\cf3 ).addEventListener(\cf8 "click"\cf3 , rollD20);\
+\});
+\f2\fs24 \cf0 \
+\
+\pard\tqr\tx100\tx260\li260\fi-260\sl324\slmult1\sb240\partightenfactor0
+
+\f0\fs28 \cf2 	\'95	
+\f5\b startGame()
+\f0\b0 : Hides the setup UI, initializes empty hands, optionally shuffles or deals.\
+	\'95	
+\f5\b shuffleDeck()
+\f0\b0 : Uses our shuffle function on the 
+\f6 deck
+\f0 .\
+	\'95	
+\f5\b dealCards()
+\f0\b0 : Removes cards from 
+\f6 deck
+\f0  and places them into each player\'92s hand.\
+	\'95	
+\f5\b rollD20()
+\f0\b0 : Basic random integer from 1 to 20.\
+	\'95	
+\f5\b renderHands()
+\f0\b0 : Updates the DOM to reflect each player\'92s current hand.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f2\fs24 \cf0 \
+\uc0\u11835 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f0\fs28 \cf2 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f3\b\fs34 \cf2 4. Add Some Simple Styling (style.css) [Optional]
+\f2\b0\fs24 \cf0 \
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f4\fs28 \cf6 body\cf3  \{\
+  \cf8 font-family\cf3 : Arial, sans-serif;\
+  \cf8 margin\cf3 : \cf7 20px\cf3 ;\
+\}\
+\
+\cf7 .player-hand\cf3  \{\
+  \cf8 border\cf3 : \cf7 1px\cf3  solid \cf7 #ccc\cf3 ;\
+  \cf8 padding\cf3 : \cf7 10px\cf3 ;\
+  \cf8 margin-bottom\cf3 : \cf7 20px\cf3 ;\
+\}\
+\
+\cf7 .card\cf3  \{\
+  \cf8 display\cf3 : inline-block;\
+  \cf8 border\cf3 : \cf7 1px\cf3  solid \cf7 #ddd\cf3 ;\
+  \cf8 margin\cf3 : \cf7 5px\cf3 ;\
+  \cf8 width\cf3 : \cf7 150px\cf3 ;\
+  \cf8 vertical-align\cf3 : top;\
+\}\
+\
+\cf7 .card-img\cf3  \{\
+  \cf8 max-width\cf3 : \cf7 100%\cf3 ;\
+  \cf8 height\cf3 : auto;\
+\}
+\f2\fs24 \cf0 \
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f0\fs28 \cf2 This just ensures cards show side by side with a small border, etc.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f2\fs24 \cf0 \
+\uc0\u11835 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f0\fs28 \cf2 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f3\b\fs34 \cf2 5. Embedding Into a Wix Site
+\f0\b0\fs28 \
+\
+If you have a 
+\f5\b Wix
+\f0\b0  website:\
+\pard\tqr\tx260\tx420\li420\fi-420\sl324\slmult1\sb240\partightenfactor0
+
+\f1 \cf2 	1.	
+\f5\b Upload
+\f0\b0  your 
+\f6 my-ttrpg-webapp
+\f0  folder to a separate hosting service (GitHub Pages, Netlify, your own hosting if you have it, etc.). You\'92ll get a public URL (like 
+\f6 https://mydomain.com/ttrpg/index.html
+\f0 ).\
+
+\f1 	2.	
+\f5\b Embed
+\f0\b0  that page in Wix:\
+\pard\tqr\tx500\tx660\li660\fi-660\sl324\slmult1\sb240\partightenfactor0
+\cf2 	\'95	You can use an 
+\f5\b iframe
+\f0\b0  embed or the \'93Embed a Site\'94 tool in Wix.\
+	\'95	Alternatively, if you\'92re comfortable adding custom code in Wix\'92s Dev Mode (Velo), you could copy/paste your HTML/JS directly, but an iframe is usually simpler.\
+\
+Players visiting your site can then interact with your game in-browser.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f2\fs24 \cf0 \
+\uc0\u11835 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f0\fs28 \cf2 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f3\b\fs34 \cf2 6. Future Enhancements
+\f0\b0\fs28 \
+\pard\tqr\tx100\tx260\li260\fi-260\sl324\slmult1\sb240\partightenfactor0
+\cf2 	\'95	
+\f5\b Save Game State
+\f0\b0  (Local Storage): If you want players to come back and see the same hands, store 
+\f6 playerHands
+\f0  in 
+\f6 localStorage
+\f0 .\
+	\'95	
+\f5\b More Polished UI
+\f0\b0 : Instead of a list of players, you could do fancy card animations or drag-and-drop. (That\'92s more advanced JavaScript or a library like Phaser.js or Pixi.js.)\
+	\'95	
+\f5\b Multiple Scenes
+\f0\b0 : If you want a \'93landing screen,\'94 \'93character creation,\'94 or different pages, you can create additional HTML sections or switch views in JS.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f2\fs24 \cf0 \
+\uc0\u11835 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f0\fs28 \cf2 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f3\b\fs34 \cf2 7. Cross-Platform Outlook
+\f0\b0\fs28 \
+\pard\tqr\tx100\tx260\li260\fi-260\sl324\slmult1\sb240\partightenfactor0
+\cf2 	\'95	This approach works in any modern browser across Windows, Linux, macOS, iOS, Android, etc. No app store required.\
+	\'95	If you eventually need a more \'93native app\'94 approach, you can wrap this site in something like {\field{\*\fldinst{HYPERLINK "https://cordova.apache.org/"}}{\fldrslt Apache Cordova}}, {\field{\*\fldinst{HYPERLINK "https://capacitorjs.com/"}}{\fldrslt Capacitor}}, or {\field{\*\fldinst{HYPERLINK "https://www.electronjs.org/"}}{\fldrslt Electron}} for desktop. But for a quick, free distribution solution, a browser-based version is great.\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f2\fs24 \cf0 \
+\uc0\u11835 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f0\fs28 \cf2 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\sl324\slmult1\pardirnatural\partightenfactor0
+
+\f3\b\fs30 \cf2 Summary
+\f0\b0\fs28 \
+\pard\tqr\tx260\tx420\li420\fi-420\sl324\slmult1\sb240\partightenfactor0
+
+\f1 \cf2 	1.	
+\f5\b Create a basic HTML page
+\f0\b0  with placeholders for your game UI.\
+
+\f1 	2.	
+\f5\b Write a simple JS script
+\f0\b0  to store the deck, shuffle, deal, and roll dice.\
+
+\f1 	3.	
+\f5\b Render
+\f0\b0  the card images and text dynamically.\
+
+\f1 	4.	
+\f5\b Host
+\f0\b0  the site or embed it on Wix via an iframe or custom code.\
+\
+This ensures your TTRPG game is accessible on any device without requiring paid developer accounts, and you keep full control over updates. Good luck, and have fun bringing your game to the web!}
