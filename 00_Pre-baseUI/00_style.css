@@ -112,7 +112,7 @@ body {
 /* Mutable Column */
 #mutableColumn {
   position: absolute;
-  right: 312px;
+  right: 120px;
   top: 240px;
   display: flex;
   flex-direction: column;
@@ -122,17 +122,6 @@ body {
 .mutableSlot {
   width: 80px;
   height: 144px;
-  background-color: #3a3a3a;
-  border-radius: 5px;
-}
-
-/* D20 Area */
-#d20Area {
-  position: absolute;
-  width: 184px;
-  height: 184px;
-  left: 1504px;
-  top: 448px;
   background-color: #3a3a3a;
   border-radius: 5px;
 }
@@ -152,27 +141,17 @@ body {
   height: 144px;
   background-color: #3a3a3a;
   border-radius: 5px;
+}
+
+/* D20 Die */
+#d20Die {
   position: absolute;
-}
-
-#mainDeck {
-  left: 1512px;
-  top: 240px;
-}
-
-#mainDiscard {
-  left: 1600px;
-  top: 240px;
-}
-
-#altDeck {
-  left: 1512px;
-  top: 696px;
-}
-
-#altDiscard {
-  left: 1600px;
-  top: 696px;
+  width: 80px;
+  height: 144px;
+  right: 120px;
+  bottom: 32px;
+  background-color: #3a3a3a;
+  border-radius: 5px;
 }
 
 /* Bottom Section */

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soul Sworn - A Card-Based Rapid Role Playing Game</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="gameBoard">
+    <!-- Menu -->
+    <div id="menuIcon" class="icon"></div>
+
+    <!-- Player 1 Hand -->
+    <div id="player1Hand" class="playerHand">
+      <div class="charCard"></div>
+      <div class="handCard"></div>
+      <div class="handCard"></div>
+      <div class="handCard"></div>
+      <div class="handCard"></div>
+      <div class="handCard"></div>
+    </div>
+
+    <!-- Player 2 Hand -->
+    <div id="player2Hand" class="playerHand">
+      <div class="charCard"></div>
+      <div class="handCard"></div>
+      <div class="handCard"></div>
+      <div class="handCard"></div>
+      <div class="handCard"></div>
+      <div class="handCard"></div>
+    </div>
+
+    <!-- Settings -->
+    <div id="settingsIcon" class="icon"></div>
+
+    <!-- Inspector -->
+    <div id="inspector"></div>
+
+    <!-- Story Grid -->
+    <div id="storyGrid">
+      <!-- 40 grid slots will be added by JavaScript -->
+    </div>
+
+    <!-- Mutable Column -->
+    <div id="mutableColumn">
+      <div class="mutableSlot"></div>
+      <div class="mutableSlot"></div>
+      <div class="mutableSlot"></div>
+      <div class="mutableSlot"></div>
+    </div>
+
+    <!-- Deck Area -->
+    <div id="deckArea">
+      <div id="mainDeck"></div>
+      <div id="mainDiscard"></div>
+      <div id="altDeck"></div>
+      <div id="altDiscard"></div>
+    </div>
+
+    <!-- D20 Die -->
+    <div id="d20Die"></div>
+
+    <!-- Player 3 Hand -->
+    <div id="player3Hand" class="playerHand">
+      <div class="charCard"></div>
+      <div class="handCard"></div>
+      <div class="handCard"></div>
+      <div class="handCard"></div>
+      <div class="handCard"></div>
+      <div class="handCard"></div>
+    </div>
+
+    <!-- Player 4 Hand -->
+    <div id="player4Hand" class="playerHand">
+      <div class="charCard"></div>
+      <div class="handCard"></div>
+      <div class="handCard"></div>
+      <div class="handCard"></div>
+      <div class="handCard"></div>
+      <div class="handCard"></div>
+    </div>
+
+    <!-- Bottom Section -->
+    <div id="bottomSection">
+      <div id="logo"></div>
+      <div id="turnTimer"></div>
+    </div>
+  </div>
+
+  <!-- Game Setup Modal -->
+  <div id="setup" class="modal">
+    <div class="modal-content">
+      <h2>Game Setup</h2>
+      <div class="setup-options">
+        <label for="playerCount">Number of Players:</label>
+        <input type="number" id="playerCount" min="1" max="4" value="1" />
+        <button id="startGameBtn">Start Game</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
