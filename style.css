@@ -85,6 +85,15 @@ body {
   border-radius: 5px;
 }
 
+/* Inspector */
+#inspector {
+  position: absolute;
+  width: 376px;
+  height: 600px;
+  left: 24px;
+  top: 240px;
+}
+
 /* Story Grid */
 #storyGrid {
   position: absolute;
@@ -104,7 +113,7 @@ body {
 /* Mutable Column */
 #mutableColumn {
   position: absolute;
-  right: 336px;
+  left: 1376px;
   top: 240px;
   display: flex;
   flex-direction: column;
@@ -116,29 +125,13 @@ body {
   height: 144px;
 }
 
-/* D20 Area */
-#d20Area {
-  position: absolute;
-  width: 184px;
-  height: 184px;
-  left: 1504px;
-  top: 448px;
-}
-
-/* Deck Area */
-#deckArea {
-  position: absolute;
-  right: 24px;
-  top: 240px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
+/* Deck and Discard */
 #mainDeck, #mainDiscard, #altDeck, #altDiscard {
   width: 80px;
   height: 144px;
   position: absolute;
+  background-color: #3a3a3a;
+  border-radius: 5px;
 }
 
 #mainDeck {
@@ -161,29 +154,36 @@ body {
   top: 696px;
 }
 
-/* Bottom Section */
-#bottomSection {
+/* D20 Area */
+#d20Area {
   position: absolute;
-  bottom: 24px;
-  left: 24px;
-  right: 24px;
-  height: 160px;
+  width: 184px;
+  height: 184px;
+  left: 1504px;
+  top: 448px;
+  background-color: #3a3a3a;
+  border-radius: 5px;
 }
 
+/* Logo and Timer */
 #logo {
   position: absolute;
-  left: 0;
-  bottom: 0;
+  left: 24px;
+  top: 904px;
   width: 184px;
   height: 160px;
+  background-color: #3a3a3a;
+  border-radius: 5px;
 }
 
 #turnTimer {
   position: absolute;
-  right: 0;
-  bottom: 0;
+  left: 1504px;
+  top: 904px;
   width: 184px;
   height: 160px;
+  background-color: #3a3a3a;
+  border-radius: 5px;
 }
 
 /* Modal */
