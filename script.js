@@ -357,4 +357,17 @@ window.addEventListener('DOMContentLoaded', () => {
     // Initialize with setup modal visible
     document.getElementById('gameBoard').style.display = 'none';
     document.getElementById('setup').style.display = 'flex';
+
+    // Token input validation
+    document.querySelectorAll('.token').forEach(token => {
+        token.addEventListener('input', function(e) {
+            // Remove any non-digit characters
+            this.value = this.value.replace(/[^0-9]/g, '');
+            
+            // Ensure the value is between 0 and 9
+            if (this.value > 9) {
+                this.value = 9;
+            }
+        });
+    });
 });
