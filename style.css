@@ -30,8 +30,15 @@ body {
   height: 160px;
   left: 24px;
   top: 24px;
-  background-color: #3a3a3a;
-  border-radius: 5px;
+}
+
+/* Settings Icon */
+#settingsIcon {
+  position: absolute;
+  width: 184px;
+  height: 160px;
+  left: 1504px;
+  top: 24px;
 }
 
 /* Player Hands */
@@ -65,28 +72,15 @@ body {
 .charCard, .handCard {
   width: 80px;
   height: 144px;
+}
+
+/* Basic element styles */
+#menuIcon, #settingsIcon, #inspector, #logo, #turnTimer, #d20Area {
   background-color: #3a3a3a;
   border-radius: 5px;
 }
 
-/* Settings Icon */
-#settingsIcon {
-  position: absolute;
-  width: 184px;
-  height: 160px;
-  right: 24px;
-  top: 24px;
-  background-color: #3a3a3a;
-  border-radius: 5px;
-}
-
-/* Inspector */
-#inspector {
-  position: absolute;
-  width: 376px;
-  height: 600px;
-  left: 24px;
-  top: 240px;
+.charCard, .handCard, .gridSlot, .mutableSlot, #mainDeck, #mainDiscard, #altDeck, #altDiscard {
   background-color: #3a3a3a;
   border-radius: 5px;
 }
@@ -105,14 +99,12 @@ body {
 .gridSlot {
   width: 80px;
   height: 144px;
-  background-color: #3a3a3a;
-  border-radius: 5px;
 }
 
 /* Mutable Column */
 #mutableColumn {
   position: absolute;
-  right: 312px;
+  right: 336px;
   top: 240px;
   display: flex;
   flex-direction: column;
@@ -122,8 +114,6 @@ body {
 .mutableSlot {
   width: 80px;
   height: 144px;
-  background-color: #3a3a3a;
-  border-radius: 5px;
 }
 
 /* D20 Area */
@@ -133,8 +123,6 @@ body {
   height: 184px;
   left: 1504px;
   top: 448px;
-  background-color: #3a3a3a;
-  border-radius: 5px;
 }
 
 /* Deck Area */
@@ -150,8 +138,6 @@ body {
 #mainDeck, #mainDiscard, #altDeck, #altDiscard {
   width: 80px;
   height: 144px;
-  background-color: #3a3a3a;
-  border-radius: 5px;
   position: absolute;
 }
 
@@ -190,8 +176,6 @@ body {
   bottom: 0;
   width: 184px;
   height: 160px;
-  background-color: #3a3a3a;
-  border-radius: 5px;
 }
 
 #turnTimer {
@@ -200,8 +184,6 @@ body {
   bottom: 0;
   width: 184px;
   height: 160px;
-  background-color: #3a3a3a;
-  border-radius: 5px;
 }
 
 /* Modal */
