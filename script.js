@@ -77,11 +77,11 @@ function initializeGameBoard() {
 
 // Start game function
 function startGame() {
-    playerCount = parseInt(document.getElementById('playerCount').value, 10);
-    if (playerCount < 1) playerCount = 1;
-    if (playerCount > 4) playerCount = 4;
-    
-    initializeGameBoard();
+    const count = parseInt(document.getElementById('playerCount').value);
+    if (count >= 1 && count <= 4) {
+        playerCount = count;
+        initializeGameBoard();
+    }
 }
 
 function shuffleDeck() {
@@ -341,33 +341,18 @@ function renderHands() {
 
 // Initialize event listeners
 window.addEventListener('DOMContentLoaded', () => {
-    // Setup modal
+    // Start game button
     document.getElementById('startGameBtn').addEventListener('click', startGame);
     
-    // Menu and settings icons
+    // Menu icon
     document.getElementById('menuIcon').addEventListener('click', () => {
-        // TODO: Implement menu functionality
         console.log('Menu clicked');
     });
     
+    // Settings icon
     document.getElementById('settingsIcon').addEventListener('click', () => {
-        // TODO: Implement settings functionality
         console.log('Settings clicked');
     });
-    
-    // Timer controls
-    document.getElementById('resetTimer').addEventListener('click', () => {
-        // TODO: Implement timer reset
-        console.log('Timer reset clicked');
-    });
-    
-    document.getElementById('toggleTimer').addEventListener('click', () => {
-        // TODO: Implement timer toggle
-        console.log('Timer toggle clicked');
-    });
-    
-    // Add arrow key listener
-    document.addEventListener('keydown', handleArrowKeys);
     
     // Initialize with setup modal visible
     document.getElementById('gameBoard').style.display = 'none';
