@@ -328,6 +328,67 @@ body {
   height: 160px;
   background-color: #3a3a3a;
   border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.timer-display {
+  font-size: 48px;
+  font-weight: bold;
+  color: #ffffff;
+  transition: color 0.3s ease;
+}
+
+.timer-controls {
+  display: flex;
+  gap: 8px;
+  width: 160px;
+}
+
+.timer-controls button {
+  flex: 1;
+  padding: 8px;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 14px;
+}
+
+#toggleBtn {
+  background-color: #2a6;
+}
+
+#toggleBtn:hover {
+  background-color: #3b7;
+}
+
+#toggleBtn.running {
+  background-color: #f80;
+}
+
+#resetBtn {
+  background-color: #d44;
+}
+
+#resetBtn:hover {
+  background-color: #e55;
+}
+
+#turnTimer.running .timer-display { color: #fff; }
+#turnTimer.paused .timer-display { color: #f80; }
+#turnTimer.completed .timer-display { color: #e55; }
+
+#toggleBtn.times-up {
+  background-color: #8a2be2; /* Purple */
+}
+
+#toggleBtn.times-up:hover {
+  background-color: #9a3bf2;
 }
 
 /* Modal */

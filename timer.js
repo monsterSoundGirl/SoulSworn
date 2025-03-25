@@ -8,7 +8,8 @@ class TurnTimer {
         this.remaining = duration;
         this.isRunning = false;
         this.timerId = null;
-        this.element = document.getElementById(elementId);
+        this.element = document.querySelector(`#${elementId} .timer-display`);
+        this.toggleBtn = document.getElementById('toggleBtn');
         this.callbacks = {
             onTick: null,
             onComplete: null,
@@ -27,6 +28,16 @@ class TurnTimer {
     updateDisplay() {
         if (this.element) {
             this.element.textContent = this.formatTime(this.remaining);
+            
+            // Update display color based on state
+            if (this.remaining === 0) {
+                this.element.style.color = '#e55'; // Red at 0:00
+                this.toggleBtn.textContent = 'TIME IS UP';
+                this.toggleBtn.className = 'times-up';
+            } else {
+                this.element.style.color = '#ffffff'; // White otherwise
+            }
+
             if (typeof this.callbacks.onTick === 'function') {
                 this.callbacks.onTick(this.remaining);
             }
@@ -36,6 +47,9 @@ class TurnTimer {
     start() {
         if (!this.isRunning) {
             this.isRunning = true;
+            this.toggleBtn.textContent = 'Pause';
+            this.toggleBtn.className = 'running';
+            
             if (typeof this.callbacks.onStart === 'function') {
                 this.callbacks.onStart();
             }
@@ -44,10 +58,12 @@ class TurnTimer {
                 if (this.remaining > 0) {
                     this.remaining--;
                     this.updateDisplay();
-                } else {
-                    this.pause();
-                    if (typeof this.callbacks.onComplete === 'function') {
-                        this.callbacks.onComplete();
+                    
+                    if (this.remaining === 0) {
+                        this.pause();
+                        if (typeof this.callbacks.onComplete === 'function') {
+                            this.callbacks.onComplete();
+                        }
                     }
                 }
             }, 1000);
@@ -58,6 +74,10 @@ class TurnTimer {
         if (this.isRunning) {
             clearInterval(this.timerId);
             this.isRunning = false;
+            if (this.remaining > 0) {
+                this.toggleBtn.textContent = 'Start';
+                this.toggleBtn.className = '';
+            }
             if (typeof this.callbacks.onPause === 'function') {
                 this.callbacks.onPause();
             }
@@ -68,6 +88,8 @@ class TurnTimer {
         this.pause();
         this.remaining = this.duration;
         this.updateDisplay();
+        this.toggleBtn.textContent = 'Start';
+        this.toggleBtn.className = '';
         if (typeof this.callbacks.onReset === 'function') {
             this.callbacks.onReset();
         }

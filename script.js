@@ -286,38 +286,56 @@ function initializeGameBoard() {
     d20Area.appendChild(rollDisplay);
 
     // Initialize turn timer
-    const turnTimer = document.getElementById('turnTimer');
-    gameTimer = new timerClass('turnTimer', 300); // 5 minutes
-    gameTimer.updateDisplay(); // Show initial time
+    const timer = new TurnTimer('turnTimer', 120); // 2 minutes
+    const minutesInput = document.getElementById('timerMinutes');
+    const secondsInput = document.getElementById('timerSeconds');
     
-    // Add click handler for timer
-    turnTimer.addEventListener('click', () => {
-        if (gameTimer.isActive()) {
-            gameTimer.pause();
+    // Update display once to show initial time
+    timer.updateDisplay();
+    
+    // Toggle button control
+    document.getElementById('toggleBtn').addEventListener('click', function() {
+        if (timer.isActive()) {
+            timer.pause();
         } else {
-            gameTimer.start();
+            if (timer.getTimeRemaining() === 0) {
+                timer.reset(); // Reset if at zero before starting
+            }
+            timer.start();
         }
     });
     
-    // Add double click handler to reset timer
-    turnTimer.addEventListener('dblclick', () => {
-        gameTimer.reset();
+    document.getElementById('resetBtn').addEventListener('click', function() {
+        timer.reset();
     });
 
-    // Add timer event handlers
-    gameTimer.on('complete', () => {
-        turnTimer.style.color = '#e24a4a'; // Red when time's up
+    // Duration setting
+    document.getElementById('setDurationBtn').addEventListener('click', function() {
+        const minutes = parseInt(minutesInput.value) || 0;
+        const seconds = parseInt(secondsInput.value) || 0;
+        const totalSeconds = (minutes * 60) + seconds;
+        
+        if (totalSeconds > 0) {
+            timer.setDuration(totalSeconds);
+        }
     });
 
-    gameTimer.on('start', () => {
-        turnTimer.style.color = '#ffffff'; // White while running
+    // Input validation
+    minutesInput.addEventListener('input', function() {
+        let value = parseInt(this.value) || 0;
+        if (value > 60) value = 60;
+        if (value < 0) value = 0;
+        this.value = value;
     });
 
-    gameTimer.on('reset', () => {
-        turnTimer.style.color = '#ffffff'; // White on reset
+    secondsInput.addEventListener('input', function() {
+        let value = parseInt(this.value) || 0;
+        if (value > 59) value = 59;
+        if (value < 0) value = 0;
+        this.value = value;
     });
-
-    // First hide setup, then show game board to avoid display issues
+    
+    // Show game board, hide setup
     document.getElementById('setup').style.display = 'none';
     document.getElementById('gameBoard').style.display = 'flex';
     gameStarted = true;
