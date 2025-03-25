@@ -47,6 +47,7 @@ body {
   height: 144px;
   display: flex;
   gap: 8px;
+  align-items: center;
 }
 
 #player1Hand {
@@ -111,32 +112,81 @@ body {
   border-color: #ffffff;
 }
 
-/* Card styles */
-.charCard, .handCard {
+/* Hand Card Slots */
+.handCard {
   width: 80px;
   height: 144px;
   background-color: #3a3a3a;
   border-radius: 5px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-/* Basic element styles */
-#menuIcon, #settingsIcon, #inspector, #logo, #turnTimer, #d20Area {
-  background-color: #3a3a3a;
-  border-radius: 5px;
+.handCard.drag-over {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
 }
 
-.charCard, .handCard, .gridSlot, .mutableSlot, #mainDeck, #mainDiscard, #altDeck, #altDiscard {
-  background-color: #3a3a3a;
-  border-radius: 5px;
+/* Card styles */
+.card {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.6s;
+  cursor: pointer;
+  width: 80px;
+  height: 144px;
 }
 
-/* Inspector */
-#inspector {
+.card-front,
+.card-back {
+  width: 100%;
+  height: 100%;
   position: absolute;
+  backface-visibility: hidden;
+  border-radius: 5px;
+  object-fit: cover;
+}
+
+.card-back {
+  transform: rotateY(180deg);
+}
+
+.card.face-down {
+  transform: rotateY(180deg);
+}
+
+.card.highlighted {
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* Inspector card styles */
+.inspector-card {
   width: 376px;
   height: 600px;
-  left: 24px;
-  top: 240px;
+  transform-style: preserve-3d;
+  transition: transform 0.6s;
+}
+
+.inspector-card .card-front,
+.inspector-card .card-back {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 5px;
+  position: absolute;
+  backface-visibility: hidden;
+}
+
+.inspector-card .card-back {
+  transform: rotateY(180deg);
+}
+
+.inspector-card.face-down {
+  transform: rotateY(180deg);
 }
 
 /* Story Grid */
@@ -168,6 +218,36 @@ body {
 .mutableSlot {
   width: 80px;
   height: 144px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 5px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.mutableSlot.drag-over {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+}
+
+.mutableSlot .card {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  transform-style: preserve-3d;
+  transition: transform 0.6s;
+}
+
+.mutableSlot .card.dragging {
+  cursor: grabbing;
+  opacity: 0.8;
+  transform: scale(1.05);
 }
 
 /* Deck and Discard */
@@ -270,33 +350,28 @@ body {
   cursor: pointer;
 }
 
-.card {
-  position: relative;
-  width: 80px;
-  height: 144px;
-  transform-style: preserve-3d;
-  transition: transform 0.6s;
-  cursor: pointer;
+/* Basic element styles */
+#menuIcon, #settingsIcon, #inspector, #logo, #turnTimer, #d20Area {
+    background-color: #3a3a3a;
+    border-radius: 5px;
 }
 
-.card.inspector-card {
-  width: 376px;
-  height: 600px;
+.charCard, .handCard, .gridSlot, .mutableSlot, #mainDeck, #mainDiscard, #altDeck, #altDiscard {
+    background-color: #3a3a3a;
+    border-radius: 5px;
 }
 
-.card-front,
-.card-back {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  backface-visibility: hidden;
-  border-radius: 5px;
-}
-
-.card-back {
-  transform: rotateY(180deg);
-}
-
-.card.face-down {
-  transform: rotateY(180deg);
+/* Inspector */
+#inspector {
+    position: absolute;
+    width: 376px;
+    height: 600px;
+    left: 24px;
+    top: 240px;
+    background-color: #3a3a3a;
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
 }

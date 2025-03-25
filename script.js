@@ -131,26 +131,32 @@ const testCardSetup = async () => {
 // Card data with monster cards for testing
 const deck = [
   {
-    id: 1,
-    name: "Test Monster 1",
-    description: "A fearsome creature from the depths.",
-    imageUrl: "assets/JPG/cards/monster_cards/monster_1_289x485.jpg",
-    originalImageUrl: "assets/JPG/cards/monster_cards/monster_1_1192x2000.jpg"
-  },
-  {
-    id: 2,
-    name: "Test Monster 2",
-    description: "An ancient being of great power.",
-    imageUrl: "assets/JPG/cards/monster_cards/monster_2_289x485.jpg",
-    originalImageUrl: "assets/JPG/cards/monster_cards/monster_2_1192x2000.jpg"
-  },
-  {
-    id: 3,
-    name: "Test Monster 3",
-    description: "A mysterious entity from beyond.",
-    imageUrl: "assets/JPG/cards/monster_cards/monster_3_289x485.jpg",
-    originalImageUrl: "assets/JPG/cards/monster_cards/monster_3_1192x2000.jpg"
-  }
+        id: 'monster1',
+        name: "Monster A",
+        description: "A fearsome creature from the depths.",
+        imageUrl: {
+            small: "assets/JPG/cards/monster_cards/monster_1_289x485.jpg",
+            large: "assets/JPG/cards/monster_cards/monster_1_1192x2000.jpg"
+        }
+    },
+    {
+        id: 'monster2',
+        name: "Monster B",
+        description: "An ancient being of great power.",
+        imageUrl: {
+            small: "assets/JPG/cards/monster_cards/monster_2_289x485.jpg",
+            large: "assets/JPG/cards/monster_cards/monster_2_1192x2000.jpg"
+        }
+    },
+    {
+        id: 'monster3',
+        name: "Monster C",
+        description: "A mysterious entity from beyond.",
+        imageUrl: {
+            small: "assets/JPG/cards/monster_cards/monster_3_289x485.jpg",
+            large: "assets/JPG/cards/monster_cards/monster_3_1192x2000.jpg"
+        }
+    }
 ];
 
 // Game state
@@ -185,16 +191,33 @@ function initializeGameBoard() {
         const slot = document.createElement('div');
         slot.className = 'gridSlot';
         slot.dataset.index = i;
+        // Add drag and drop event listeners
+        slot.addEventListener('dragover', handleDragOver);
+        slot.addEventListener('drop', handleDrop);
         storyGrid.appendChild(slot);
     }
 
+    // Initialize mutable column slots
+    const mutableColumn = document.getElementById('mutableColumn');
+    // Clear existing slots first
+    mutableColumn.innerHTML = '';
+    for (let i = 0; i < 4; i++) {
+        const slot = document.createElement('div');
+        slot.className = 'mutableSlot';
+        slot.dataset.index = i;
+        // Add drag and drop event listeners
+        slot.addEventListener('dragover', handleDragOver);
+        slot.addEventListener('drop', handleDrop);
+        mutableColumn.appendChild(slot);
+    }
+
     // Initialize player hands and tokens
-    playerHands = [];
+  playerHands = [];
     initializePlayerTokens();
     
-    for (let i = 0; i < playerCount; i++) {
-        playerHands.push([]);
-    }
+  for (let i = 0; i < playerCount; i++) {
+    playerHands.push([]);
+  }
 
     // Show game board, hide setup
     document.getElementById('gameBoard').style.display = 'flex';
@@ -202,7 +225,7 @@ function initializeGameBoard() {
     gameStarted = true;
     
     // Render initial hands
-    renderHands();
+  renderHands();
 }
 
 // Start game function
@@ -240,7 +263,7 @@ function rollD20() {
   document.getElementById("rollResult").textContent = "You rolled a " + result;
 }
 
-// Create a card element
+// Create card element
 function createCardElement(card, isInspector = false) {
     const cardDiv = document.createElement('div');
     cardDiv.className = 'card';
@@ -258,7 +281,7 @@ function createCardElement(card, isInspector = false) {
     frontImg.style.position = 'absolute';
     frontImg.style.backfaceVisibility = 'hidden';
     cardDiv.appendChild(frontImg);
-
+    
     // Create back image element
     const backImg = document.createElement('img');
     backImg.src = isInspector ? cardData.cardBacks.large : cardData.cardBacks.small;
@@ -272,14 +295,14 @@ function createCardElement(card, isInspector = false) {
     backImg.style.backfaceVisibility = 'hidden';
     backImg.style.transform = 'rotateY(180deg)';
     cardDiv.appendChild(backImg);
-
+    
     // Add interaction event listeners
     cardDiv.draggable = true;
     cardDiv.addEventListener('click', handleCardClick);
     cardDiv.addEventListener('dblclick', handleCardDoubleClick);
     cardDiv.addEventListener('dragstart', handleCardDragStart);
     cardDiv.addEventListener('dragend', handleCardDragEnd);
-
+    
     return cardDiv;
 }
 
@@ -339,22 +362,12 @@ function renderHands() {
     });
 }
 
-// Update inspector view
-function updateInspector(card) {
-    const inspector = document.getElementById('inspector');
-    inspector.innerHTML = '';
-    
-    if (card) {
-        const inspectorCard = createCardElement(card, true);
-        inspectorCard.classList.add('inspector-card');
-        inspector.appendChild(inspectorCard);
-    }
-}
-
 // Handle card click
 function handleCardClick(event) {
     const card = event.currentTarget;
     const cardId = card.dataset.cardId;
+    
+    console.log('Card clicked:', cardId);
     
     // Remove highlight from previously highlighted card
     if (highlightedCard) {
@@ -366,16 +379,20 @@ function handleCardClick(event) {
     highlightedCard = card;
     
     // Find the card data
-    let cardData;
+    let foundCard;
     if (cardId.startsWith('char')) {
-        cardData = cardData.characterCards.find(c => c.id === cardId);
+        foundCard = cardData.characterCards.find(c => c.id === cardId);
     } else if (cardId.startsWith('test')) {
-        cardData = cardData.testCards.find(c => c.id === cardId);
+        foundCard = cardData.testCards.find(c => c.id === cardId);
+    } else if (cardId.startsWith('monster')) {
+        foundCard = deck.find(c => c.id === cardId);
     }
     
+    console.log('Found card data:', foundCard);
+    
     // Update inspector if card data found
-    if (cardData) {
-        updateInspector(cardData);
+    if (foundCard) {
+        updateInspector(foundCard);
     }
 }
 
@@ -410,7 +427,14 @@ function handleCardDragEnd(event) {
 // Handle drag over
 function handleDragOver(event) {
     event.preventDefault();
-    event.currentTarget.classList.add('drag-over');
+    const target = event.currentTarget;
+    
+    // Only add drag-over class to valid drop targets
+    if (target.classList.contains('handCard') || 
+        target.classList.contains('gridSlot') || 
+        target.classList.contains('mutableSlot')) {
+        target.classList.add('drag-over');
+    }
 }
 
 // Handle drop
@@ -421,15 +445,16 @@ function handleDrop(event) {
     
     if (!draggedCard) return;
 
-    // Don't allow dropping character cards into hand card slots
-    if (draggedCard.classList.contains('charCard') && target.classList.contains('handCard')) {
+    // Don't allow dropping character cards into hand card slots, grid slots, or mutable slots
+    if (draggedCard.classList.contains('charCard') && 
+        (target.classList.contains('handCard') || 
+         target.classList.contains('gridSlot') || 
+         target.classList.contains('mutableSlot'))) {
         return;
     }
 
-    if (target.classList.contains('handCard') || 
-        target.classList.contains('gridSlot') || 
-        target.classList.contains('mutableSlot')) {
-        
+    // Handle drops in hand card slots
+    if (target.classList.contains('handCard')) {
         const sourceParent = draggedCard.parentNode;
         
         // If target already has a card, swap them
@@ -441,16 +466,108 @@ function handleDrop(event) {
         target.appendChild(draggedCard);
         
         // Ensure hand structure remains intact
-        if (sourceParent.classList.contains('handCard') || target.classList.contains('handCard')) {
-            const hand = sourceParent.closest('.playerHand') || target.closest('.playerHand');
-            if (hand) {
-                // Verify all slots are present
-                const slots = hand.querySelectorAll('.handCard');
-                if (slots.length < 5) {
-                    renderHands();
-                }
+        const hand = sourceParent.closest('.playerHand') || target.closest('.playerHand');
+        if (hand) {
+            // Verify all slots are present
+            const slots = hand.querySelectorAll('.handCard');
+            if (slots.length < 5) {
+                renderHands();
             }
         }
+    }
+    // Handle drops in grid slots
+    else if (target.classList.contains('gridSlot')) {
+        const sourceParent = draggedCard.parentNode;
+        
+        // If target already has a card, find the nearest empty slot
+        const existingCard = target.querySelector('.card');
+        if (existingCard) {
+            // Find all grid slots
+            const allGridSlots = Array.from(document.querySelectorAll('.gridSlot'));
+            const currentIndex = allGridSlots.indexOf(target);
+            
+            // Search for nearest empty slot
+            let emptySlot = null;
+            let searchRadius = 1;
+            const maxSearch = Math.max(10, 4); // Width or height of grid
+            
+            while (!emptySlot && searchRadius <= maxSearch) {
+                // Check slots in expanding radius
+                for (let i = -searchRadius; i <= searchRadius; i++) {
+                    for (let j = -searchRadius; j <= searchRadius; j++) {
+                        const checkIndex = currentIndex + (i * 10) + j;
+                        if (checkIndex >= 0 && checkIndex < allGridSlots.length) {
+                            const checkSlot = allGridSlots[checkIndex];
+                            if (!checkSlot.querySelector('.card')) {
+                                emptySlot = checkSlot;
+                                break;
+                            }
+                        }
+                    }
+                    if (emptySlot) break;
+                }
+                searchRadius++;
+            }
+            
+            // If no empty slot found, return card to original position
+            if (!emptySlot) {
+                draggedCard.style.transform = ''; // Reset any transform
+                return;
+            }
+            
+            // Move existing card to empty slot
+            emptySlot.appendChild(existingCard);
+        }
+        
+        // Place dragged card in target slot
+        target.appendChild(draggedCard);
+        draggedCard.style.transform = ''; // Reset any transform
+    }
+    // Handle drops in mutable slots
+    else if (target.classList.contains('mutableSlot')) {
+        const sourceParent = draggedCard.parentNode;
+        
+        // If target already has a card, find the nearest empty mutable slot
+        const existingCard = target.querySelector('.card');
+        if (existingCard) {
+            // Find all mutable slots
+            const allMutableSlots = Array.from(document.querySelectorAll('.mutableSlot'));
+            const currentIndex = allMutableSlots.indexOf(target);
+            
+            // Search for nearest empty slot
+            let emptySlot = null;
+            let searchRadius = 1;
+            const maxSearch = 4; // Number of mutable slots
+            
+            while (!emptySlot && searchRadius <= maxSearch) {
+                // Check slots in expanding radius
+                for (let i = -searchRadius; i <= searchRadius; i++) {
+                    const checkIndex = currentIndex + i;
+                    if (checkIndex >= 0 && checkIndex < allMutableSlots.length) {
+                        const checkSlot = allMutableSlots[checkIndex];
+                        if (!checkSlot.querySelector('.card')) {
+                            emptySlot = checkSlot;
+                            break;
+                        }
+                    }
+                }
+                if (emptySlot) break;
+                searchRadius++;
+            }
+            
+            // If no empty slot found, return card to original position
+            if (!emptySlot) {
+                draggedCard.style.transform = ''; // Reset any transform
+                return;
+            }
+            
+            // Move existing card to empty slot
+            emptySlot.appendChild(existingCard);
+        }
+        
+        // Place dragged card in target slot
+        target.appendChild(draggedCard);
+        draggedCard.style.transform = ''; // Reset any transform
     }
 }
 
@@ -526,6 +643,49 @@ function checkTokenMax(token, total) {
         token.classList.add('maxed');
     } else {
         token.classList.remove('maxed');
+    }
+}
+
+// Update inspector with clicked card
+function updateInspector(card) {
+    console.log('Updating inspector with card:', card);
+    const inspector = document.getElementById('inspector');
+    inspector.innerHTML = ''; // Clear current inspector content
+    
+    if (card) {
+        const inspectorCard = document.createElement('div');
+        inspectorCard.className = 'card inspector-card';
+        inspectorCard.dataset.cardId = card.id;
+        
+        // Create front image element
+        const frontImg = document.createElement('img');
+        frontImg.src = card.imageUrl.large;
+        frontImg.alt = card.name;
+        frontImg.className = 'card-front';
+        frontImg.style.width = '100%';
+        frontImg.style.height = '100%';
+        frontImg.style.objectFit = 'contain';
+        frontImg.style.borderRadius = '5px';
+        frontImg.style.position = 'absolute';
+        frontImg.style.backfaceVisibility = 'hidden';
+        inspectorCard.appendChild(frontImg);
+        
+        // Create back image element
+        const backImg = document.createElement('img');
+        backImg.src = cardData.cardBacks.large;
+        backImg.alt = 'Card Back';
+        backImg.className = 'card-back';
+        backImg.style.width = '100%';
+        backImg.style.height = '100%';
+        backImg.style.objectFit = 'contain';
+        backImg.style.borderRadius = '5px';
+        backImg.style.position = 'absolute';
+        backImg.style.backfaceVisibility = 'hidden';
+        backImg.style.transform = 'rotateY(180deg)';
+        inspectorCard.appendChild(backImg);
+        
+        inspector.appendChild(inspectorCard);
+        console.log('Inspector card created and added');
     }
 }
 
