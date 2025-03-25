@@ -212,12 +212,22 @@ function initializeGameBoard() {
     }
 
     // Initialize player hands and tokens
-  playerHands = [];
+    playerHands = [];
     initializePlayerTokens();
     
-  for (let i = 0; i < playerCount; i++) {
-    playerHands.push([]);
-  }
+    for (let i = 0; i < playerCount; i++) {
+        playerHands.push([]);
+    }
+
+    // Initialize d20 with starting value of 20 in green
+    const d20Area = document.getElementById('d20Area');
+    const rollDisplay = document.createElement('div');
+    rollDisplay.id = 'rollDisplay';
+    rollDisplay.className = 'roll-number';
+    rollDisplay.textContent = '20';
+    rollDisplay.style.color = '#4ae24a'; // Green for 20
+    d20Area.innerHTML = '';
+    d20Area.appendChild(rollDisplay);
 
     // Show game board, hide setup
     document.getElementById('gameBoard').style.display = 'flex';
@@ -225,7 +235,7 @@ function initializeGameBoard() {
     gameStarted = true;
     
     // Render initial hands
-  renderHands();
+    renderHands();
 }
 
 // Start game function
@@ -258,9 +268,53 @@ function dealCards(cardsPerPlayer = 1) {
   renderHands();
 }
 
-function rollD20() {
-  const result = Math.floor(Math.random() * 20) + 1;
-  document.getElementById("rollResult").textContent = "You rolled a " + result;
+// D20 roll animation
+function animateD20Roll() {
+    const d20Area = document.getElementById('d20Area');
+    const rollDisplay = document.createElement('div');
+    rollDisplay.id = 'rollDisplay';
+    rollDisplay.className = 'roll-number';
+    d20Area.innerHTML = '';
+    d20Area.appendChild(rollDisplay);
+
+    let duration = 2000; // 2 seconds
+    let interval = 50; // Update every 50ms
+    let startTime = Date.now();
+    let animationFrame;
+
+    function updateDisplay() {
+        let currentTime = Date.now();
+        let elapsed = currentTime - startTime;
+        
+        if (elapsed < duration) {
+            // Generate random number 1-20
+            let randomNum = Math.floor(Math.random() * 20) + 1;
+            rollDisplay.textContent = randomNum.toString();
+            rollDisplay.style.color = '#ffffff'; // White during animation
+            
+            // Slow down the animation gradually
+            interval = 50 + (elapsed / duration) * 200;
+            
+            animationFrame = setTimeout(updateDisplay, interval);
+        } else {
+            // Final roll
+            let finalRoll = Math.floor(Math.random() * 20) + 1;
+            rollDisplay.textContent = finalRoll.toString();
+            
+            // Set color based on roll value
+            if (finalRoll === 20) {
+                rollDisplay.style.color = '#4ae24a'; // Green
+            } else if (finalRoll === 1) {
+                rollDisplay.style.color = '#e24a4a'; // Red
+            } else {
+                rollDisplay.style.color = '#ffffff'; // White
+            }
+            
+            rollDisplay.classList.add('final-roll');
+        }
+    }
+
+    updateDisplay();
 }
 
 // Create card element
@@ -704,6 +758,9 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('settingsIcon').addEventListener('click', () => {
         console.log('Settings clicked');
     });
+
+    // D20 area click handler
+    document.getElementById('d20Area').addEventListener('click', animateD20Roll);
     
     // Initialize with setup modal visible
     document.getElementById('gameBoard').style.display = 'none';

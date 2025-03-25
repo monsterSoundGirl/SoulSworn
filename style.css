@@ -288,6 +288,25 @@ body {
   top: 448px;
   background-color: #3a3a3a;
   border-radius: 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.roll-number {
+  font-family: 'Arial', sans-serif;
+  font-size: 36px;
+  font-weight: bold;
+  color: #ffffff;
+  transition: transform 0.2s ease;
+  user-select: none;
+}
+
+.roll-number.final-roll {
+  transform: scale(1.2);
+  color: #ffeb3b;
 }
 
 /* Logo and Timer */
