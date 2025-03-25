@@ -1,3 +1,10 @@
+// Use the global TurnTimer instead of importing
+// import TurnTimer from './timer.js';
+
+// Create a reference to the timer class without instantiating it
+let timerClass = TurnTimer;  // This will be available from timer.js
+let gameTimer = null;
+
 // Card data structure
 const cardData = {
     cardBacks: {
@@ -183,10 +190,60 @@ function shuffleArray(arr) {
   return arr;
 }
 
+// Initialize event listeners
+window.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM fully loaded');
+    
+    // Make sure setup screen is visible and game board is hidden
+    document.getElementById('gameBoard').style.display = 'none';
+    document.getElementById('setup').style.display = 'flex';
+    
+    testCardSetup();
+    
+    // Start game button
+    const startBtn = document.getElementById('startGameBtn');
+    console.log('Start button found:', startBtn);
+    
+    startBtn.addEventListener('click', () => {
+        console.log('Start button clicked');
+        startGame();
+    });
+    
+    // Menu icon
+    document.getElementById('menuIcon').addEventListener('click', () => {
+        console.log('Menu clicked');
+    });
+    
+    // Settings icon
+    document.getElementById('settingsIcon').addEventListener('click', () => {
+        console.log('Settings clicked');
+    });
+
+    // D20 area click handler
+    document.getElementById('d20Area').addEventListener('click', animateD20Roll);
+});
+
+// Start game function
+function startGame() {
+    console.log('startGame function called');
+    const playerSelect = document.getElementById('playerCount');
+    const count = parseInt(playerSelect.value);
+    console.log('Selected player count:', count);
+    
+    if (count >= 1 && count <= 4) {
+        playerCount = count;
+        console.log('Initializing game board with', playerCount, 'players');
+        initializeGameBoard();
+    } else {
+        console.error('Invalid player count:', count);
+    }
+}
+
 // Initialize the game board
 function initializeGameBoard() {
     // Generate story grid slots
     const storyGrid = document.getElementById('storyGrid');
+    storyGrid.innerHTML = ''; // Clear existing slots
     for (let i = 0; i < 40; i++) { // 4x10 grid
         const slot = document.createElement('div');
         slot.className = 'gridSlot';
@@ -199,8 +256,7 @@ function initializeGameBoard() {
 
     // Initialize mutable column slots
     const mutableColumn = document.getElementById('mutableColumn');
-    // Clear existing slots first
-    mutableColumn.innerHTML = '';
+    mutableColumn.innerHTML = ''; // Clear existing slots
     for (let i = 0; i < 4; i++) {
         const slot = document.createElement('div');
         slot.className = 'mutableSlot';
@@ -229,22 +285,45 @@ function initializeGameBoard() {
     d20Area.innerHTML = '';
     d20Area.appendChild(rollDisplay);
 
-    // Show game board, hide setup
-    document.getElementById('gameBoard').style.display = 'flex';
+    // Initialize turn timer
+    const turnTimer = document.getElementById('turnTimer');
+    gameTimer = new timerClass('turnTimer', 300); // 5 minutes
+    gameTimer.updateDisplay(); // Show initial time
+    
+    // Add click handler for timer
+    turnTimer.addEventListener('click', () => {
+        if (gameTimer.isActive()) {
+            gameTimer.pause();
+        } else {
+            gameTimer.start();
+        }
+    });
+    
+    // Add double click handler to reset timer
+    turnTimer.addEventListener('dblclick', () => {
+        gameTimer.reset();
+    });
+
+    // Add timer event handlers
+    gameTimer.on('complete', () => {
+        turnTimer.style.color = '#e24a4a'; // Red when time's up
+    });
+
+    gameTimer.on('start', () => {
+        turnTimer.style.color = '#ffffff'; // White while running
+    });
+
+    gameTimer.on('reset', () => {
+        turnTimer.style.color = '#ffffff'; // White on reset
+    });
+
+    // First hide setup, then show game board to avoid display issues
     document.getElementById('setup').style.display = 'none';
+    document.getElementById('gameBoard').style.display = 'flex';
     gameStarted = true;
     
     // Render initial hands
     renderHands();
-}
-
-// Start game function
-function startGame() {
-    const count = parseInt(document.getElementById('playerCount').value);
-    if (count >= 1 && count <= 4) {
-        playerCount = count;
-        initializeGameBoard();
-    }
 }
 
 function shuffleDeck() {
@@ -742,40 +821,3 @@ function updateInspector(card) {
         console.log('Inspector card created and added');
     }
 }
-
-// Initialize event listeners
-window.addEventListener('DOMContentLoaded', () => {
-    testCardSetup();
-    // Start game button
-    document.getElementById('startGameBtn').addEventListener('click', startGame);
-    
-    // Menu icon
-    document.getElementById('menuIcon').addEventListener('click', () => {
-        console.log('Menu clicked');
-    });
-    
-    // Settings icon
-    document.getElementById('settingsIcon').addEventListener('click', () => {
-        console.log('Settings clicked');
-    });
-
-    // D20 area click handler
-    document.getElementById('d20Area').addEventListener('click', animateD20Roll);
-    
-    // Initialize with setup modal visible
-    document.getElementById('gameBoard').style.display = 'none';
-    document.getElementById('setup').style.display = 'flex';
-
-    // Token input validation
-    document.querySelectorAll('.token').forEach(token => {
-        token.addEventListener('input', function(e) {
-            // Remove any non-digit characters
-            this.value = this.value.replace(/[^0-9]/g, '');
-            
-            // Ensure the value is between 0 and 9
-            if (this.value > 9) {
-                this.value = 9;
-            }
-        });
-    });
-});

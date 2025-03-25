@@ -7,7 +7,25 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="gameBoard">
+  <!-- Setup screen -->
+  <div id="setup" style="display: flex;">
+    <div id="setupContent">
+      <h1>Game Setup</h1>
+      <div class="setup-form">
+        <label for="playerCount">Number of Players:</label>
+        <select id="playerCount">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
+        <button id="startGameBtn">Start Game</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game board (initially hidden) -->
+  <div id="gameBoard" style="display: none;">
     <!-- Menu -->
     <div id="menuIcon" class="icon"></div>
 
@@ -94,18 +112,7 @@
     <div id="turnTimer"></div>
   </div>
 
-  <!-- Game Setup Modal -->
-  <div id="setup" class="modal">
-    <div class="modal-content">
-      <h2>Game Setup</h2>
-      <div class="setup-options">
-        <label for="playerCount">Number of Players:</label>
-        <input type="number" id="playerCount" min="1" max="4" value="1" />
-        <button id="startGameBtn">Start Game</button>
-      </div>
-    </div>
-  </div>
-
+  <script src="timer.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

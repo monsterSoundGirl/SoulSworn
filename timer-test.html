@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer Test Sandbox</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #333;
+            color: white;
+        }
+        
+        .container {
+            text-align: center;
+        }
+        
+        #timer {
+            font-size: 60px;
+            font-weight: bold;
+            margin: 30px 0;
+            padding: 20px 40px;
+            background-color: #222;
+            border-radius: 10px;
+            width: 200px;
+            display: inline-block;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            width: 280px; /* Same as timer width (200px) + padding (2 * 40px) */
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        button {
+            flex: 1;
+            padding: 10px 20px;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 16px;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        #toggleBtn {
+            background-color: #2a6;
+        }
+        
+        #toggleBtn:hover {
+            background-color: #3b7;
+        }
+        
+        #toggleBtn.paused {
+            background-color: #2a6;
+        }
+        
+        #toggleBtn.running {
+            background-color: #f80;
+        }
+        
+        #resetBtn {
+            background-color: #d44;
+        }
+        
+        #resetBtn:hover {
+            background-color: #e55;
+        }
+        
+        .status {
+            font-size: 14px;
+            height: 20px;
+            margin-top: 10px;
+            color: #aaa;
+        }
+        
+        #timer.running { color: #fff; }
+        #timer.paused { color: #f80; }
+        #timer.completed { color: #e55; }
+        
+        .duration-setting {
+            margin-top: 30px;
+        }
+        
+        input {
+            padding: 8px;
+            margin: 0 10px;
+            width: 60px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Timer Test Sandbox</h1>
+        
+        <div id="timer">2:00</div>
+        
+        <div class="controls">
+            <button id="toggleBtn">Start</button>
+            <button id="resetBtn">Reset</button>
+        </div>
+        
+        <div class="status" id="status">Click Start to begin timer</div>
+        
+        <div class="duration-setting">
+            <label for="minutes">Set Duration:</label>
+            <input type="number" id="minutes" min="0" max="60" value="2">
+            <span>:</span>
+            <input type="number" id="seconds" min="0" max="59" value="0">
+            <button id="setDurationBtn">Set</button>
+        </div>
+    </div>
+    
+    <script src="timer.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize timer with 2 minutes (120 seconds)
+            const timer = new TurnTimer('timer', 120);
+            const timerElement = document.getElementById('timer');
+            const statusElement = document.getElementById('status');
+            const toggleBtn = document.getElementById('toggleBtn');
+            
+            // Update display once to show initial time
+            timer.updateDisplay();
+            
+            // Toggle button control
+            toggleBtn.addEventListener('click', function() {
+                if (timer.isActive()) {
+                    timer.pause();
+                    toggleBtn.textContent = 'Start';
+                    toggleBtn.className = 'paused';
+                    timerElement.className = 'paused';
+                    statusElement.textContent = 'Timer paused';
+                } else {
+                    timer.start();
+                    toggleBtn.textContent = 'Pause';
+                    toggleBtn.className = 'running';
+                    timerElement.className = 'running';
+                    statusElement.textContent = 'Timer running';
+                }
+            });
+            
+            document.getElementById('resetBtn').addEventListener('click', function() {
+                timer.reset();
+                timerElement.className = '';
+                toggleBtn.textContent = 'Start';
+                toggleBtn.className = '';
+                statusElement.textContent = 'Timer reset';
+            });
+            
+            // Timer element click also toggles start/pause
+            timerElement.addEventListener('click', function() {
+                toggleBtn.click(); // Trigger the toggle button click
+            });
+            
+            // Duration setting
+            document.getElementById('setDurationBtn').addEventListener('click', function() {
+                const minutes = parseInt(document.getElementById('minutes').value) || 0;
+                const seconds = parseInt(document.getElementById('seconds').value) || 0;
+                const totalSeconds = (minutes * 60) + seconds;
+                
+                if (totalSeconds > 0) {
+                    timer.setDuration(totalSeconds);
+                    timerElement.className = '';
+                    toggleBtn.textContent = 'Start';
+                    toggleBtn.className = '';
+                    statusElement.textContent = `Duration set to ${minutes}:${seconds.toString().padStart(2, '0')}`;
+                } else {
+                    statusElement.textContent = 'Please enter a valid duration';
+                }
+            });
+            
+            // Set up timer event handlers
+            timer.on('complete', function() {
+                timerElement.className = 'completed';
+                toggleBtn.textContent = 'Start';
+                toggleBtn.className = '';
+                statusElement.textContent = 'Time\'s up!';
+            });
+            
+            timer.on('start', function() {
+                timerElement.className = 'running';
+            });
+            
+            timer.on('reset', function() {
+                timerElement.className = '';
+            });
+        });
+    </script>
+</body>
+</html> 
