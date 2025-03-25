@@ -1,5 +1,9 @@
 // Card data structure
 const cardData = {
+    cardBacks: {
+        small: 'assets/JPG/cards/card_back/cardBack_smalls.jpg',
+        large: 'assets/JPG/cards/card_back/cardBack_bigs.jpg'
+    },
     testCards: [
         {
             id: 'test1',
@@ -242,15 +246,32 @@ function createCardElement(card, isInspector = false) {
     cardDiv.className = 'card';
     cardDiv.dataset.cardId = card.id;
     
-    // Create the image element
-    const img = document.createElement('img');
-    img.src = isInspector ? card.imageUrl.large : card.imageUrl.small;
-    img.alt = card.name;
-    img.style.width = '100%';
-    img.style.height = '100%';
-    img.style.objectFit = 'cover';
-    img.style.borderRadius = '5px';
-    cardDiv.appendChild(img);
+    // Create front image element
+    const frontImg = document.createElement('img');
+    frontImg.src = isInspector ? card.imageUrl.large : card.imageUrl.small;
+    frontImg.alt = card.name;
+    frontImg.className = 'card-front';
+    frontImg.style.width = '100%';
+    frontImg.style.height = '100%';
+    frontImg.style.objectFit = 'cover';
+    frontImg.style.borderRadius = '5px';
+    frontImg.style.position = 'absolute';
+    frontImg.style.backfaceVisibility = 'hidden';
+    cardDiv.appendChild(frontImg);
+
+    // Create back image element
+    const backImg = document.createElement('img');
+    backImg.src = isInspector ? cardData.cardBacks.large : cardData.cardBacks.small;
+    backImg.alt = 'Card Back';
+    backImg.className = 'card-back';
+    backImg.style.width = '100%';
+    backImg.style.height = '100%';
+    backImg.style.objectFit = 'cover';
+    backImg.style.borderRadius = '5px';
+    backImg.style.position = 'absolute';
+    backImg.style.backfaceVisibility = 'hidden';
+    backImg.style.transform = 'rotateY(180deg)';
+    cardDiv.appendChild(backImg);
 
     // Add interaction event listeners
     cardDiv.draggable = true;
@@ -268,7 +289,9 @@ function renderHands() {
     const hands = document.querySelectorAll('.playerHand');
     hands.forEach(hand => {
         const playerIndex = parseInt(hand.id.replace('player', '').replace('Hand', '')) - 1;
+        // Store existing token container and cards
         const tokenContainer = hand.querySelector('.tokenContainer');
+        const existingCards = Array.from(hand.querySelectorAll('.card'));
         hand.innerHTML = '';
         
         if (tokenContainer) {
@@ -277,16 +300,39 @@ function renderHands() {
 
         // Add character card if this is an active player
         if (playerIndex < playerCount) {
-            const charCard = createCardElement(cardData.characterCards[playerIndex]);
-            charCard.classList.add('charCard');
+            // Reuse existing character card or create new one
+            let charCard;
+            const existingCharCard = existingCards.find(card => card.classList.contains('charCard'));
+            if (existingCharCard) {
+                charCard = existingCharCard;
+            } else {
+                charCard = createCardElement(cardData.characterCards[playerIndex]);
+                charCard.classList.add('charCard');
+            }
             hand.appendChild(charCard);
 
-            // Add placeholder hand cards
+            // Always create 5 hand card slots
             for (let i = 0; i < 5; i++) {
                 const cardSlot = document.createElement('div');
                 cardSlot.className = 'handCard';
                 cardSlot.addEventListener('dragover', handleDragOver);
                 cardSlot.addEventListener('drop', handleDrop);
+                
+                // If there was a card in this slot, reattach it
+                const existingCard = existingCards.find(card => 
+                    !card.classList.contains('charCard') && 
+                    card.parentElement === hand.children[i + 1]
+                );
+                if (existingCard) {
+                    cardSlot.appendChild(existingCard);
+                }
+                // Add test card to player 1's first slot
+                else if (playerIndex === 0 && i === 0 && !hand.querySelector('.test-card')) {
+                    const testCard = createCardElement(cardData.testCards[0]); // test1.jpg
+                    testCard.classList.add('test-card');
+                    cardSlot.appendChild(testCard);
+                }
+                
                 hand.appendChild(cardSlot);
             }
         }
@@ -337,10 +383,12 @@ function handleCardClick(event) {
 function handleCardDoubleClick(event) {
     const card = event.currentTarget;
     card.classList.toggle('face-down');
+    
+    // Apply the flip animation
     if (card.classList.contains('face-down')) {
-        card.querySelector('img').style.visibility = 'hidden';
+        card.style.transform = 'rotateY(180deg)';
     } else {
-        card.querySelector('img').style.visibility = 'visible';
+        card.style.transform = 'rotateY(0)';
     }
 }
 
@@ -371,16 +419,38 @@ function handleDrop(event) {
     const target = event.currentTarget;
     target.classList.remove('drag-over');
     
-    if (draggedCard && (target.classList.contains('handCard') || 
-                       target.classList.contains('gridSlot') || 
-                       target.classList.contains('mutableSlot'))) {
+    if (!draggedCard) return;
+
+    // Don't allow dropping character cards into hand card slots
+    if (draggedCard.classList.contains('charCard') && target.classList.contains('handCard')) {
+        return;
+    }
+
+    if (target.classList.contains('handCard') || 
+        target.classList.contains('gridSlot') || 
+        target.classList.contains('mutableSlot')) {
+        
+        const sourceParent = draggedCard.parentNode;
+        
         // If target already has a card, swap them
         const existingCard = target.querySelector('.card');
         if (existingCard) {
-            const draggedParent = draggedCard.parentNode;
-            draggedParent.appendChild(existingCard);
+            sourceParent.appendChild(existingCard);
         }
+        
         target.appendChild(draggedCard);
+        
+        // Ensure hand structure remains intact
+        if (sourceParent.classList.contains('handCard') || target.classList.contains('handCard')) {
+            const hand = sourceParent.closest('.playerHand') || target.closest('.playerHand');
+            if (hand) {
+                // Verify all slots are present
+                const slots = hand.querySelectorAll('.handCard');
+                if (slots.length < 5) {
+                    renderHands();
+                }
+            }
+        }
     }
 }
 
