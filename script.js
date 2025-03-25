@@ -1,3 +1,129 @@
+// Card data structure
+const cardData = {
+    testCards: [
+        {
+            id: 'test1',
+            name: 'Test Card 1',
+            imageUrl: {
+                small: 'assets/JPG/cards/_test_cards/test_smalls/test1.jpg',
+                large: 'assets/JPG/cards/_test_cards/test_bigs/test1.jpg'
+            }
+        },
+        {
+            id: 'test2',
+            name: 'Test Card 2',
+            imageUrl: {
+                small: 'assets/JPG/cards/_test_cards/test_smalls/test2.jpg',
+                large: 'assets/JPG/cards/_test_cards/test_bigs/test2.jpg'
+            }
+        },
+        {
+            id: 'test3',
+            name: 'Test Card 3',
+            imageUrl: {
+                small: 'assets/JPG/cards/_test_cards/test_smalls/test3.jpg',
+                large: 'assets/JPG/cards/_test_cards/test_bigs/test3.jpg'
+            }
+        }
+    ],
+    characterCards: [
+        {
+            id: 'char1',
+            name: 'Character 1',
+            imageUrl: {
+                small: 'assets/JPG/cards/character_cards/character_smalls/char1.jpg',
+                large: 'assets/JPG/cards/character_cards/character_bigs/char1.jpg'
+            }
+        },
+        {
+            id: 'char2',
+            name: 'Character 2',
+            imageUrl: {
+                small: 'assets/JPG/cards/character_cards/character_smalls/char2.jpg',
+                large: 'assets/JPG/cards/character_cards/character_bigs/char2.jpg'
+            }
+        },
+        {
+            id: 'char3',
+            name: 'Character 3',
+            imageUrl: {
+                small: 'assets/JPG/cards/character_cards/character_smalls/char3.jpg',
+                large: 'assets/JPG/cards/character_cards/character_bigs/char3.jpg'
+            }
+        },
+        {
+            id: 'char4',
+            name: 'Character 4',
+            imageUrl: {
+                small: 'assets/JPG/cards/character_cards/character_smalls/char4.jpg',
+                large: 'assets/JPG/cards/character_cards/character_bigs/char4.jpg'
+            }
+        }
+    ]
+};
+
+// Image preloading
+const preloadImages = () => {
+    const allCards = [...cardData.testCards, ...cardData.characterCards];
+    const loadedImages = new Set();
+    let totalImages = allCards.length * 2; // 2 sizes per card
+    let loadedCount = 0;
+
+    return new Promise((resolve, reject) => {
+        allCards.forEach(card => {
+            const smallImg = new Image();
+            const largeImg = new Image();
+
+            const handleLoad = () => {
+                loadedCount++;
+                if (loadedCount === totalImages) {
+                    console.log('All card images loaded successfully');
+                    resolve();
+                }
+            };
+
+            const handleError = (error) => {
+                console.error('Error loading card image:', error);
+                reject(error);
+            };
+
+            smallImg.onload = handleLoad;
+            largeImg.onload = handleLoad;
+            smallImg.onerror = handleError;
+            largeImg.onerror = handleError;
+
+            smallImg.src = card.imageUrl.small;
+            largeImg.src = card.imageUrl.large;
+        });
+    });
+};
+
+// Test function to verify card data and image loading
+const testCardSetup = async () => {
+    try {
+        console.log('Testing card data structure:');
+        console.log('Test cards:', cardData.testCards);
+        console.log('Character cards:', cardData.characterCards);
+        
+        await preloadImages();
+        console.log('Image preloading test passed');
+        
+        // Test card dimensions
+        const testCard = document.createElement('div');
+        testCard.className = 'handCard';
+        document.body.appendChild(testCard);
+        const computedStyle = window.getComputedStyle(testCard);
+        console.log('Card dimensions:', {
+            width: computedStyle.width,
+            height: computedStyle.height
+        });
+        document.body.removeChild(testCard);
+        
+    } catch (error) {
+        console.error('Card setup test failed:', error);
+    }
+};
+
 // Card data with monster cards for testing
 const deck = [
   {
@@ -113,77 +239,124 @@ function rollD20() {
 // Create a card element
 function createCardElement(card, isInspector = false) {
     const cardDiv = document.createElement('div');
-    cardDiv.className = `card ${isInspector ? 'inspector' : ''}`;
+    cardDiv.className = 'card';
     cardDiv.dataset.cardId = card.id;
     
-    // Use original image for inspector, display size for regular cards
-    const imageUrl = isInspector ? card.originalImageUrl : card.imageUrl;
-    
-    cardDiv.innerHTML = `
-        <img src="${imageUrl}" alt="${card.name}" />
-        <div class="card-content">
-            <div class="card-name">${card.name}</div>
-            <div class="card-description">${card.description}</div>
-        </div>
-    `;
+    // Create the image element
+    const img = document.createElement('img');
+    img.src = isInspector ? card.imageUrl.large : card.imageUrl.small;
+    img.alt = card.name;
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'cover';
+    img.style.borderRadius = '5px';
+    cardDiv.appendChild(img);
 
     // Add interaction event listeners
+    cardDiv.draggable = true;
     cardDiv.addEventListener('click', handleCardClick);
     cardDiv.addEventListener('dblclick', handleCardDoubleClick);
-    cardDiv.addEventListener('mousedown', handleCardDragStart);
-    cardDiv.addEventListener('mouseup', handleCardDragEnd);
-    cardDiv.addEventListener('mouseleave', handleCardDragEnd);
+    cardDiv.addEventListener('dragstart', handleCardDragStart);
+    cardDiv.addEventListener('dragend', handleCardDragEnd);
 
     return cardDiv;
+}
+
+// Render a player's hand
+function renderHands() {
+    // Clear existing hands
+    const hands = document.querySelectorAll('.playerHand');
+    hands.forEach(hand => {
+        const playerIndex = parseInt(hand.id.replace('player', '').replace('Hand', '')) - 1;
+        const tokenContainer = hand.querySelector('.tokenContainer');
+        hand.innerHTML = '';
+        
+        if (tokenContainer) {
+            hand.appendChild(tokenContainer);
+        }
+
+        // Add character card if this is an active player
+        if (playerIndex < playerCount) {
+            const charCard = createCardElement(cardData.characterCards[playerIndex]);
+            charCard.classList.add('charCard');
+            hand.appendChild(charCard);
+
+            // Add placeholder hand cards
+            for (let i = 0; i < 5; i++) {
+                const cardSlot = document.createElement('div');
+                cardSlot.className = 'handCard';
+                cardSlot.addEventListener('dragover', handleDragOver);
+                cardSlot.addEventListener('drop', handleDrop);
+                hand.appendChild(cardSlot);
+            }
+        }
+    });
+}
+
+// Update inspector view
+function updateInspector(card) {
+    const inspector = document.getElementById('inspector');
+    inspector.innerHTML = '';
+    
+    if (card) {
+        const inspectorCard = createCardElement(card, true);
+        inspectorCard.classList.add('inspector-card');
+        inspector.appendChild(inspectorCard);
+    }
 }
 
 // Handle card click
 function handleCardClick(event) {
     const card = event.currentTarget;
+    const cardId = card.dataset.cardId;
+    
+    // Remove highlight from previously highlighted card
     if (highlightedCard) {
         highlightedCard.classList.remove('highlighted');
     }
+    
+    // Highlight this card
     card.classList.add('highlighted');
     highlightedCard = card;
     
-    // Update inspector
-    const cardId = card.dataset.cardId;
-    const cardData = deck.find(c => c.id === parseInt(cardId));
+    // Find the card data
+    let cardData;
+    if (cardId.startsWith('char')) {
+        cardData = cardData.characterCards.find(c => c.id === cardId);
+    } else if (cardId.startsWith('test')) {
+        cardData = cardData.testCards.find(c => c.id === cardId);
+    }
+    
+    // Update inspector if card data found
     if (cardData) {
         updateInspector(cardData);
     }
 }
 
-// Handle card double click
+// Handle card double click for flipping
 function handleCardDoubleClick(event) {
     const card = event.currentTarget;
     card.classList.toggle('face-down');
+    if (card.classList.contains('face-down')) {
+        card.querySelector('img').style.visibility = 'hidden';
+    } else {
+        card.querySelector('img').style.visibility = 'visible';
+    }
 }
 
-// Handle card drag start
+// Handle drag start
 function handleCardDragStart(event) {
     draggedCard = event.currentTarget;
+    event.dataTransfer.setData('text/plain', ''); // Required for Firefox
     draggedCard.classList.add('dragging');
-    
-    // Add drag-over listeners to valid drop targets
-    document.querySelectorAll('.gridSlot, .mutableSlot').forEach(slot => {
-        slot.addEventListener('dragover', handleDragOver);
-        slot.addEventListener('drop', handleDrop);
-    });
 }
 
-// Handle card drag end
+// Handle drag end
 function handleCardDragEnd(event) {
     if (draggedCard) {
         draggedCard.classList.remove('dragging');
         draggedCard = null;
     }
-    
-    // Remove drag-over listeners
-    document.querySelectorAll('.gridSlot, .mutableSlot').forEach(slot => {
-        slot.removeEventListener('dragover', handleDragOver);
-        slot.removeEventListener('drop', handleDrop);
-    });
 }
 
 // Handle drag over
@@ -198,16 +371,17 @@ function handleDrop(event) {
     const target = event.currentTarget;
     target.classList.remove('drag-over');
     
-    if (draggedCard && target.classList.contains('gridSlot') || target.classList.contains('mutableSlot')) {
+    if (draggedCard && (target.classList.contains('handCard') || 
+                       target.classList.contains('gridSlot') || 
+                       target.classList.contains('mutableSlot'))) {
+        // If target already has a card, swap them
+        const existingCard = target.querySelector('.card');
+        if (existingCard) {
+            const draggedParent = draggedCard.parentNode;
+            draggedParent.appendChild(existingCard);
+        }
         target.appendChild(draggedCard);
     }
-}
-
-// Update inspector view
-function updateInspector(cardData) {
-    const inspector = document.getElementById('cardInspector');
-    inspector.innerHTML = '';
-    inspector.appendChild(createCardElement(cardData, true));
 }
 
 // Initialize token state for each player
@@ -285,62 +459,9 @@ function checkTokenMax(token, total) {
     }
 }
 
-// Update render hands function to use new token interaction
-function renderHands() {
-    const topHands = document.getElementById('topPlayerHands');
-    const bottomHands = document.getElementById('bottomPlayerHands');
-    
-    // Clear existing hands
-    topHands.innerHTML = '';
-    bottomHands.innerHTML = '';
-    
-    // Render hands based on player count
-    for (let p = 0; p < playerCount; p++) {
-        const playerHand = document.createElement('div');
-        playerHand.className = 'playerHand';
-        playerHand.dataset.playerIndex = p;
-        
-        // Add character card slot
-        const charSlot = document.createElement('div');
-        charSlot.className = 'card face-up';
-        charSlot.innerHTML = '<div class="card-content">Character Card</div>';
-        playerHand.appendChild(charSlot);
-        
-        // Add attribute tokens
-        const tokenContainer = document.createElement('div');
-        tokenContainer.className = 'token-container';
-        
-        const attributes = ['rational', 'emotional', 'physical'];
-        attributes.forEach(attr => {
-            const token = document.createElement('div');
-            token.className = 'token';
-            token.dataset.attribute = attr;
-            token.textContent = playerTokens[p][attr];
-            
-            // Add token selection listener
-            token.addEventListener('click', handleTokenClick);
-            
-            tokenContainer.appendChild(token);
-        });
-        
-        playerHand.appendChild(tokenContainer);
-        
-        // Add hand cards
-        playerHands[p].forEach(card => {
-            playerHand.appendChild(createCardElement(card));
-        });
-        
-        // Add to appropriate container
-        if (p === 0 || p === 3) {
-            bottomHands.appendChild(playerHand);
-        } else {
-            topHands.appendChild(playerHand);
-        }
-    }
-}
-
 // Initialize event listeners
 window.addEventListener('DOMContentLoaded', () => {
+    testCardSetup();
     // Start game button
     document.getElementById('startGameBtn').addEventListener('click', startGame);
     
