@@ -85,6 +85,17 @@ let playerTokens = [];
 // Token interaction state
 let selectedToken = null;
 
+// Card type definitions
+const CARD_TYPES = {
+    CHARACTER: 'character',
+    MONSTER: 'monster',
+    NPC: 'NPC',
+    ITEM: 'item',
+    LOCATION: 'location',
+    OBJECTIVE: 'objective',
+    SPELL: 'spell'
+};
+
 function shuffleArray(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -1152,4 +1163,96 @@ function renderMainDiscard() {
         
         discardElement.appendChild(cardElement);
     }
+}
+
+// Function to validate and load card pairs
+async function loadCardPairs() {
+    const cardData = {};
+    
+    // Initialize card data structure for each type
+    Object.values(CARD_TYPES).forEach(type => {
+        cardData[type] = [];
+    });
+    
+    // Function to get all files in a directory
+    async function getFilesInDirectory(path) {
+        try {
+            const response = await fetch(path);
+            const text = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(text, 'text/html');
+            return Array.from(doc.querySelectorAll('a'))
+                .map(a => a.href)
+                .filter(href => href.match(/\.(jpg|jpeg|png)$/i));
+        } catch (error) {
+            console.error(`Error reading directory ${path}:`, error);
+            return [];
+        }
+    }
+    
+    // Function to validate a card pair
+    function validateCardPair(smallPath, bigPath) {
+        // Extract the base filename without extension and size suffix
+        const smallBase = smallPath.replace(/\/[^/]+$/, '').replace(/\/[^/]+$/, '');
+        const bigBase = bigPath.replace(/\/[^/]+$/, '').replace(/\/[^/]+$/, '');
+        
+        // Check if the base names match
+        return smallBase === bigBase;
+    }
+    
+    // Process each card type
+    for (const [type, typeName] of Object.entries(CARD_TYPES)) {
+        const smallPath = `assets/JPG/cards/${typeName}_cards/${typeName}_smalls/`;
+        const bigPath = `assets/JPG/cards/${typeName}_cards/${typeName}_bigs/`;
+        
+        // Get all files in both directories
+        const smallFiles = await getFilesInDirectory(smallPath);
+        const bigFiles = await getFilesInDirectory(bigPath);
+        
+        // Match pairs
+        for (const smallFile of smallFiles) {
+            const matchingBigFile = bigFiles.find(bigFile => 
+                validateCardPair(smallFile, bigFile)
+            );
+            
+            if (matchingBigFile) {
+                // Extract card ID from filename
+                const cardId = smallFile.split('/').pop().replace(/\.[^/.]+$/, '');
+                
+                // Add card to the appropriate type array
+                cardData[type].push({
+                    id: cardId,
+                    name: cardId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                    imageUrl: {
+                        small: smallFile,
+                        large: matchingBigFile
+                    },
+                    faceUp: false
+                });
+            } else {
+                console.warn(`No matching large version found for ${smallFile}`);
+            }
+        }
+    }
+    
+    return cardData;
+}
+
+// Function to initialize all decks with loaded cards
+async function initializeDecks() {
+    const loadedCards = await loadCardPairs();
+    
+    // Initialize main deck with all cards
+    mainDeck = [];
+    Object.values(loadedCards).forEach(cardArray => {
+        mainDeck.push(...cardArray.map(card => ({...card, faceUp: false})));
+    });
+    
+    // Shuffle the deck
+    shuffleArray(mainDeck);
+    
+    // Update the display
+    renderMainDeck();
+    
+    console.log(`Main deck initialized with ${mainDeck.length} cards`);
 }
