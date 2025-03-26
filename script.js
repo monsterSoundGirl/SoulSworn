@@ -5,38 +5,38 @@
 let timerClass = TurnTimer;  // This will be available from timer.js
 let gameTimer = null;
 
+// Main deck and discard pile data
+let mainDeck = [];
+let mainDiscard = [];
+let altDeck = [];
+let altDiscard = [];
+
+// Card interaction state
+let draggedCard = null;
+let highlightedCard = null;
+let isDragging = false;
+
 // Card data structure
 const cardData = {
     cardBacks: {
         small: 'assets/JPG/cards/card_back/cardBack_smalls.jpg',
         large: 'assets/JPG/cards/card_back/cardBack_bigs.jpg'
     },
-    testCards: [
-        {
-            id: 'test1',
-            name: 'Test Card 1',
+    // Generate 50 test cards with the specified pattern
+    testCards: Array.from({ length: 50 }, (_, i) => {
+        // Convert index to padded number (01-50)
+        const cardNum = String(i + 1).padStart(2, '0');
+        return {
+            id: `test${cardNum}`,
+            name: `Test Card ${cardNum}`,
+            description: `Description for test card ${cardNum}`,
             imageUrl: {
-                small: 'assets/JPG/cards/_test_cards/test_smalls/test1.jpg',
-                large: 'assets/JPG/cards/_test_cards/test_bigs/test1.jpg'
-            }
-        },
-        {
-            id: 'test2',
-            name: 'Test Card 2',
-            imageUrl: {
-                small: 'assets/JPG/cards/_test_cards/test_smalls/test2.jpg',
-                large: 'assets/JPG/cards/_test_cards/test_bigs/test2.jpg'
-            }
-        },
-        {
-            id: 'test3',
-            name: 'Test Card 3',
-            imageUrl: {
-                small: 'assets/JPG/cards/_test_cards/test_smalls/test3.jpg',
-                large: 'assets/JPG/cards/_test_cards/test_bigs/test3.jpg'
-            }
-        }
-    ],
+                small: `assets/JPG/cards/_test_cards/test_smalls/ssworn_test_deck-${cardNum}.jpg`,
+                large: `assets/JPG/cards/_test_cards/test_bigs/ssworn_test_deck-${cardNum}_lrg.jpg`
+            },
+            faceUp: false
+        };
+    }),
     characterCards: [
         {
             id: 'char1',
@@ -73,107 +73,10 @@ const cardData = {
     ]
 };
 
-// Image preloading
-const preloadImages = () => {
-    const allCards = [...cardData.testCards, ...cardData.characterCards];
-    const loadedImages = new Set();
-    let totalImages = allCards.length * 2; // 2 sizes per card
-    let loadedCount = 0;
-
-    return new Promise((resolve, reject) => {
-        allCards.forEach(card => {
-            const smallImg = new Image();
-            const largeImg = new Image();
-
-            const handleLoad = () => {
-                loadedCount++;
-                if (loadedCount === totalImages) {
-                    console.log('All card images loaded successfully');
-                    resolve();
-                }
-            };
-
-            const handleError = (error) => {
-                console.error('Error loading card image:', error);
-                reject(error);
-            };
-
-            smallImg.onload = handleLoad;
-            largeImg.onload = handleLoad;
-            smallImg.onerror = handleError;
-            largeImg.onerror = handleError;
-
-            smallImg.src = card.imageUrl.small;
-            largeImg.src = card.imageUrl.large;
-        });
-    });
-};
-
-// Test function to verify card data and image loading
-const testCardSetup = async () => {
-    try {
-        console.log('Testing card data structure:');
-        console.log('Test cards:', cardData.testCards);
-        console.log('Character cards:', cardData.characterCards);
-        
-        await preloadImages();
-        console.log('Image preloading test passed');
-        
-        // Test card dimensions
-        const testCard = document.createElement('div');
-        testCard.className = 'handCard';
-        document.body.appendChild(testCard);
-        const computedStyle = window.getComputedStyle(testCard);
-        console.log('Card dimensions:', {
-            width: computedStyle.width,
-            height: computedStyle.height
-        });
-        document.body.removeChild(testCard);
-        
-    } catch (error) {
-        console.error('Card setup test failed:', error);
-    }
-};
-
-// Card data with monster cards for testing
-const deck = [
-  {
-        id: 'monster1',
-        name: "Monster A",
-        description: "A fearsome creature from the depths.",
-        imageUrl: {
-            small: "assets/JPG/cards/monster_cards/monster_1_289x485.jpg",
-            large: "assets/JPG/cards/monster_cards/monster_1_1192x2000.jpg"
-        }
-    },
-    {
-        id: 'monster2',
-        name: "Monster B",
-        description: "An ancient being of great power.",
-        imageUrl: {
-            small: "assets/JPG/cards/monster_cards/monster_2_289x485.jpg",
-            large: "assets/JPG/cards/monster_cards/monster_2_1192x2000.jpg"
-        }
-    },
-    {
-        id: 'monster3',
-        name: "Monster C",
-        description: "A mysterious entity from beyond.",
-        imageUrl: {
-            small: "assets/JPG/cards/monster_cards/monster_3_289x485.jpg",
-            large: "assets/JPG/cards/monster_cards/monster_3_1192x2000.jpg"
-        }
-    }
-];
-
 // Game state
 let playerCount = 1;
 let playerHands = [];
 let gameStarted = false;
-
-// Card interaction state
-let draggedCard = null;
-let highlightedCard = null;
 
 // Token state
 const MAX_TOKENS = 7;
@@ -195,19 +98,26 @@ window.addEventListener('DOMContentLoaded', () => {
     console.log('DOM fully loaded');
     
     // Make sure setup screen is visible and game board is hidden
+    console.log('Setup element:', document.getElementById('setup'));
+    console.log('Setup style:', document.getElementById('setup').style.display);
     document.getElementById('gameBoard').style.display = 'none';
     document.getElementById('setup').style.display = 'flex';
     
-    testCardSetup();
+    // Set up menu UI interactions
+    initializeMenuInteractions();
     
     // Start game button
     const startBtn = document.getElementById('startGameBtn');
     console.log('Start button found:', startBtn);
     
-    startBtn.addEventListener('click', () => {
-        console.log('Start button clicked');
-        startGame();
-    });
+    if (startBtn) {
+        startBtn.addEventListener('click', () => {
+            console.log('Start button clicked');
+            startGame();
+        });
+    } else {
+        console.error('Start button not found in the DOM');
+    }
     
     // Menu icon
     document.getElementById('menuIcon').addEventListener('click', () => {
@@ -223,24 +133,242 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('d20Area').addEventListener('click', animateD20Roll);
 });
 
-// Start game function
-function startGame() {
-    console.log('startGame function called');
-    const playerSelect = document.getElementById('playerCount');
-    const count = parseInt(playerSelect.value);
-    console.log('Selected player count:', count);
+// Initialize menu interactions
+function initializeMenuInteractions() {
+    // Deck type selections
+    const mainDeckSelect = document.getElementById('mainDeckType');
+    const altDeckSelect = document.getElementById('altDeckType');
     
-    if (count >= 1 && count <= 4) {
-        playerCount = count;
-        console.log('Initializing game board with', playerCount, 'players');
-        initializeGameBoard();
-    } else {
-        console.error('Invalid player count:', count);
+    if (mainDeckSelect) {
+        mainDeckSelect.addEventListener('change', () => {
+            console.log('Main deck type changed:', mainDeckSelect.value);
+        });
+    }
+    
+    if (altDeckSelect) {
+        altDeckSelect.addEventListener('change', () => {
+            console.log('Alt deck type changed:', altDeckSelect.value);
+        });
+    }
+    
+    // Card preview navigation
+    const prevCardBtn = document.getElementById('prevCard');
+    const nextCardBtn = document.getElementById('nextCard');
+    
+    if (prevCardBtn) {
+        prevCardBtn.addEventListener('click', () => {
+            console.log('Previous card button clicked');
+        });
+    }
+    
+    if (nextCardBtn) {
+        nextCardBtn.addEventListener('click', () => {
+            console.log('Next card button clicked');
+        });
+    }
+    
+    // Join game button
+    const joinBtn = document.getElementById('joinBtn');
+    if (joinBtn) {
+        joinBtn.addEventListener('click', () => {
+            const joinCode = document.getElementById('joinCode').value;
+            console.log('Join game button clicked with code:', joinCode);
+        });
     }
 }
 
-// Initialize the game board
-function initializeGameBoard() {
+// Deck initialization function
+function initializeMainDeck() {
+    console.log('Initializing main deck with all test cards');
+    // Clear the deck
+    mainDeck = [];
+    
+    // Copy all test cards to the deck
+    mainDeck = cardData.testCards.map(card => ({...card, faceUp: false}));
+    
+    // Shuffle the deck
+    shuffleArray(mainDeck);
+    
+    // Initialize the deck element
+    renderMainDeck();
+    
+    console.log(`Main deck initialized with ${mainDeck.length} cards`);
+}
+
+// Render main deck
+function renderMainDeck() {
+    const deckElement = document.getElementById('mainDeck');
+    deckElement.innerHTML = '';
+    
+    // Add deck count indicator
+    const deckCount = document.createElement('div');
+    deckCount.className = 'deck-count';
+    deckCount.textContent = mainDeck.length;
+    deckElement.appendChild(deckCount);
+    
+    // Only render the top card if the deck has cards
+    if (mainDeck.length > 0) {
+        const topCard = mainDeck[0];
+        
+        // Create a single draggable element to represent the top card
+        const cardElement = document.createElement('div');
+        cardElement.className = 'deck-card-container';
+        cardElement.setAttribute('draggable', 'true');
+        cardElement.dataset.fromDeck = 'true';
+        cardElement.dataset.faceUp = topCard.faceUp ? 'true' : 'false';
+        
+        // Create card front (the actual card image)
+        const cardFront = document.createElement('img');
+        cardFront.className = 'deck-card-front';
+        cardFront.src = topCard.imageUrl.small;
+        cardFront.alt = topCard.name;
+        
+        // Create card back
+        const cardBack = document.createElement('img');
+        cardBack.className = 'deck-card-back';
+        cardBack.src = cardData.cardBacks.small;
+        cardBack.alt = 'Card Back';
+        
+        // Add correct visibility based on face up/down state
+        if (topCard.faceUp) {
+            cardFront.style.display = 'block';
+            cardBack.style.display = 'none';
+        } else {
+            cardFront.style.display = 'none';
+            cardBack.style.display = 'block';
+        }
+        
+        // Add elements to container
+        cardElement.appendChild(cardFront);
+        cardElement.appendChild(cardBack);
+        
+        // Add event listeners
+        cardElement.addEventListener('dragstart', handleSimpleDeckDragStart);
+        cardElement.addEventListener('dragend', handleSimpleDeckDragEnd);
+        cardElement.addEventListener('click', function() {
+            // Show in inspector without changing state
+            updateInspector(topCard);
+        });
+        cardElement.addEventListener('dblclick', function() {
+            // Toggle face up/down state
+            topCard.faceUp = !topCard.faceUp;
+            renderMainDeck();
+        });
+        
+        deckElement.appendChild(cardElement);
+    }
+}
+
+// Handle dragging a card from the deck - simplified approach
+function handleSimpleDeckDragStart(event) {
+    if (mainDeck.length === 0) return;
+    
+    draggedCard = event.currentTarget;
+    event.dataTransfer.setData('text/plain', 'deck-card');
+    
+    // Add visual feedback
+    draggedCard.classList.add('dragging');
+    
+    // Always show card in inspector when dragged
+    updateInspector(mainDeck[0]);
+    
+    // Use the correct image for dragging based on current state
+    const isFaceUp = draggedCard.dataset.faceUp === 'true';
+    if (event.dataTransfer.setDragImage) {
+        const img = new Image();
+        if (isFaceUp) {
+            img.src = mainDeck[0].imageUrl.small;
+        } else {
+            img.src = cardData.cardBacks.small;
+        }
+        event.dataTransfer.setDragImage(img, 40, 72);
+    }
+}
+
+// Handle end of dragging a card from the deck
+function handleSimpleDeckDragEnd(event) {
+    if (draggedCard) {
+        draggedCard.classList.remove('dragging');
+        draggedCard = null;
+    }
+}
+
+// Handle dropping cards onto the discard pile
+function handleDiscardDrop(event) {
+    event.preventDefault();
+    
+    if (!draggedCard) return;
+    
+    // Check if we're dragging from the deck wrapper
+    if (draggedCard.dataset.fromDeck === 'true') {
+        // Move top card from deck to discard
+        if (mainDeck.length > 0) {
+            const card = mainDeck.shift();
+            card.faceUp = true; // Cards in discard are always face up
+            mainDiscard.push(card);
+            
+            // Update the display
+            renderMainDeck();
+            renderMainDiscard();
+        }
+        return;
+    }
+    
+    // Handle cards dragged from other places
+    const cardId = draggedCard.dataset.cardId;
+    if (cardId) {
+        // Find the card data
+        let foundCard;
+        if (cardId.startsWith('test')) {
+            const cardNum = cardId.replace('test', '');
+            const index = parseInt(cardNum, 10) - 1;
+            if (index >= 0 && index < 50) {
+                // Create a copy of the card for the discard pile
+                const originalCard = cardData.testCards[index];
+                foundCard = {...originalCard, faceUp: true};
+            }
+        }
+        
+        if (foundCard) {
+            // Add to discard
+            mainDiscard.push(foundCard);
+            
+            // Remove from original position
+            draggedCard.remove();
+            
+            // Update display
+            renderMainDiscard();
+        }
+    }
+}
+
+// Initialize deck event listeners
+function initializeDeckEventListeners() {
+    // Add event listeners for the discard pile
+    const mainDiscardElement = document.getElementById('mainDiscard');
+    mainDiscardElement.addEventListener('dragover', (e) => e.preventDefault());
+    mainDiscardElement.addEventListener('drop', handleDiscardDrop);
+}
+
+// Start game function
+function startGame() {
+    console.log('Starting game...');
+    
+    // Get selected player count
+    const playerCountSelect = document.getElementById('playerCount');
+    playerCount = parseInt(playerCountSelect.value);
+    console.log('Player count:', playerCount);
+    
+    if (playerCount < 1 || playerCount > 4) {
+        console.error('Invalid player count:', playerCount);
+        return;
+    }
+
+    // Initialize game state
+    gameStarted = true;
+    playerHands = Array(playerCount).fill().map(() => []);
+    initializePlayerTokens();
+    
     // Generate story grid slots
     const storyGrid = document.getElementById('storyGrid');
     storyGrid.innerHTML = ''; // Clear existing slots
@@ -248,7 +376,6 @@ function initializeGameBoard() {
         const slot = document.createElement('div');
         slot.className = 'gridSlot';
         slot.dataset.index = i;
-        // Add drag and drop event listeners
         slot.addEventListener('dragover', handleDragOver);
         slot.addEventListener('drop', handleDrop);
         storyGrid.appendChild(slot);
@@ -261,65 +388,59 @@ function initializeGameBoard() {
         const slot = document.createElement('div');
         slot.className = 'mutableSlot';
         slot.dataset.index = i;
-        // Add drag and drop event listeners
         slot.addEventListener('dragover', handleDragOver);
         slot.addEventListener('drop', handleDrop);
         mutableColumn.appendChild(slot);
     }
 
-    // Initialize player hands and tokens
-    playerHands = [];
-    initializePlayerTokens();
-    
-    for (let i = 0; i < playerCount; i++) {
-        playerHands.push([]);
-    }
-
     // Initialize d20 with starting value of 20 in green
     const d20Area = document.getElementById('d20Area');
     const rollDisplay = document.createElement('div');
-    rollDisplay.id = 'rollDisplay';
     rollDisplay.className = 'roll-number';
     rollDisplay.textContent = '20';
     rollDisplay.style.color = '#4ae24a'; // Green for 20
     d20Area.innerHTML = '';
     d20Area.appendChild(rollDisplay);
 
-    // Initialize turn timer
-    const timer = new TurnTimer('turnTimer', 120); // 2 minutes
-    const minutesInput = document.getElementById('timerMinutes');
-    const secondsInput = document.getElementById('timerSeconds');
-    
-    // Update display once to show initial time
-    timer.updateDisplay();
-    
-    // Toggle button control
-    document.getElementById('toggleBtn').addEventListener('click', function() {
-        if (timer.isActive()) {
-            timer.pause();
-        } else {
-            if (timer.getTimeRemaining() === 0) {
-                timer.reset(); // Reset if at zero before starting
-            }
-            timer.start();
-        }
-    });
-    
-    document.getElementById('resetBtn').addEventListener('click', function() {
-        timer.reset();
+    // Show only the active player hands
+    const playerHandElements = document.querySelectorAll('.playerHand');
+    playerHandElements.forEach((hand, index) => {
+        hand.style.display = index < playerCount ? 'flex' : 'none';
     });
 
-    // Duration setting
+    // Initialize turn timer with global reference
+    gameTimer = new TurnTimer('turnTimer', 120); // 2 minutes
+    gameTimer.updateDisplay();
+
+    // Timer controls - use the existing elements from the timer.js
+    document.getElementById('toggleBtn').addEventListener('click', function() {
+        if (gameTimer.isRunning) {
+            gameTimer.pause();
+        } else {
+            if (gameTimer.remaining === 0) {
+                gameTimer.reset();
+            }
+            gameTimer.start();
+        }
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', function() {
+        gameTimer.reset();
+    });
+    
+    // Duration setting controls
+    const minutesInput = document.getElementById('timerMinutes');
+    const secondsInput = document.getElementById('timerSeconds');
     document.getElementById('setDurationBtn').addEventListener('click', function() {
         const minutes = parseInt(minutesInput.value) || 0;
         const seconds = parseInt(secondsInput.value) || 0;
         const totalSeconds = (minutes * 60) + seconds;
         
         if (totalSeconds > 0) {
-            timer.setDuration(totalSeconds);
+            gameTimer.setDuration(totalSeconds);
         }
     });
-
+    
     // Input validation
     minutesInput.addEventListener('input', function() {
         let value = parseInt(this.value) || 0;
@@ -327,7 +448,7 @@ function initializeGameBoard() {
         if (value < 0) value = 0;
         this.value = value;
     });
-
+    
     secondsInput.addEventListener('input', function() {
         let value = parseInt(this.value) || 0;
         if (value > 59) value = 59;
@@ -335,13 +456,18 @@ function initializeGameBoard() {
         this.value = value;
     });
     
-    // Show game board, hide setup
-    document.getElementById('setup').style.display = 'none';
-    document.getElementById('gameBoard').style.display = 'flex';
-    gameStarted = true;
+    // Initialize the deck
+    initializeMainDeck();
+    initializeDeckEventListeners();
     
-    // Render initial hands
+    // Render initial cards (without test card)
     renderHands();
+    
+    // Hide setup screen and show game board
+    document.getElementById('setup').style.display = 'none';
+    document.getElementById('gameBoard').style.display = 'block';
+    
+    console.log('Game initialized successfully');
 }
 
 function shuffleDeck() {
@@ -500,12 +626,6 @@ function renderHands() {
                 if (existingCard) {
                     cardSlot.appendChild(existingCard);
                 }
-                // Add test card to player 1's first slot
-                else if (playerIndex === 0 && i === 0 && !hand.querySelector('.test-card')) {
-                    const testCard = createCardElement(cardData.testCards[0]); // test1.jpg
-                    testCard.classList.add('test-card');
-                    cardSlot.appendChild(testCard);
-                }
                 
                 hand.appendChild(cardSlot);
             }
@@ -604,6 +724,122 @@ function handleDrop(event) {
         return;
     }
 
+    // Special handling for cards dragged from the deck
+    if (draggedCard.dataset.fromDeck === 'true') {
+        // Get a reference to the card data
+        const card = {...mainDeck.shift()};
+        
+        // Get the face-up state from the deck
+        const isFaceUp = draggedCard.dataset.faceUp === 'true';
+        card.faceUp = isFaceUp;
+        
+        // Handle drops in hand card slots
+        if (target.classList.contains('handCard')) {
+            // If target already has a card, swap them
+            const existingCard = target.querySelector('.card');
+            if (existingCard) {
+                // Put the existing card back into the deck
+                mainDeck.unshift({...cardData.testCards.find(c => c.id === existingCard.dataset.cardId), faceUp: false});
+            }
+            
+            // Create a new properly sized card for the hand
+            const newCard = createCardElement(card);
+            
+            // Apply face-up/face-down state
+            if (!card.faceUp) {
+                newCard.classList.add('face-down');
+                newCard.style.transform = 'rotateY(180deg)';
+            } else {
+                newCard.classList.remove('face-down');
+                newCard.style.transform = 'rotateY(0deg)';
+            }
+            
+            target.appendChild(newCard);
+            
+            // Update the main deck display
+            renderMainDeck();
+            return;
+        }
+        // Handle drops in grid slots
+        else if (target.classList.contains('gridSlot')) {
+            // Handle existing card in slot
+            const existingCard = target.querySelector('.card');
+            if (existingCard) {
+                // Find empty slot or return card to deck
+                const allGridSlots = Array.from(document.querySelectorAll('.gridSlot'));
+                const emptySlot = allGridSlots.find(slot => !slot.querySelector('.card'));
+                
+                if (emptySlot) {
+                    emptySlot.appendChild(existingCard);
+                } else {
+                    mainDeck.unshift(card);
+                    renderMainDeck();
+                    return;
+                }
+            }
+            
+            // Create a new properly sized card for the grid
+            const newCard = createCardElement(card);
+            
+            // Apply face-up/face-down state
+            if (!card.faceUp) {
+                newCard.classList.add('face-down');
+                newCard.style.transform = 'rotateY(180deg)';
+            } else {
+                newCard.classList.remove('face-down');
+                newCard.style.transform = 'rotateY(0deg)';
+            }
+            
+            target.appendChild(newCard);
+            
+            // Update the main deck display
+            renderMainDeck();
+            return;
+        }
+        // Handle drops in mutable slots
+        else if (target.classList.contains('mutableSlot')) {
+            // Handle existing card in slot
+            const existingCard = target.querySelector('.card');
+            if (existingCard) {
+                // Find empty slot or return card to deck
+                const allMutableSlots = Array.from(document.querySelectorAll('.mutableSlot'));
+                const emptySlot = allMutableSlots.find(slot => !slot.querySelector('.card'));
+                
+                if (emptySlot) {
+                    emptySlot.appendChild(existingCard);
+                } else {
+                    mainDeck.unshift(card);
+                    renderMainDeck();
+                    return;
+                }
+            }
+            
+            // Create a new properly sized card for the mutable slot
+            const newCard = createCardElement(card);
+            
+            // Apply face-up/face-down state
+            if (!card.faceUp) {
+                newCard.classList.add('face-down');
+                newCard.style.transform = 'rotateY(180deg)';
+            } else {
+                newCard.classList.remove('face-down');
+                newCard.style.transform = 'rotateY(0deg)';
+            }
+            
+            target.appendChild(newCard);
+            
+            // Update the main deck display
+            renderMainDeck();
+            return;
+        }
+        
+        // If the drop is not in a valid target, return the card to the deck
+        mainDeck.unshift(card);
+        renderMainDeck();
+        return;
+    }
+
+    // Handle drops for non-deck cards
     // Handle drops in hand card slots
     if (target.classList.contains('handCard')) {
         const sourceParent = draggedCard.parentNode;
@@ -706,9 +942,10 @@ function handleDrop(event) {
                 searchRadius++;
             }
             
-            // If no empty slot found, return card to original position
+            // If no empty slot found, return card to deck
             if (!emptySlot) {
-                draggedCard.style.transform = ''; // Reset any transform
+                mainDeck.unshift({...card, faceUp: false});
+                renderMainDeck();
                 return;
             }
             
@@ -716,10 +953,30 @@ function handleDrop(event) {
             emptySlot.appendChild(existingCard);
         }
         
-        // Place dragged card in target slot
-        target.appendChild(draggedCard);
-        draggedCard.style.transform = ''; // Reset any transform
+        // Create a new properly sized card for the mutable slot
+        const newCard = createCardElement(card);
+        
+        // Keep cards face-down when coming from the deck
+        newCard.classList.add('face-down');
+        newCard.style.transform = 'rotateY(180deg)';
+        
+        newCard.draggable = true;
+        newCard.addEventListener('click', handleCardClick);
+        newCard.addEventListener('dblclick', handleCardDoubleClick);
+        newCard.addEventListener('dragstart', handleCardDragStart);
+        newCard.addEventListener('dragend', handleCardDragEnd);
+        
+        target.appendChild(newCard);
+        
+        // Update the main deck display
+        renderMainDeck();
+        return;
     }
+    
+    // If the drop is not in a valid target, return the card to the deck
+    mainDeck.unshift({...card, faceUp: isFaceUp});
+    renderMainDeck();
+    return;
 }
 
 // Initialize token state for each player
@@ -808,7 +1065,7 @@ function updateInspector(card) {
         inspectorCard.className = 'card inspector-card';
         inspectorCard.dataset.cardId = card.id;
         
-        // Create front image element
+        // Create front image element (always visible in inspector)
         const frontImg = document.createElement('img');
         frontImg.src = card.imageUrl.large;
         frontImg.alt = card.name;
@@ -835,7 +1092,64 @@ function updateInspector(card) {
         backImg.style.transform = 'rotateY(180deg)';
         inspectorCard.appendChild(backImg);
         
+        // Always show front of card in inspector (even if it's face-down in the game)
+        inspectorCard.classList.remove('face-down');
+        inspectorCard.style.transform = 'rotateY(0deg)';
+        
         inspector.appendChild(inspectorCard);
         console.log('Inspector card created and added');
+    }
+}
+
+// Add fullscreen handling
+document.addEventListener('keydown', function(e) {
+    // Check for Command+F (Mac) or Control+F (Windows)
+    if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+        e.preventDefault(); // Prevent default find behavior
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+        }
+    }
+    
+    // Check for Escape key
+    if (e.key === 'Escape' && document.fullscreenElement) {
+        document.exitFullscreen();
+    }
+});
+
+// Update instructions based on OS
+document.addEventListener('DOMContentLoaded', function() {
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const instructions = document.querySelector('.fullscreen-instructions');
+    if (instructions) {
+        if (isMac) {
+            instructions.innerHTML = 'Press <kbd>⌘F</kbd> for fullscreen • <kbd>Esc</kbd> to exit';
+        } else {
+            instructions.innerHTML = 'Press <kbd>Ctrl+F</kbd> for fullscreen • <kbd>Esc</kbd> to exit';
+        }
+    }
+});
+
+// Render main discard pile
+function renderMainDiscard() {
+    const discardElement = document.getElementById('mainDiscard');
+    discardElement.innerHTML = '';
+    
+    // Add discard count indicator
+    const discardCount = document.createElement('div');
+    discardCount.className = 'deck-count';
+    discardCount.textContent = mainDiscard.length;
+    discardElement.appendChild(discardCount);
+    
+    // Only render the top card if the discard has cards
+    if (mainDiscard.length > 0) {
+        const topCard = mainDiscard[mainDiscard.length - 1];
+        const cardElement = createCardElement({...topCard, faceUp: true}); // Always show face-up
+        cardElement.classList.add('discard-card');
+        // Discard cards are always face up
+        cardElement.classList.remove('face-down');
+        cardElement.style.transform = 'rotateY(0deg)';
+        
+        discardElement.appendChild(cardElement);
     }
 }

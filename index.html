@@ -9,17 +9,106 @@
 <body>
   <!-- Setup screen -->
   <div id="setup" style="display: flex;">
-    <div id="setupContent">
-      <h1>Game Setup</h1>
-      <div class="setup-form">
-        <label for="playerCount">Number of Players:</label>
-        <select id="playerCount">
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-        </select>
+    <div id="bannerSection"></div>
+    <div id="marketingSection">
+      <h1>Soul Sworn - A Card-Based Rapid Role Playing Game</h1>
+    </div>
+    <div id="menuContent">
+      <!-- Left Column - Player Setup -->
+      <div class="menu-column" id="playerSetup">
+        <h2>Player Setup</h2>
+        <div class="menu-section">
+          <div class="scrollable-text">
+            <p>Welcome to Soul Sworn! Configure your game settings and get ready to play.</p>
+          </div>
+          <div class="form-group">
+            <label for="playerName">Your Name:</label>
+            <input type="text" id="playerName" placeholder="Enter your name">
+          </div>
+          <div class="form-group">
+            <label for="characterSelect">Character:</label>
+            <select id="characterSelect">
+              <option value="warrior">Warrior</option>
+              <option value="mage">Mage</option>
+              <option value="rogue">Rogue</option>
+              <option value="cleric">Cleric</option>
+            </select>
+          </div>
+          <div class="instance-code">
+            <label>Instance Code:</label>
+            <span id="instanceCode">ABC123</span>
+          </div>
+          <div class="join-controls">
+            <input type="text" id="joinCode" placeholder="Enter code to join">
+            <button id="joinBtn">Join Game</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center Column - Game Settings -->
+      <div class="menu-column" id="gameSettings">
+        <h2>Game Settings</h2>
+        <div class="menu-section">
+          <div class="form-group">
+            <label for="playerCount">Number of Players:</label>
+            <select id="playerCount">
+              <option value="1">1 Player</option>
+              <option value="2">2 Players</option>
+              <option value="3">3 Players</option>
+              <option value="4">4 Players</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="mainDeckType">Main Deck:</label>
+            <select id="mainDeckType">
+              <option value="standard">Standard (All Cards)</option>
+              <option value="basic">Basic</option>
+              <option value="advanced">Advanced</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="altDeckType">Alt Deck:</label>
+            <select id="altDeckType">
+              <option value="none">None</option>
+              <option value="expansion1">Expansion 1</option>
+              <option value="expansion2">Expansion 2</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="timerDuration">Timer Duration:</label>
+            <div class="timer-input">
+              <input type="number" id="timerMinutes" min="0" max="60" value="2">
+              <span>:</span>
+              <input type="number" id="timerSeconds" min="0" max="59" value="0">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="dealerRole">Dealer Role:</label>
+            <select id="dealerRole">
+              <option value="player1">Player 1</option>
+              <option value="player2">Player 2</option>
+              <option value="player3">Player 3</option>
+              <option value="player4">Player 4</option>
+            </select>
+          </div>
+        </div>
         <button id="startGameBtn">Start Game</button>
+      </div>
+
+      <!-- Right Column - Card Inspector -->
+      <div class="menu-column" id="cardInspector">
+        <h2>Card Inspector</h2>
+        <div class="card-preview">
+          <div class="preview-placeholder">
+            <p>Select a card to preview</p>
+          </div>
+          <div class="preview-navigation">
+            <button class="nav-arrow" id="prevCard">◀</button>
+            <span class="card-count">0/0</span>
+            <button class="nav-arrow" id="nextCard">▶</button>
+          </div>
+          <button id="confirmCardBtn">Confirm Selection</button>
+        </div>
       </div>
     </div>
   </div>
@@ -75,7 +164,9 @@
     <div id="mainDiscard"></div>
     <div id="altDeck"></div>
     <div id="altDiscard"></div>
-    <div id="d20Area"></div>
+    <div id="d20Area">
+      <div class="roll-number">20</div>
+    </div>
 
     <!-- Player 3 Hand -->
     <div id="player3Hand" class="playerHand">
@@ -108,20 +199,24 @@
     </div>
 
     <!-- Logo and Timer -->
-    <div id="logo"></div>
+    <!-- <div id="logo"></div> -->
     <div id="turnTimer">
-        <div class="timer-display">2:00</div>
-        <div class="timer-controls">
-            <button id="toggleBtn">Start</button>
-            <button id="resetBtn">Reset</button>
-        </div>
-        <div class="timer-duration">
-            <input type="number" id="timerMinutes" min="0" max="60" value="2">
-            <span>:</span>
-            <input type="number" id="timerSeconds" min="0" max="59" value="0">
-            <button id="setDurationBtn">Set</button>
-        </div>
+      <div class="timer-display">5:00</div>
+      <div class="timer-controls">
+        <button id="toggleBtn">Start</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+      <div class="timer-duration">
+        <input type="number" id="timerMinutes" min="0" max="60" value="2">
+        <span>:</span>
+        <input type="number" id="timerSeconds" min="0" max="59" value="0">
+        <button id="setDurationBtn">Set</button>
+      </div>
     </div>
+  </div>
+
+  <div class="fullscreen-instructions">
+    Press <kbd>⌘F</kbd> (Mac) or <kbd>Ctrl+F</kbd> (Windows) for fullscreen • <kbd>Esc</kbd> to exit
   </div>
 
   <script src="timer.js"></script>
