@@ -1095,7 +1095,7 @@ body {
 }
 
 /* Objectives Button */
-#objectivesButton {
+#objectivesButton, #randomObjectiveButton {
   position: absolute;
   width: 184px;
   height: 40px;
@@ -1110,9 +1110,18 @@ body {
   transition: background-color 0.2s;
   box-shadow: 0 2px 4px rgba(0,0,0,0.3);
   text-align: center;
+  left: 24px;
 }
 
-#objectivesButton:hover {
+#objectivesButton {
+  bottom: 72px;
+}
+
+#randomObjectiveButton {
+  bottom: 24px;
+}
+
+#objectivesButton:hover, #randomObjectiveButton:hover {
   background-color: #4a4a4a;
 }
 
