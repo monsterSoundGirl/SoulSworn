@@ -139,28 +139,66 @@ body {
   cursor: pointer;
   width: 80px;
   height: 144px;
+  perspective: 1000px;
+  border-radius: 5px;
+  overflow: hidden; /* Hide overflow to prevent question marks */
+  background-color: #3a3a3a; /* Add background color */
 }
 
-.card-front,
-.card-back {
+.card .card-front,
+.card .card-back {
   width: 100%;
   height: 100%;
   position: absolute;
+  top: 0;
+  left: 0;
   backface-visibility: hidden;
   border-radius: 5px;
   object-fit: cover;
+  transform: translateZ(0); /* Force GPU acceleration */
 }
 
-.card-back {
-  transform: rotateY(180deg);
+/* Update card front/back handling for smooth flipping */
+.card .card-back {
+  transform: rotateY(0deg);
+  z-index: 1;
 }
 
-.card.face-down {
-  transform: rotateY(180deg);
+.card .card-front {
+  transform: rotateY(0deg);
+  z-index: 2;
 }
 
+/* When a card is face down, hide front and show back */
+.card.face-down .card-front {
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 1;
+}
+
+.card.face-down .card-back {
+  opacity: 1;
+  transition: opacity 0.3s;
+  z-index: 2;
+}
+
+/* When a card is face up, show front and hide back */
+.card:not(.face-down) .card-back {
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 1;
+}
+
+.card:not(.face-down) .card-front {
+  opacity: 1;
+  transition: opacity 0.3s;
+  z-index: 2;
+}
+
+/* Add box shadow for better 3D effect */
 .card.highlighted {
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.8);
+  z-index: 10;
 }
 
 /* Fixed size for cards in grid and mutable slots */
@@ -388,31 +426,64 @@ body {
 /* D20 Area */
 #d20Area {
   position: absolute;
-  width: 184px;
-  height: 184px;
-  left: 1504px;
-  top: 448px;
-  background-color: #3a3a3a;
-  border-radius: 5px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #2a2a2a;
+  border: 2px solid #4a4a4a;
   display: flex;
   justify-content: center;
   align-items: center;
-  cursor: pointer;
-  overflow: hidden;
-}
-
-.roll-number {
-  font-family: 'Arial', sans-serif;
-  font-size: 36px;
+  font-size: 24px;
   font-weight: bold;
-  color: #ffffff;
-  transition: transform 0.2s ease;
+  cursor: pointer;
+  transition: transform 0.3s, background-color 0.3s;
   user-select: none;
+  top: 400px;
+  left: 1512px;
 }
 
-.roll-number.final-roll {
-  transform: scale(1.2);
-  color: #ffeb3b;
+#d20Area:hover {
+  transform: scale(1.05);
+  background-color: #3a3a3a;
+}
+
+#d20Area .roll-number {
+  transition: color 0.2s;
+}
+
+#d20Area.rolling {
+  animation: shake 0.5s infinite;
+}
+
+#d20Area.critical-success {
+  animation: pulse-success 0.5s 3;
+  box-shadow: 0 0 20px 5px rgba(74, 226, 74, 0.7);
+}
+
+#d20Area.critical-failure {
+  animation: pulse-failure 0.5s 3;
+  box-shadow: 0 0 20px 5px rgba(226, 74, 74, 0.7);
+}
+
+@keyframes shake {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(5deg); }
+  50% { transform: rotate(0deg); }
+  75% { transform: rotate(-5deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes pulse-success {
+  0% { background-color: #2a2a2a; }
+  50% { background-color: #4ae24a; }
+  100% { background-color: #2a2a2a; }
+}
+
+@keyframes pulse-failure {
+  0% { background-color: #2a2a2a; }
+  50% { background-color: #e24a4a; }
+  100% { background-color: #2a2a2a; }
 }
 
 /* Logo and Timer */
@@ -550,7 +621,7 @@ body {
 /* Inspector */
 #inspector {
     position: absolute;
-    width: 376px;
+    width: 333px;
     height: 600px;
     left: 24px;
     top: 240px;
@@ -905,4 +976,117 @@ body {
   height: 100%;
   border-radius: 5px;
   object-fit: cover;
+}
+
+/* Drag-drop styles */
+.handCard.drag-over,
+.gridSlot.drag-over,
+.mutableSlot.drag-over {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 0 10px 5px rgba(74, 144, 226, 0.6) !important;
+  transform: scale(1.05) !important;
+}
+
+/* Form styles */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #ccc;
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  background-color: #3a3a3a;
+  border: 1px solid #555;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 14px;
+}
+
+/* Checkbox group styles */
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  background-color: #3a3a3a;
+  border: 1px solid #555;
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.checkbox-item:hover {
+  background-color: #4a4a4a;
+}
+
+.checkbox-item input[type="checkbox"] {
+  width: auto;
+  margin-right: 5px;
+}
+
+.checkbox-item label {
+  display: inline;
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
+.help-text {
+  font-size: 12px;
+  color: #999;
+  margin-top: 5px;
+  font-style: italic;
+}
+
+/* Objectives Button */
+#objectivesButton {
+  position: absolute;
+  width: 184px;
+  height: 40px;
+  background-color: #3a3a3a;
+  border-radius: 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: background-color 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  text-align: center;
+}
+
+#objectivesButton:hover {
+  background-color: #4a4a4a;
+}
+
+#saveGameBtn, #loadGameBtn {
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #3a3a3a;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: bold;
+  transition: background-color 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  text-align: center;
+}
+
+#saveGameBtn:hover, #loadGameBtn:hover {
+  background-color: #4a4a4a;
 }

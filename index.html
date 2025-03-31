@@ -28,10 +28,8 @@
           <div class="form-group">
             <label for="characterSelect">Character:</label>
             <select id="characterSelect">
-              <option value="warrior">Warrior</option>
-              <option value="mage">Mage</option>
-              <option value="rogue">Rogue</option>
-              <option value="cleric">Cleric</option>
+              <option value="">Select a character...</option>
+              <!-- Character options will be populated dynamically -->
             </select>
           </div>
           <div class="instance-code">
@@ -59,6 +57,16 @@
             </select>
           </div>
           <div class="form-group">
+            <label for="objectiveSelect">Select Objective:</label>
+            <select id="objectiveSelect">
+              <option value="">Select an objective...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="scenesCount">Number of Scenes (3-40):</label>
+            <input type="number" id="scenesCount" min="3" max="40" value="10">
+          </div>
+          <div class="form-group">
             <label for="mainDeckType">Main Deck:</label>
             <select id="mainDeckType">
               <option value="standard">Standard (All Cards)</option>
@@ -67,12 +75,34 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="altDeckType">Alt Deck:</label>
-            <select id="altDeckType">
-              <option value="none">None</option>
-              <option value="expansion1">Expansion 1</option>
-              <option value="expansion2">Expansion 2</option>
-            </select>
+            <label for="altDeckType">Alt Deck Card Types:</label>
+            <div id="altDeckTypes" class="checkbox-group">
+              <div class="checkbox-item">
+                <input type="checkbox" id="altDeck_objective" value="objective" checked>
+                <label for="altDeck_objective">Objective</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="altDeck_monster" value="monster">
+                <label for="altDeck_monster">Monster</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="altDeck_item" value="item">
+                <label for="altDeck_item">Item</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="altDeck_location" value="location">
+                <label for="altDeck_location">Location</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="altDeck_npc" value="NPC">
+                <label for="altDeck_npc">NPC</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="altDeck_spell" value="spell">
+                <label for="altDeck_spell">Spell</label>
+              </div>
+            </div>
+            <div class="help-text">Card types selected here will be moved from the main deck to the alternative deck.</div>
           </div>
           <div class="form-group">
             <label for="timerDuration">Timer Duration:</label>
@@ -148,8 +178,18 @@
       <div class="handCard"></div>
     </div>
 
+    <!-- Game Management Buttons -->
+    <div id="saveGameBtn" class="icon" style="top: 104px; left: 1504px; display: none;">Save Game</div>
+    <div id="loadGameBtn" class="icon" style="top: 152px; left: 1504px; display: none;">Load Game</div>
+    
     <!-- Settings -->
     <div id="settingsIcon" class="icon"></div>
+
+    <!-- Objective Cards Button -->
+    <div id="objectivesButton" class="icon" style="top: 208px; left: 1504px;">Show Objectives</div>
+    
+    <!-- Random Objective Button -->
+    <div id="randomObjectiveButton" class="icon" style="top: 256px; left: 1504px;">Random Objective</div>
 
     <!-- Main Game Area -->
     <div id="inspector"></div>

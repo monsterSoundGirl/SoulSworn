@@ -1,0 +1,244 @@
+{
+  "deck": {
+    "monster": [
+      {
+        "id": "monster_ashenWalker",
+        "name": "Ashen Walker",
+        "type": "monster",
+        "imageUrl": "assets/JPG/cards/deck/monster/monsters_ashenWalker.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "monster_blackEyedKid",
+        "name": "Black Eyed Kid",
+        "type": "monster",
+        "imageUrl": "assets/JPG/cards/deck/monster/monsters_blackEyedKid.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "monster_boneReaper",
+        "name": "Bone Reaper",
+        "type": "monster",
+        "imageUrl": "assets/JPG/cards/deck/monster/monsters_boneReaper.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "monster_carnivalCreep",
+        "name": "Carnival Creep",
+        "type": "monster",
+        "imageUrl": "assets/JPG/cards/deck/monster/monsters_carnivalCreep.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "monster_draugr",
+        "name": "Draugr",
+        "type": "monster",
+        "imageUrl": "assets/JPG/cards/deck/monster/monsters_draugr.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "monster_gargoyle",
+        "name": "Gargoyle",
+        "type": "monster",
+        "imageUrl": "assets/JPG/cards/deck/monster/monsters_gargolye.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "monster_ghoul",
+        "name": "Ghoul",
+        "type": "monster",
+        "imageUrl": "assets/JPG/cards/deck/monster/monsters_ghoul.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "monster_manafuro",
+        "name": "Manafuro",
+        "type": "monster",
+        "imageUrl": "assets/JPG/cards/deck/monster/monsters_manafuro.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "monster_polterGeist",
+        "name": "Polter Geist",
+        "type": "monster",
+        "imageUrl": "assets/JPG/cards/deck/monster/monsters_polterGeist.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "monster_shadowWraith",
+        "name": "Shadow Wraith",
+        "type": "monster",
+        "imageUrl": "assets/JPG/cards/deck/monster/monsters_shadowWraith.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "monster_urbanChimera1",
+        "name": "Urban Chimera",
+        "type": "monster",
+        "imageUrl": "assets/JPG/cards/deck/monster/monsters_urbanChimera.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "monster_urbanChimera2",
+        "name": "Urban Chimera",
+        "type": "monster",
+        "imageUrl": "assets/JPG/cards/deck/monster/monsters_urbanChimera copy 2.jpg",
+        "faceUp": false
+      }
+    ],
+    "item": [
+      {
+        "id": "item_amberSin",
+        "name": "Amber Sin",
+        "type": "item",
+        "imageUrl": "assets/JPG/cards/deck/item/items_amberSin.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "item_atlantianDisc",
+        "name": "Atlantian Disc",
+        "type": "item",
+        "imageUrl": "assets/JPG/cards/deck/item/items_atlantianDisc.jpg",
+        "faceUp": false
+      }
+    ],
+    "location": [
+      {
+        "id": "location_abandonedFactory",
+        "name": "Abandoned Factory",
+        "type": "location",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_abandonedFactory.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "location_alchemyShop",
+        "name": "Alchemy Shop",
+        "type": "location",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_alchemyShop.jpg",
+        "faceUp": false
+      }
+    ],
+    "NPC": [
+      {
+        "id": "npc_antiqueSalesmen",
+        "name": "Antique Salesmen",
+        "type": "NPC",
+        "imageUrl": "assets/JPG/cards/deck/npc/npcs_antiqueSalesmen.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "npc_beggar",
+        "name": "Beggar",
+        "type": "NPC",
+        "imageUrl": "assets/JPG/cards/deck/npc/npcs_beggar.jpg",
+        "faceUp": false
+      }
+    ],
+    "spell": [
+      {
+        "id": "spell_banishingRitual",
+        "name": "Banishing Ritual",
+        "type": "spell",
+        "imageUrl": "assets/JPG/cards/deck/spell/spells_banishingRitual.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "spell_bloodOath",
+        "name": "Blood Oath",
+        "type": "spell",
+        "imageUrl": "assets/JPG/cards/deck/spell/spells_bloodOath.jpg",
+        "faceUp": false
+      }
+    ]
+  },
+  "nonDeck": {
+    "character": [
+      {
+        "id": "characters_alleyWitch",
+        "name": "Alley Witch",
+        "type": "character",
+        "imageUrl": "assets/JPG/cards/nonDeck/character/characters_alleyWitch.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "characters_cursedScholar",
+        "name": "Cursed Scholar",
+        "type": "character",
+        "imageUrl": "assets/JPG/cards/nonDeck/character/characters_cursedScholar.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "characters_detective",
+        "name": "Detective",
+        "type": "character",
+        "imageUrl": "assets/JPG/cards/nonDeck/character/characters_detective.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "characters_monsterHunter",
+        "name": "Monster Hunter",
+        "type": "character",
+        "imageUrl": "assets/JPG/cards/nonDeck/character/characters_monsterHunter.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "characters_quietRogue",
+        "name": "Quiet Rogue",
+        "type": "character",
+        "imageUrl": "assets/JPG/cards/nonDeck/character/characters_quietRogue.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "characters_reluctantHero",
+        "name": "Reluctant Hero",
+        "type": "character",
+        "imageUrl": "assets/JPG/cards/nonDeck/character/characters_reluctantHero.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "characters_scarredShifter",
+        "name": "Scarred Shifter",
+        "type": "character",
+        "imageUrl": "assets/JPG/cards/nonDeck/character/characters_scarredShifter.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "characters_spiritMedium",
+        "name": "Spirit Medium",
+        "type": "character",
+        "imageUrl": "assets/JPG/cards/nonDeck/character/characters_spiritMedium.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "characters_techSavant",
+        "name": "Tech Savant",
+        "type": "character",
+        "imageUrl": "assets/JPG/cards/nonDeck/character/characters_techSavant.jpg",
+        "faceUp": true
+      }
+    ],
+    "objective": [
+      {
+        "id": "objective_bounty",
+        "name": "Bounty",
+        "type": "objective",
+        "imageUrl": "assets/JPG/cards/nonDeck/objective/objectives_bounty.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "objective_breachTheSanctuary",
+        "name": "Breach The Sanctuary",
+        "type": "objective",
+        "imageUrl": "assets/JPG/cards/nonDeck/objective/objectives_breachTheSanctuary.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "objective_buryTheTruth",
+        "name": "Bury The Truth",
+        "type": "objective",
+        "imageUrl": "assets/JPG/cards/nonDeck/objective/objectives_buryTheTruth.jpg",
+        "faceUp": true
+      }
+    ]
+  }
+} 

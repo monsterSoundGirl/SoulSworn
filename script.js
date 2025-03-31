@@ -1,8 +1,122 @@
-// Use the global TurnTimer instead of importing
-// import TurnTimer from './timer.js';
+// Define a simple TurnTimer class if not already available
+if (typeof TurnTimer === 'undefined') {
+    class TurnTimer {
+        constructor(elementId, duration = 120) {
+            this.elementId = elementId;
+            this.duration = duration;
+            this.remaining = duration;
+            this.isRunning = false;
+            this.timerId = null;
+            this.element = document.getElementById(elementId);
+            this.onComplete = null;
+        }
+        
+        start() {
+            if (this.isRunning) return;
+            
+            this.isRunning = true;
+            this.element?.classList.add('running');
+            this.element?.classList.remove('paused', 'completed');
+            
+            const toggleBtn = document.getElementById('toggleBtn');
+            if (toggleBtn) {
+                toggleBtn.textContent = 'Pause';
+                toggleBtn.classList.add('running');
+            }
+            
+            this.timerId = setInterval(() => {
+                this.tick();
+            }, 1000);
+        }
+        
+        pause() {
+            if (!this.isRunning) return;
+            
+            this.isRunning = false;
+            this.element?.classList.add('paused');
+            this.element?.classList.remove('running');
+            
+            const toggleBtn = document.getElementById('toggleBtn');
+            if (toggleBtn) {
+                toggleBtn.textContent = 'Resume';
+                toggleBtn.classList.remove('running');
+            }
+            
+            if (this.timerId) {
+                clearInterval(this.timerId);
+                this.timerId = null;
+            }
+        }
+        
+        reset() {
+            this.pause();
+            this.remaining = this.duration;
+            this.updateDisplay();
+            
+            this.element?.classList.remove('completed', 'running', 'paused');
+            
+            const toggleBtn = document.getElementById('toggleBtn');
+            if (toggleBtn) {
+                toggleBtn.textContent = 'Start';
+                toggleBtn.classList.remove('running', 'times-up');
+            }
+        }
+        
+        tick() {
+            if (this.remaining <= 0) {
+                this.complete();
+                return;
+            }
+            
+            this.remaining--;
+            this.updateDisplay();
+            
+            // Warning when 10 seconds or less remain
+            if (this.remaining <= 10) {
+                this.element?.classList.add('warning');
+            }
+        }
+        
+        complete() {
+            this.pause();
+            this.remaining = 0;
+            this.updateDisplay();
+            
+            this.element?.classList.add('completed');
+            this.element?.classList.remove('running', 'paused');
+            
+            const toggleBtn = document.getElementById('toggleBtn');
+            if (toggleBtn) {
+                toggleBtn.textContent = 'Time\'s Up!';
+                toggleBtn.classList.add('times-up');
+            }
+            
+            if (typeof this.onComplete === 'function') {
+                this.onComplete();
+            }
+        }
+        
+        setDuration(seconds) {
+            this.duration = seconds;
+            this.reset();
+        }
+        
+        updateDisplay() {
+            const timerDisplay = document.querySelector(`#${this.elementId} .timer-display`);
+            if (timerDisplay) {
+                const minutes = Math.floor(this.remaining / 60);
+                const seconds = this.remaining % 60;
+                timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+    }
+    
+    // Make it globally available
+    window.TurnTimer = TurnTimer;
+}
 
-// Create a reference to the timer class without instantiating it
-let timerClass = TurnTimer;  // This will be available from timer.js
+// Create a reference to the timer class
+let timerClass = TurnTimer;
 let gameTimer = null;
 
 // Main deck and discard pile data
@@ -16,61 +130,16 @@ let draggedCard = null;
 let highlightedCard = null;
 let isDragging = false;
 
+// Player character assignments
+let playerCharacters = [];
+
 // Card data structure
 const cardData = {
     cardBacks: {
-        small: 'assets/JPG/cards/card_back/cardBack_smalls.jpg',
-        large: 'assets/JPG/cards/card_back/cardBack_bigs.jpg'
+        small: 'assets/JPG/cards/nonDeck/card_back/cardBack.jpg',
+        large: 'assets/JPG/cards/nonDeck/card_back/cardBack.jpg'
     },
-    // Generate 50 test cards with the specified pattern
-    testCards: Array.from({ length: 50 }, (_, i) => {
-        // Convert index to padded number (01-50)
-        const cardNum = String(i + 1).padStart(2, '0');
-        return {
-            id: `test${cardNum}`,
-            name: `Test Card ${cardNum}`,
-            description: `Description for test card ${cardNum}`,
-            imageUrl: {
-                small: `assets/JPG/cards/_test_cards/test_smalls/ssworn_test_deck-${cardNum}.jpg`,
-                large: `assets/JPG/cards/_test_cards/test_bigs/ssworn_test_deck-${cardNum}_lrg.jpg`
-            },
-            faceUp: false
-        };
-    }),
-    characterCards: [
-        {
-            id: 'char1',
-            name: 'Character 1',
-            imageUrl: {
-                small: 'assets/JPG/cards/character_cards/character_smalls/char1.jpg',
-                large: 'assets/JPG/cards/character_cards/character_bigs/char1.jpg'
-            }
-        },
-        {
-            id: 'char2',
-            name: 'Character 2',
-            imageUrl: {
-                small: 'assets/JPG/cards/character_cards/character_smalls/char2.jpg',
-                large: 'assets/JPG/cards/character_cards/character_bigs/char2.jpg'
-            }
-        },
-        {
-            id: 'char3',
-            name: 'Character 3',
-            imageUrl: {
-                small: 'assets/JPG/cards/character_cards/character_smalls/char3.jpg',
-                large: 'assets/JPG/cards/character_cards/character_bigs/char3.jpg'
-            }
-        },
-        {
-            id: 'char4',
-            name: 'Character 4',
-            imageUrl: {
-                small: 'assets/JPG/cards/character_cards/character_smalls/char4.jpg',
-                large: 'assets/JPG/cards/character_cards/character_bigs/char4.jpg'
-            }
-        }
-    ]
+    // Remove the test cards and character cards definitions as they'll be loaded dynamically
 };
 
 // Game state
@@ -87,13 +156,18 @@ let selectedToken = null;
 
 // Card type definitions
 const CARD_TYPES = {
-    CHARACTER: 'character',
-    MONSTER: 'monster',
-    NPC: 'NPC',
     ITEM: 'item',
     LOCATION: 'location',
-    OBJECTIVE: 'objective',
+    MONSTER: 'monster',
+    NPC: 'NPC',
     SPELL: 'spell'
+};
+
+// Card types that don't go in the deck
+const NON_DECK_TYPES = {
+    CHARACTER: 'character',
+    OBJECTIVE: 'objective',
+    CARD_BACK: 'card_back'
 };
 
 function shuffleArray(arr) {
@@ -109,8 +183,6 @@ window.addEventListener('DOMContentLoaded', () => {
     console.log('DOM fully loaded');
     
     // Make sure setup screen is visible and game board is hidden
-    console.log('Setup element:', document.getElementById('setup'));
-    console.log('Setup style:', document.getElementById('setup').style.display);
     document.getElementById('gameBoard').style.display = 'none';
     document.getElementById('setup').style.display = 'flex';
     
@@ -119,11 +191,9 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Start game button
     const startBtn = document.getElementById('startGameBtn');
-    console.log('Start button found:', startBtn);
     
     if (startBtn) {
         startBtn.addEventListener('click', () => {
-            console.log('Start button clicked');
             startGame();
         });
     } else {
@@ -137,8 +207,20 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Settings icon
     document.getElementById('settingsIcon').addEventListener('click', () => {
-        console.log('Settings clicked');
+        showSettingsMenu();
     });
+    
+    // Objectives button
+    document.getElementById('objectivesButton').addEventListener('click', showAllObjectives);
+    
+    // Random Objective button
+    document.getElementById('randomObjectiveButton').addEventListener('click', selectRandomObjective);
+    
+    // Save Game button
+    document.getElementById('saveGameBtn').addEventListener('click', showSaveGameDialog);
+    
+    // Load Game button
+    document.getElementById('loadGameBtn').addEventListener('click', showLoadGameDialog);
 
     // D20 area click handler
     document.getElementById('d20Area').addEventListener('click', animateD20Roll);
@@ -148,7 +230,6 @@ window.addEventListener('DOMContentLoaded', () => {
 function initializeMenuInteractions() {
     // Deck type selections
     const mainDeckSelect = document.getElementById('mainDeckType');
-    const altDeckSelect = document.getElementById('altDeckType');
     
     if (mainDeckSelect) {
         mainDeckSelect.addEventListener('change', () => {
@@ -156,11 +237,8 @@ function initializeMenuInteractions() {
         });
     }
     
-    if (altDeckSelect) {
-        altDeckSelect.addEventListener('change', () => {
-            console.log('Alt deck type changed:', altDeckSelect.value);
-        });
-    }
+    // Initialize alt deck checkboxes
+    initializeAltDeckCheckboxes();
     
     // Card preview navigation
     const prevCardBtn = document.getElementById('prevCard');
@@ -186,24 +264,173 @@ function initializeMenuInteractions() {
             console.log('Join game button clicked with code:', joinCode);
         });
     }
+
+    // Initialize card type selection dropdowns
+    initializeCardTypeDropdowns();
 }
 
-// Deck initialization function
-function initializeMainDeck() {
-    console.log('Initializing main deck with all test cards');
-    // Clear the deck
-    mainDeck = [];
+// Initialize alt deck checkboxes with interactivity
+function initializeAltDeckCheckboxes() {
+    const checkboxes = document.querySelectorAll('#altDeckTypes input[type="checkbox"]');
     
-    // Copy all test cards to the deck
-    mainDeck = cardData.testCards.map(card => ({...card, faceUp: false}));
+    checkboxes.forEach(checkbox => {
+        // Make the entire checkbox item clickable
+        const checkboxItem = checkbox.closest('.checkbox-item');
+        if (checkboxItem) {
+            checkboxItem.addEventListener('click', (e) => {
+                // Prevent double-triggering when clicking the actual checkbox
+                if (e.target !== checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    // Dispatch a change event for custom handlers
+                    checkbox.dispatchEvent(new Event('change'));
+                }
+            });
+        }
+        
+        // Add change listener to each checkbox
+        checkbox.addEventListener('change', () => {
+            // Highlight the selected options
+            const item = checkbox.closest('.checkbox-item');
+            if (item) {
+                if (checkbox.checked) {
+                    item.style.backgroundColor = '#4a90e2';
+                    item.style.borderColor = '#2a70c2';
+                } else {
+                    item.style.backgroundColor = '#3a3a3a';
+                    item.style.borderColor = '#555';
+                }
+            }
+            
+            // Log the current alt deck configuration
+            const selectedTypes = getSelectedAltDeckTypes();
+            console.log('Alt deck configuration updated:', selectedTypes);
+        });
+        
+        // Initialize styling for checked checkboxes
+        if (checkbox.checked) {
+            const item = checkbox.closest('.checkbox-item');
+            if (item) {
+                item.style.backgroundColor = '#4a90e2';
+                item.style.borderColor = '#2a70c2';
+            }
+        }
+    });
+}
+
+// Get the currently selected card types for the alt deck
+function getSelectedAltDeckTypes() {
+    const checkboxes = document.querySelectorAll('#altDeckTypes input[type="checkbox"]:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
+}
+
+// Generalized function to handle card selection for different card types
+function initializeCardTypeDropdowns() {
+    // Initialize character selection dropdown
+    initializeCardSelection('characterSelect', CHARACTER_CARDS);
     
-    // Shuffle the deck
-    shuffleArray(mainDeck);
+    // Initialize objective selection dropdown
+    initializeCardSelection('objectiveSelect', OBJECTIVE_CARDS);
     
-    // Initialize the deck element
-    renderMainDeck();
+    // Initialize number of scenes validation
+    const scenesCountInput = document.getElementById('scenesCount');
+    if (scenesCountInput) {
+        scenesCountInput.addEventListener('change', function() {
+            const value = parseInt(this.value);
+            if (isNaN(value) || value < 3) {
+                this.value = 3;
+            } else if (value > 40) {
+                this.value = 40;
+            }
+        });
+    }
+}
+
+// Generic function to handle card selection dropdowns
+function initializeCardSelection(selectId, cardCollection) {
+    const dropdown = document.getElementById(selectId);
     
-    console.log(`Main deck initialized with ${mainDeck.length} cards`);
+    if (!dropdown) {
+        console.error(`Dropdown with ID ${selectId} not found`);
+        return;
+    }
+    
+    // Clear existing options except the first placeholder
+    while (dropdown.options.length > 1) {
+        dropdown.remove(1);
+    }
+    
+    // Add each card as an option
+    cardCollection.forEach(card => {
+        const option = document.createElement('option');
+        option.value = card.id;
+        option.textContent = card.name;
+        dropdown.appendChild(option);
+    });
+    
+    // Show card in preview when selected
+    dropdown.addEventListener('change', function() {
+        const selectedCardId = this.value;
+        if (selectedCardId) {
+            const selectedCard = cardCollection.find(card => card.id === selectedCardId);
+            if (selectedCard) {
+                updateCardPreview(selectedCard);
+            }
+        }
+    });
+}
+
+// Update card preview in the UI
+function updateCardPreview(card) {
+    // Try to find preview placeholder in the start menu
+    const previewContainer = document.querySelector('.preview-placeholder');
+    if (previewContainer) {
+        // Clear existing content
+        previewContainer.innerHTML = '';
+        
+        // Create a card preview
+        const cardPreview = document.createElement('div');
+        cardPreview.className = 'card-preview-wrapper';
+        cardPreview.style.height = '100%';
+        cardPreview.style.width = '100%';
+        cardPreview.style.display = 'flex';
+        cardPreview.style.justifyContent = 'center';
+        cardPreview.style.alignItems = 'center';
+        
+        // Create the image
+        const previewImg = document.createElement('img');
+        previewImg.src = card.imageUrl;
+        previewImg.alt = card.name;
+        previewImg.style.height = '100%';
+        previewImg.style.width = 'auto';
+        previewImg.style.maxWidth = '100%';
+        previewImg.style.objectFit = 'contain'; // Maintain aspect ratio
+        previewImg.style.borderRadius = '10px';
+        
+        // Add card name and additional info if needed
+        const cardInfo = document.createElement('div');
+        cardInfo.className = 'card-info';
+        cardInfo.style.position = 'absolute';
+        cardInfo.style.bottom = '10px';
+        cardInfo.style.left = '0';
+        cardInfo.style.right = '0';
+        cardInfo.style.textAlign = 'center';
+        cardInfo.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        cardInfo.style.color = 'white';
+        cardInfo.style.padding = '5px';
+        cardInfo.style.borderBottomLeftRadius = '10px';
+        cardInfo.style.borderBottomRightRadius = '10px';
+        cardInfo.textContent = card.name;
+        
+        // Add elements to the DOM
+        cardPreview.appendChild(previewImg);
+        cardPreview.appendChild(cardInfo);
+        previewContainer.appendChild(cardPreview);
+    }
+    
+    // Also update the main inspector if we're in game
+    if (gameStarted) {
+        updateInspector(card);
+    }
 }
 
 // Render main deck
@@ -217,96 +444,148 @@ function renderMainDeck() {
     deckCount.textContent = mainDeck.length;
     deckElement.appendChild(deckCount);
     
-    // Only render the top card if the deck has cards
+    // Only create a clickable deck card if there are cards in the deck
     if (mainDeck.length > 0) {
-        const topCard = mainDeck[0];
+        // Create a draggable container for the top card
+        const deckCardContainer = document.createElement('div');
+        deckCardContainer.className = 'deck-card-container';
+        deckCardContainer.draggable = true;
+        deckCardContainer.dataset.fromDeck = 'true';
         
-        // Create a single draggable element to represent the top card
-        const cardElement = document.createElement('div');
-        cardElement.className = 'deck-card-container';
-        cardElement.setAttribute('draggable', 'true');
-        cardElement.dataset.fromDeck = 'true';
-        cardElement.dataset.faceUp = topCard.faceUp ? 'true' : 'false';
-        
-        // Create card front (the actual card image)
-        const cardFront = document.createElement('img');
-        cardFront.className = 'deck-card-front';
-        cardFront.src = topCard.imageUrl.small;
-        cardFront.alt = topCard.name;
-        
-        // Create card back
+        // Add card images (back is shown by default)
         const cardBack = document.createElement('img');
         cardBack.className = 'deck-card-back';
         cardBack.src = cardData.cardBacks.small;
         cardBack.alt = 'Card Back';
+        deckCardContainer.appendChild(cardBack);
         
-        // Add correct visibility based on face up/down state
-        if (topCard.faceUp) {
-            cardFront.style.display = 'block';
-            cardBack.style.display = 'none';
-        } else {
-            cardFront.style.display = 'none';
-            cardBack.style.display = 'block';
+        // Add the top card's front image (hidden by default)
+        const topCard = mainDeck[0];
+        if (topCard) {
+            const cardFront = document.createElement('img');
+            cardFront.className = 'deck-card-front';
+            cardFront.src = topCard.imageUrl;
+            cardFront.alt = topCard.name;
+            cardFront.style.display = 'none'; // Hide front by default
+            deckCardContainer.appendChild(cardFront);
+            
+            // Store the card ID on the container
+            deckCardContainer.dataset.cardId = topCard.id;
         }
         
-        // Add elements to container
-        cardElement.appendChild(cardFront);
-        cardElement.appendChild(cardBack);
-        
-        // Add event listeners
-        cardElement.addEventListener('dragstart', handleSimpleDeckDragStart);
-        cardElement.addEventListener('dragend', handleSimpleDeckDragEnd);
-        cardElement.addEventListener('click', function() {
-            // Show in inspector without changing state
-            updateInspector(topCard);
+        // Add click event for flipping the top card
+        deckCardContainer.addEventListener('dblclick', function(e) {
+            e.stopPropagation();
+            const cardFront = this.querySelector('.deck-card-front');
+            const cardBack = this.querySelector('.deck-card-back');
+            
+            if (cardFront && cardBack) {
+                // Toggle visibility of front and back
+                if (cardFront.style.display === 'none') {
+                    cardFront.style.display = 'block';
+                    cardBack.style.display = 'none';
+                    // Update the card in the deck to be face up
+                    if (mainDeck.length > 0) {
+                        mainDeck[0].faceUp = true;
+                    }
+                } else {
+                    cardFront.style.display = 'none';
+                    cardBack.style.display = 'block';
+                    // Update the card in the deck to be face down
+                    if (mainDeck.length > 0) {
+                        mainDeck[0].faceUp = false;
+                    }
+                }
+            }
         });
-        cardElement.addEventListener('dblclick', function() {
-            // Toggle face up/down state
-            topCard.faceUp = !topCard.faceUp;
-            renderMainDeck();
+        
+        // Add drag event for dragging the top card
+        deckCardContainer.addEventListener('dragstart', function(e) {
+            e.stopPropagation();
+            this.classList.add('dragging');
+            draggedCard = this;
         });
         
-        deckElement.appendChild(cardElement);
+        deckCardContainer.addEventListener('dragend', function(e) {
+            e.stopPropagation();
+            this.classList.remove('dragging');
+            draggedCard = null;
+        });
+        
+        deckElement.appendChild(deckCardContainer);
     }
 }
 
-// Handle dragging a card from the deck - simplified approach
-function handleSimpleDeckDragStart(event) {
-    if (mainDeck.length === 0) return;
+// Render main discard pile
+function renderMainDiscard() {
+    const discardElement = document.getElementById('mainDiscard');
+    discardElement.innerHTML = '';
     
-    draggedCard = event.currentTarget;
-    event.dataTransfer.setData('text/plain', 'deck-card');
+    // Add discard count indicator
+    const discardCount = document.createElement('div');
+    discardCount.className = 'deck-count';
+    discardCount.textContent = mainDiscard.length;
+    discardElement.appendChild(discardCount);
     
-    // Add visual feedback
-    draggedCard.classList.add('dragging');
-    
-    // Always show card in inspector when dragged
-    updateInspector(mainDeck[0]);
-    
-    // Use the correct image for dragging based on current state
-    const isFaceUp = draggedCard.dataset.faceUp === 'true';
-    if (event.dataTransfer.setDragImage) {
-        const img = new Image();
-        if (isFaceUp) {
-            img.src = mainDeck[0].imageUrl.small;
-        } else {
-            img.src = cardData.cardBacks.small;
-        }
-        event.dataTransfer.setDragImage(img, 40, 72);
+    // Only render the top card if the discard has cards
+    if (mainDiscard.length > 0) {
+        const topCard = mainDiscard[mainDiscard.length - 1];
+        const cardElement = createCardElement({...topCard, faceUp: true}); // Always show face-up
+        cardElement.classList.add('discard-card');
+        // Discard cards are always face up
+        cardElement.classList.remove('face-down');
+        cardElement.style.transform = 'rotateY(0deg)';
+        
+        // Make the top discard card draggable
+        cardElement.setAttribute('draggable', 'true');
+        cardElement.dataset.fromDiscard = 'true';
+        
+        // Add drag event handlers
+        cardElement.addEventListener('dragstart', function(e) {
+            e.stopPropagation();
+            this.classList.add('dragging');
+            draggedCard = this;
+        });
+        
+        cardElement.addEventListener('dragend', function(e) {
+            e.stopPropagation();
+            this.classList.remove('dragging');
+            draggedCard = null;
+        });
+        
+        discardElement.appendChild(cardElement);
+    } else {
+        // Empty discard pile
+        const emptyIndicator = document.createElement('div');
+        emptyIndicator.className = 'empty-discard';
+        emptyIndicator.textContent = 'Empty';
+        emptyIndicator.style.color = '#888';
+        emptyIndicator.style.fontSize = '12px';
+        emptyIndicator.style.position = 'absolute';
+        emptyIndicator.style.top = '50%';
+        emptyIndicator.style.left = '50%';
+        emptyIndicator.style.transform = 'translate(-50%, -50%)';
+        discardElement.appendChild(emptyIndicator);
     }
-}
-
-// Handle end of dragging a card from the deck
-function handleSimpleDeckDragEnd(event) {
-    if (draggedCard) {
-        draggedCard.classList.remove('dragging');
-        draggedCard = null;
-    }
+    
+    // Add drop event handlers
+    discardElement.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        this.classList.add('drag-over');
+    });
+    
+    discardElement.addEventListener('dragleave', function() {
+        this.classList.remove('drag-over');
+    });
+    
+    discardElement.addEventListener('drop', handleDiscardDrop);
 }
 
 // Handle dropping cards onto the discard pile
 function handleDiscardDrop(event) {
     event.preventDefault();
+    event.currentTarget.classList.remove('drag-over');
     
     if (!draggedCard) return;
     
@@ -325,22 +604,86 @@ function handleDiscardDrop(event) {
         return;
     }
     
-    // Handle cards dragged from other places
+    // Check if we're dragging from the discard pile itself
+    if (draggedCard.dataset.fromDiscard === 'true') {
+        // We don't need to do anything if dragging to same pile
+        return;
+    }
+    
+    // Handle cards dragged from other places (slots, hand, etc.)
     const cardId = draggedCard.dataset.cardId;
     if (cardId) {
         // Find the card data
         let foundCard;
-        if (cardId.startsWith('test')) {
-            const cardNum = cardId.replace('test', '');
-            const index = parseInt(cardNum, 10) - 1;
-            if (index >= 0 && index < 50) {
-                // Create a copy of the card for the discard pile
-                const originalCard = cardData.testCards[index];
-                foundCard = {...originalCard, faceUp: true};
+        let foundInDeck = false;
+        let cardIndex = -1;
+        
+        // Search for card in all possible locations
+        // Search in player hands
+        for (let i = 0; i < playerHands.length; i++) {
+            cardIndex = playerHands[i].findIndex(c => c.id === cardId);
+            if (cardIndex !== -1) {
+                foundCard = {...playerHands[i][cardIndex]};
+                playerHands[i].splice(cardIndex, 1); // Remove from hand
+                foundInDeck = true;
+                break;
+            }
+        }
+        
+        // Search in main deck
+        if (!foundInDeck) {
+            cardIndex = mainDeck.findIndex(c => c.id === cardId);
+            if (cardIndex !== -1) {
+                foundCard = {...mainDeck[cardIndex]};
+                mainDeck.splice(cardIndex, 1); // Remove from deck
+                foundInDeck = true;
+            }
+        }
+        
+        // If card was not found in any data structure, create a new card object
+        if (!foundInDeck) {
+            // Handle emergency placeholder cards 
+            if (cardId.startsWith('emergency')) {
+                const match = cardId.match(/emergency(\d+)/);
+                if (match) {
+                    const cardNum = parseInt(match[1]);
+                    if (!isNaN(cardNum)) {
+                        // Determine card type based on number
+                        const cardType = cardNum % 5 === 0 ? 'monster' : 
+                                       cardNum % 5 === 1 ? 'spell' : 
+                                       cardNum % 5 === 2 ? 'item' : 
+                                       cardNum % 5 === 3 ? 'location' : 'NPC';
+                        
+                        // Create emergency card object
+                        foundCard = {
+                            id: cardId,
+                            name: `Placeholder ${cardType.charAt(0).toUpperCase() + cardType.slice(1)} ${cardNum}`,
+                            type: cardType
+                        };
+                    }
+                }
+            } else {
+                // Try to find the card in the other card collections
+                const allCardTypes = [...Object.keys(CARD_TYPES), ...Object.keys(NON_DECK_TYPES)];
+                for (const type of allCardTypes) {
+                    if (cardId.startsWith(type.toLowerCase() + '_')) {
+                        // Extract the card name from the ID
+                        const cardName = cardId.replace(type.toLowerCase() + '_', '');
+                        foundCard = {
+                            id: cardId,
+                            name: cardName.charAt(0).toUpperCase() + cardName.slice(1),
+                            type: type.toLowerCase()
+                        };
+                        break;
+                    }
+                }
             }
         }
         
         if (foundCard) {
+            // Ensure the card is face up in the discard pile
+            foundCard.faceUp = true;
+            
             // Add to discard
             mainDiscard.push(foundCard);
             
@@ -353,647 +696,158 @@ function handleDiscardDrop(event) {
     }
 }
 
-// Initialize deck event listeners
-function initializeDeckEventListeners() {
-    // Add event listeners for the discard pile
-    const mainDiscardElement = document.getElementById('mainDiscard');
-    mainDiscardElement.addEventListener('dragover', (e) => e.preventDefault());
-    mainDiscardElement.addEventListener('drop', handleDiscardDrop);
-}
-
-// Start game function
-function startGame() {
-    console.log('Starting game...');
-    
-    // Get selected player count
-    const playerCountSelect = document.getElementById('playerCount');
-    playerCount = parseInt(playerCountSelect.value);
-    console.log('Player count:', playerCount);
-    
-    if (playerCount < 1 || playerCount > 4) {
-        console.error('Invalid player count:', playerCount);
-        return;
-    }
-
-    // Initialize game state
-    gameStarted = true;
-    playerHands = Array(playerCount).fill().map(() => []);
-    initializePlayerTokens();
-    
-    // Generate story grid slots
-    const storyGrid = document.getElementById('storyGrid');
-    storyGrid.innerHTML = ''; // Clear existing slots
-    for (let i = 0; i < 40; i++) { // 4x10 grid
-        const slot = document.createElement('div');
-        slot.className = 'gridSlot';
-        slot.dataset.index = i;
-        slot.addEventListener('dragover', handleDragOver);
-        slot.addEventListener('drop', handleDrop);
-        storyGrid.appendChild(slot);
-    }
-
-    // Initialize mutable column slots
-    const mutableColumn = document.getElementById('mutableColumn');
-    mutableColumn.innerHTML = ''; // Clear existing slots
-    for (let i = 0; i < 4; i++) {
-        const slot = document.createElement('div');
-        slot.className = 'mutableSlot';
-        slot.dataset.index = i;
-        slot.addEventListener('dragover', handleDragOver);
-        slot.addEventListener('drop', handleDrop);
-        mutableColumn.appendChild(slot);
-    }
-
-    // Initialize d20 with starting value of 20 in green
-    const d20Area = document.getElementById('d20Area');
-    const rollDisplay = document.createElement('div');
-    rollDisplay.className = 'roll-number';
-    rollDisplay.textContent = '20';
-    rollDisplay.style.color = '#4ae24a'; // Green for 20
-    d20Area.innerHTML = '';
-    d20Area.appendChild(rollDisplay);
-
-    // Show only the active player hands
-    const playerHandElements = document.querySelectorAll('.playerHand');
-    playerHandElements.forEach((hand, index) => {
-        hand.style.display = index < playerCount ? 'flex' : 'none';
-    });
-
-    // Initialize turn timer with global reference
-    gameTimer = new TurnTimer('turnTimer', 120); // 2 minutes
-    gameTimer.updateDisplay();
-
-    // Timer controls - use the existing elements from the timer.js
-    document.getElementById('toggleBtn').addEventListener('click', function() {
-        if (gameTimer.isRunning) {
-            gameTimer.pause();
-        } else {
-            if (gameTimer.remaining === 0) {
-                gameTimer.reset();
-            }
-            gameTimer.start();
-        }
-    });
-
-    document.getElementById('resetBtn').addEventListener('click', function() {
-        gameTimer.reset();
-    });
-    
-    // Duration setting controls
-    const minutesInput = document.getElementById('timerMinutes');
-    const secondsInput = document.getElementById('timerSeconds');
-    document.getElementById('setDurationBtn').addEventListener('click', function() {
-        const minutes = parseInt(minutesInput.value) || 0;
-        const seconds = parseInt(secondsInput.value) || 0;
-        const totalSeconds = (minutes * 60) + seconds;
-        
-        if (totalSeconds > 0) {
-            gameTimer.setDuration(totalSeconds);
-        }
-    });
-    
-    // Input validation
-    minutesInput.addEventListener('input', function() {
-        let value = parseInt(this.value) || 0;
-        if (value > 60) value = 60;
-        if (value < 0) value = 0;
-        this.value = value;
-    });
-    
-    secondsInput.addEventListener('input', function() {
-        let value = parseInt(this.value) || 0;
-        if (value > 59) value = 59;
-        if (value < 0) value = 0;
-        this.value = value;
-    });
-    
-    // Initialize the deck
-    initializeMainDeck();
-    initializeDeckEventListeners();
-    
-    // Render initial cards (without test card)
-    renderHands();
-    
-    // Hide setup screen and show game board
-    document.getElementById('setup').style.display = 'none';
-    document.getElementById('gameBoard').style.display = 'block';
-    
-    console.log('Game initialized successfully');
-}
-
-function shuffleDeck() {
-  shuffleArray(deck);
-  alert("Deck shuffled!");
-}
-
-function dealCards(cardsPerPlayer = 1) {
-  // For each player, draw `cardsPerPlayer` from the top of the deck (if available)
-  for (let p = 0; p < playerCount; p++) {
-    for (let c = 0; c < cardsPerPlayer; c++) {
-      if (deck.length > 0) {
-        const card = deck.shift();
-        playerHands[p].push(card);
-      } else {
-        alert("No more cards in the deck!");
-        return;
-      }
-    }
-  }
-  renderHands();
-}
-
-// D20 roll animation
-function animateD20Roll() {
-    const d20Area = document.getElementById('d20Area');
-    const rollDisplay = document.createElement('div');
-    rollDisplay.id = 'rollDisplay';
-    rollDisplay.className = 'roll-number';
-    d20Area.innerHTML = '';
-    d20Area.appendChild(rollDisplay);
-
-    let duration = 2000; // 2 seconds
-    let interval = 50; // Update every 50ms
-    let startTime = Date.now();
-    let animationFrame;
-
-    function updateDisplay() {
-        let currentTime = Date.now();
-        let elapsed = currentTime - startTime;
-        
-        if (elapsed < duration) {
-            // Generate random number 1-20
-            let randomNum = Math.floor(Math.random() * 20) + 1;
-            rollDisplay.textContent = randomNum.toString();
-            rollDisplay.style.color = '#ffffff'; // White during animation
-            
-            // Slow down the animation gradually
-            interval = 50 + (elapsed / duration) * 200;
-            
-            animationFrame = setTimeout(updateDisplay, interval);
-        } else {
-            // Final roll
-            let finalRoll = Math.floor(Math.random() * 20) + 1;
-            rollDisplay.textContent = finalRoll.toString();
-            
-            // Set color based on roll value
-            if (finalRoll === 20) {
-                rollDisplay.style.color = '#4ae24a'; // Green
-            } else if (finalRoll === 1) {
-                rollDisplay.style.color = '#e24a4a'; // Red
-            } else {
-                rollDisplay.style.color = '#ffffff'; // White
-            }
-            
-            rollDisplay.classList.add('final-roll');
-        }
-    }
-
-    updateDisplay();
-}
-
-// Create card element
-function createCardElement(card, isInspector = false) {
-    const cardDiv = document.createElement('div');
-    cardDiv.className = 'card';
-    cardDiv.dataset.cardId = card.id;
-    
-    // Create front image element
-    const frontImg = document.createElement('img');
-    frontImg.src = isInspector ? card.imageUrl.large : card.imageUrl.small;
-    frontImg.alt = card.name;
-    frontImg.className = 'card-front';
-    frontImg.style.width = '100%';
-    frontImg.style.height = '100%';
-    frontImg.style.objectFit = 'cover';
-    frontImg.style.borderRadius = '5px';
-    frontImg.style.position = 'absolute';
-    frontImg.style.backfaceVisibility = 'hidden';
-    cardDiv.appendChild(frontImg);
-    
-    // Create back image element
-    const backImg = document.createElement('img');
-    backImg.src = isInspector ? cardData.cardBacks.large : cardData.cardBacks.small;
-    backImg.alt = 'Card Back';
-    backImg.className = 'card-back';
-    backImg.style.width = '100%';
-    backImg.style.height = '100%';
-    backImg.style.objectFit = 'cover';
-    backImg.style.borderRadius = '5px';
-    backImg.style.position = 'absolute';
-    backImg.style.backfaceVisibility = 'hidden';
-    backImg.style.transform = 'rotateY(180deg)';
-    cardDiv.appendChild(backImg);
-    
-    // Add interaction event listeners
-    cardDiv.draggable = true;
-    cardDiv.addEventListener('click', handleCardClick);
-    cardDiv.addEventListener('dblclick', handleCardDoubleClick);
-    cardDiv.addEventListener('dragstart', handleCardDragStart);
-    cardDiv.addEventListener('dragend', handleCardDragEnd);
-    
-    return cardDiv;
-}
-
-// Render a player's hand
-function renderHands() {
-    // Clear existing hands
-    const hands = document.querySelectorAll('.playerHand');
-    hands.forEach(hand => {
-        const playerIndex = parseInt(hand.id.replace('player', '').replace('Hand', '')) - 1;
-        // Store existing token container and cards
-        const tokenContainer = hand.querySelector('.tokenContainer');
-        const existingCards = Array.from(hand.querySelectorAll('.card'));
-        hand.innerHTML = '';
-        
-        if (tokenContainer) {
-            hand.appendChild(tokenContainer);
-        }
-
-        // Add character card if this is an active player
-        if (playerIndex < playerCount) {
-            // Reuse existing character card or create new one
-            let charCard;
-            const existingCharCard = existingCards.find(card => card.classList.contains('charCard'));
-            if (existingCharCard) {
-                charCard = existingCharCard;
-            } else {
-                charCard = createCardElement(cardData.characterCards[playerIndex]);
-                charCard.classList.add('charCard');
-            }
-            hand.appendChild(charCard);
-
-            // Always create 5 hand card slots
-            for (let i = 0; i < 5; i++) {
-                const cardSlot = document.createElement('div');
-                cardSlot.className = 'handCard';
-                cardSlot.addEventListener('dragover', handleDragOver);
-                cardSlot.addEventListener('drop', handleDrop);
-                
-                // If there was a card in this slot, reattach it
-                const existingCard = existingCards.find(card => 
-                    !card.classList.contains('charCard') && 
-                    card.parentElement === hand.children[i + 1]
-                );
-                if (existingCard) {
-                    cardSlot.appendChild(existingCard);
-                }
-                
-                hand.appendChild(cardSlot);
-            }
-        }
-    });
-}
-
-// Handle card click
-function handleCardClick(event) {
-    const card = event.currentTarget;
-    const cardId = card.dataset.cardId;
-    
-    console.log('Card clicked:', cardId);
-    
-    // Remove highlight from previously highlighted card
-    if (highlightedCard) {
-        highlightedCard.classList.remove('highlighted');
-    }
-    
-    // Highlight this card
-    card.classList.add('highlighted');
-    highlightedCard = card;
-    
-    // Find the card data
-    let foundCard;
-    if (cardId.startsWith('char')) {
-        foundCard = cardData.characterCards.find(c => c.id === cardId);
-    } else if (cardId.startsWith('test')) {
-        foundCard = cardData.testCards.find(c => c.id === cardId);
-    } else if (cardId.startsWith('monster')) {
-        foundCard = deck.find(c => c.id === cardId);
-    }
-    
-    console.log('Found card data:', foundCard);
-    
-    // Update inspector if card data found
-    if (foundCard) {
-        updateInspector(foundCard);
-    }
-}
-
-// Handle card double click for flipping
-function handleCardDoubleClick(event) {
-    const card = event.currentTarget;
-    card.classList.toggle('face-down');
-    
-    // Apply the flip animation
-    if (card.classList.contains('face-down')) {
-        card.style.transform = 'rotateY(180deg)';
-    } else {
-        card.style.transform = 'rotateY(0)';
-    }
-}
-
-// Handle drag start
-function handleCardDragStart(event) {
-    draggedCard = event.currentTarget;
-    event.dataTransfer.setData('text/plain', ''); // Required for Firefox
-    draggedCard.classList.add('dragging');
-}
-
-// Handle drag end
-function handleCardDragEnd(event) {
-    if (draggedCard) {
-        draggedCard.classList.remove('dragging');
-        draggedCard = null;
-    }
-}
-
-// Handle drag over
-function handleDragOver(event) {
-    event.preventDefault();
-    const target = event.currentTarget;
-    
-    // Only add drag-over class to valid drop targets
-    if (target.classList.contains('handCard') || 
-        target.classList.contains('gridSlot') || 
-        target.classList.contains('mutableSlot')) {
-        target.classList.add('drag-over');
-    }
-}
-
 // Handle drop
 function handleDrop(event) {
     event.preventDefault();
+    event.stopPropagation();
+    
     const target = event.currentTarget;
     target.classList.remove('drag-over');
     
-    if (!draggedCard) return;
-
-    // Don't allow dropping character cards into hand card slots, grid slots, or mutable slots
-    if (draggedCard.classList.contains('charCard') && 
-        (target.classList.contains('handCard') || 
-         target.classList.contains('gridSlot') || 
-         target.classList.contains('mutableSlot'))) {
-        return;
-    }
-
-    // Special handling for cards dragged from the deck
-    if (draggedCard.dataset.fromDeck === 'true') {
-        // Get a reference to the card data
-        const card = {...mainDeck.shift()};
-        
-        // Get the face-up state from the deck
-        const isFaceUp = draggedCard.dataset.faceUp === 'true';
-        card.faceUp = isFaceUp;
-        
-        // Handle drops in hand card slots
-        if (target.classList.contains('handCard')) {
-            // If target already has a card, swap them
-            const existingCard = target.querySelector('.card');
-            if (existingCard) {
-                // Put the existing card back into the deck
-                mainDeck.unshift({...cardData.testCards.find(c => c.id === existingCard.dataset.cardId), faceUp: false});
-            }
-            
-            // Create a new properly sized card for the hand
-            const newCard = createCardElement(card);
-            
-            // Apply face-up/face-down state
-            if (!card.faceUp) {
-                newCard.classList.add('face-down');
-                newCard.style.transform = 'rotateY(180deg)';
-            } else {
-                newCard.classList.remove('face-down');
-                newCard.style.transform = 'rotateY(0deg)';
-            }
-            
-            target.appendChild(newCard);
-            
-            // Update the main deck display
-            renderMainDeck();
-            return;
-        }
-        // Handle drops in grid slots
-        else if (target.classList.contains('gridSlot')) {
-            // Handle existing card in slot
-            const existingCard = target.querySelector('.card');
-            if (existingCard) {
-                // Find empty slot or return card to deck
-                const allGridSlots = Array.from(document.querySelectorAll('.gridSlot'));
-                const emptySlot = allGridSlots.find(slot => !slot.querySelector('.card'));
-                
-                if (emptySlot) {
-                    emptySlot.appendChild(existingCard);
-                } else {
-                    mainDeck.unshift(card);
-                    renderMainDeck();
-                    return;
-                }
-            }
-            
-            // Create a new properly sized card for the grid
-            const newCard = createCardElement(card);
-            
-            // Apply face-up/face-down state
-            if (!card.faceUp) {
-                newCard.classList.add('face-down');
-                newCard.style.transform = 'rotateY(180deg)';
-            } else {
-                newCard.classList.remove('face-down');
-                newCard.style.transform = 'rotateY(0deg)';
-            }
-            
-            target.appendChild(newCard);
-            
-            // Update the main deck display
-            renderMainDeck();
-            return;
-        }
-        // Handle drops in mutable slots
-        else if (target.classList.contains('mutableSlot')) {
-            // Handle existing card in slot
-            const existingCard = target.querySelector('.card');
-            if (existingCard) {
-                // Find empty slot or return card to deck
-                const allMutableSlots = Array.from(document.querySelectorAll('.mutableSlot'));
-                const emptySlot = allMutableSlots.find(slot => !slot.querySelector('.card'));
-                
-                if (emptySlot) {
-                    emptySlot.appendChild(existingCard);
-                } else {
-                    mainDeck.unshift(card);
-                    renderMainDeck();
-                    return;
-                }
-            }
-            
-            // Create a new properly sized card for the mutable slot
-            const newCard = createCardElement(card);
-            
-            // Apply face-up/face-down state
-            if (!card.faceUp) {
-                newCard.classList.add('face-down');
-                newCard.style.transform = 'rotateY(180deg)';
-            } else {
-                newCard.classList.remove('face-down');
-                newCard.style.transform = 'rotateY(0deg)';
-            }
-            
-            target.appendChild(newCard);
-            
-            // Update the main deck display
-            renderMainDeck();
-            return;
-        }
-        
-        // If the drop is not in a valid target, return the card to the deck
-        mainDeck.unshift(card);
-        renderMainDeck();
-        return;
-    }
-
-    // Handle drops for non-deck cards
-    // Handle drops in hand card slots
-    if (target.classList.contains('handCard')) {
-        const sourceParent = draggedCard.parentNode;
-        
-        // If target already has a card, swap them
-        const existingCard = target.querySelector('.card');
-        if (existingCard) {
-            sourceParent.appendChild(existingCard);
-        }
-        
-        target.appendChild(draggedCard);
-        
-        // Ensure hand structure remains intact
-        const hand = sourceParent.closest('.playerHand') || target.closest('.playerHand');
-        if (hand) {
-            // Verify all slots are present
-            const slots = hand.querySelectorAll('.handCard');
-            if (slots.length < 5) {
-                renderHands();
-            }
-        }
-    }
-    // Handle drops in grid slots
-    else if (target.classList.contains('gridSlot')) {
-        const sourceParent = draggedCard.parentNode;
-        
-        // If target already has a card, find the nearest empty slot
-        const existingCard = target.querySelector('.card');
-        if (existingCard) {
-            // Find all grid slots
-            const allGridSlots = Array.from(document.querySelectorAll('.gridSlot'));
-            const currentIndex = allGridSlots.indexOf(target);
-            
-            // Search for nearest empty slot
-            let emptySlot = null;
-            let searchRadius = 1;
-            const maxSearch = Math.max(10, 4); // Width or height of grid
-            
-            while (!emptySlot && searchRadius <= maxSearch) {
-                // Check slots in expanding radius
-                for (let i = -searchRadius; i <= searchRadius; i++) {
-                    for (let j = -searchRadius; j <= searchRadius; j++) {
-                        const checkIndex = currentIndex + (i * 10) + j;
-                        if (checkIndex >= 0 && checkIndex < allGridSlots.length) {
-                            const checkSlot = allGridSlots[checkIndex];
-                            if (!checkSlot.querySelector('.card')) {
-                                emptySlot = checkSlot;
-                                break;
-                            }
-                        }
-                    }
-                    if (emptySlot) break;
-                }
-                searchRadius++;
-            }
-            
-            // If no empty slot found, return card to original position
-            if (!emptySlot) {
-                draggedCard.style.transform = ''; // Reset any transform
-                return;
-            }
-            
-            // Move existing card to empty slot
-            emptySlot.appendChild(existingCard);
-        }
-        
-        // Place dragged card in target slot
-        target.appendChild(draggedCard);
-        draggedCard.style.transform = ''; // Reset any transform
-    }
-    // Handle drops in mutable slots
-    else if (target.classList.contains('mutableSlot')) {
-        const sourceParent = draggedCard.parentNode;
-        
-        // If target already has a card, find the nearest empty mutable slot
-        const existingCard = target.querySelector('.card');
-        if (existingCard) {
-            // Find all mutable slots
-            const allMutableSlots = Array.from(document.querySelectorAll('.mutableSlot'));
-            const currentIndex = allMutableSlots.indexOf(target);
-            
-            // Search for nearest empty slot
-            let emptySlot = null;
-            let searchRadius = 1;
-            const maxSearch = 4; // Number of mutable slots
-            
-            while (!emptySlot && searchRadius <= maxSearch) {
-                // Check slots in expanding radius
-                for (let i = -searchRadius; i <= searchRadius; i++) {
-                    const checkIndex = currentIndex + i;
-                    if (checkIndex >= 0 && checkIndex < allMutableSlots.length) {
-                        const checkSlot = allMutableSlots[checkIndex];
-                        if (!checkSlot.querySelector('.card')) {
-                            emptySlot = checkSlot;
-                            break;
-                        }
-                    }
-                }
-                if (emptySlot) break;
-                searchRadius++;
-            }
-            
-            // If no empty slot found, return card to deck
-            if (!emptySlot) {
-                mainDeck.unshift({...card, faceUp: false});
-                renderMainDeck();
-                return;
-            }
-            
-            // Move existing card to empty slot
-            emptySlot.appendChild(existingCard);
-        }
-        
-        // Create a new properly sized card for the mutable slot
-        const newCard = createCardElement(card);
-        
-        // Keep cards face-down when coming from the deck
-        newCard.classList.add('face-down');
-        newCard.style.transform = 'rotateY(180deg)';
-        
-        newCard.draggable = true;
-        newCard.addEventListener('click', handleCardClick);
-        newCard.addEventListener('dblclick', handleCardDoubleClick);
-        newCard.addEventListener('dragstart', handleCardDragStart);
-        newCard.addEventListener('dragend', handleCardDragEnd);
-        
-        target.appendChild(newCard);
-        
-        // Update the main deck display
-        renderMainDeck();
+    if (!draggedCard) {
+        console.error('No dragged card found in handleDrop');
         return;
     }
     
-    // If the drop is not in a valid target, return the card to the deck
-    mainDeck.unshift({...card, faceUp: isFaceUp});
-    renderMainDeck();
-    return;
+    // Special handling for cards dragged from the main deck
+    if (draggedCard.dataset.fromDeck === 'true') {
+        // Only proceed if we have cards in the deck
+        if (mainDeck.length === 0) {
+            console.warn('Attempted to drag from empty deck');
+            return;
+        }
+        
+        // Get a copy of the top card and remove it from the deck
+        const cardData = {...mainDeck.shift()};
+        
+        // Create a new card element
+        const newCard = createCardElement(cardData);
+        
+        // Check if target already has a card
+        const existingCard = target.querySelector('.card');
+        if (existingCard) {
+            existingCard.remove();
+        }
+        
+        // Add it to the target slot
+        target.appendChild(newCard);
+        
+        // Update the deck display
+        renderMainDeck();
+        
+        return;
+    }
+    
+    // Special handling for cards dragged from the alternative deck
+    if (draggedCard.dataset.fromAltDeck === 'true') {
+        // Only proceed if we have cards in the alt deck
+        if (altDeck.length === 0) {
+            console.warn('Attempted to drag from empty alt deck');
+            return;
+        }
+        
+        // Get a copy of the top card and remove it from the alt deck
+        const cardData = {...altDeck.shift()};
+        
+        // Create a new card element
+        const newCard = createCardElement(cardData);
+        
+        // Check if target already has a card
+        const existingCard = target.querySelector('.card');
+        if (existingCard) {
+            existingCard.remove();
+        }
+        
+        // Add it to the target slot
+        target.appendChild(newCard);
+        
+        // Update the alt deck display
+        renderAltDeck();
+        
+        return;
+    }
+    
+    // Special handling for cards dragged from the main discard pile
+    if (draggedCard.dataset.fromDiscard === 'true') {
+        // Only proceed if we have cards in the discard
+        if (mainDiscard.length === 0) {
+            console.warn('Attempted to drag from empty discard');
+            return;
+        }
+        
+        // Get a copy of the top card and remove it from the discard
+        const cardData = {...mainDiscard.pop()};
+        
+        // Create a new card element
+        const newCard = createCardElement(cardData);
+        
+        // Check if target already has a card
+        const existingCard = target.querySelector('.card');
+        if (existingCard) {
+            existingCard.remove();
+        }
+        
+        // Add it to the target slot
+        target.appendChild(newCard);
+        
+        // Update the discard display
+        renderMainDiscard();
+        
+        return;
+    }
+    
+    // Special handling for cards dragged from the alt discard pile
+    if (draggedCard.dataset.fromAltDiscard === 'true') {
+        // Only proceed if we have cards in the alt discard
+        if (altDiscard.length === 0) {
+            console.warn('Attempted to drag from empty alt discard');
+            return;
+        }
+        
+        // Get a copy of the top card and remove it from the alt discard
+        const cardData = {...altDiscard.pop()};
+        
+        // Create a new card element
+        const newCard = createCardElement(cardData);
+        
+        // Check if target already has a card
+        const existingCard = target.querySelector('.card');
+        if (existingCard) {
+            existingCard.remove();
+        }
+        
+        // Add it to the target slot
+        target.appendChild(newCard);
+        
+        // Update the alt discard display
+        renderAltDiscard();
+        
+        return;
+    }
+
+    // For cards dragged from other locations (not the deck or discard)
+    // Just move the card to the target slot, handling any existing cards
+    const sourceParent = draggedCard.parentNode;
+    
+    if (sourceParent === target) {
+        return; // No need to do anything if dropping on same element
+    }
+    
+    // Check if target already has a card
+    const existingCard = target.querySelector('.card');
+    if (existingCard) {
+        // If source had a card and target has a card, swap them
+        sourceParent.appendChild(existingCard);
+    }
+    
+    // Move dragged card to target
+    target.appendChild(draggedCard);
 }
 
 // Initialize token state for each player
 function initializePlayerTokens() {
     playerTokens = [];
-    for (let i = 0; i < playerCount; i++) {
+  for (let i = 0; i < playerCount; i++) {
         playerTokens.push({
             rational: 0,
             emotional: 0,
@@ -1060,55 +914,165 @@ function updateTokenDisplay(token, value) {
 function checkTokenMax(token, total) {
     if (total >= MAX_TOKENS) {
         token.classList.add('maxed');
-    } else {
+      } else {
         token.classList.remove('maxed');
     }
 }
 
 // Update inspector with clicked card
 function updateInspector(card) {
-    console.log('Updating inspector with card:', card);
     const inspector = document.getElementById('inspector');
+    if (!inspector) {
+        console.error('Inspector element not found');
+        return;
+    }
+    
     inspector.innerHTML = ''; // Clear current inspector content
     
     if (card) {
-        const inspectorCard = document.createElement('div');
-        inspectorCard.className = 'card inspector-card';
-        inspectorCard.dataset.cardId = card.id;
+        // Create a container that takes up the full inspector space
+        const cardContainer = document.createElement('div');
+        cardContainer.className = 'inspector-card-container';
+        cardContainer.style.width = '100%';
+        cardContainer.style.height = '100%';
+        cardContainer.style.display = 'flex';
+        cardContainer.style.flexDirection = 'column';
+        cardContainer.style.justifyContent = 'center';
+        cardContainer.style.alignItems = 'center';
+        cardContainer.style.backgroundColor = '#1a1a1a';
+        cardContainer.style.position = 'relative';
+        cardContainer.style.boxSizing = 'border-box';
+        cardContainer.style.padding = '10px';
+        cardContainer.style.overflow = 'hidden'; // Prevent overflow
         
-        // Create front image element (always visible in inspector)
-        const frontImg = document.createElement('img');
-        frontImg.src = card.imageUrl.large;
-        frontImg.alt = card.name;
-        frontImg.className = 'card-front';
-        frontImg.style.width = '100%';
-        frontImg.style.height = '100%';
-        frontImg.style.objectFit = 'contain';
-        frontImg.style.borderRadius = '5px';
-        frontImg.style.position = 'absolute';
-        frontImg.style.backfaceVisibility = 'hidden';
-        inspectorCard.appendChild(frontImg);
+        // Create wrapper for the image to enforce aspect ratio
+        const imageWrapper = document.createElement('div');
+        imageWrapper.className = 'inspector-image-wrapper';
+        imageWrapper.style.width = '90%'; // Reduce from 100% to give some margin
+        imageWrapper.style.height = 'calc(90% - 40px)'; // Reduce height to ensure visibility
+        imageWrapper.style.display = 'flex';
+        imageWrapper.style.justifyContent = 'center';
+        imageWrapper.style.alignItems = 'center';
+        imageWrapper.style.overflow = 'hidden';
+        imageWrapper.style.position = 'relative';
         
-        // Create back image element
-        const backImg = document.createElement('img');
-        backImg.src = cardData.cardBacks.large;
-        backImg.alt = 'Card Back';
-        backImg.className = 'card-back';
-        backImg.style.width = '100%';
-        backImg.style.height = '100%';
-        backImg.style.objectFit = 'contain';
-        backImg.style.borderRadius = '5px';
-        backImg.style.position = 'absolute';
-        backImg.style.backfaceVisibility = 'hidden';
-        backImg.style.transform = 'rotateY(180deg)';
-        inspectorCard.appendChild(backImg);
+        // Show loading indicator
+        const loadingText = document.createElement('div');
+        loadingText.style.position = 'absolute';
+        loadingText.style.top = '50%';
+        loadingText.style.left = '50%';
+        loadingText.style.transform = 'translate(-50%, -50%)';
+        loadingText.style.color = 'white';
+        loadingText.style.fontSize = '18px';
+        loadingText.textContent = `Loading ${card.name}...`;
+        imageWrapper.appendChild(loadingText);
         
-        // Always show front of card in inspector (even if it's face-down in the game)
-        inspectorCard.classList.remove('face-down');
-        inspectorCard.style.transform = 'rotateY(0deg)';
+        // Function to create placeholder SVG for missing cards in larger format
+        function createInspectorPlaceholder(cardName, cardType) {
+            const colors = {
+                'monster': '#d35f5f',
+                'spell': '#5f5fd3',
+                'item': '#5fd35f',
+                'location': '#d3aa5f',
+                'NPC': '#aa5fd3',
+                'character': '#e5a619',
+                'objective': '#19e5e5'
+            };
+            const color = colors[cardType] || '#5a5a5a';
+            
+            return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="333" height="600" viewBox="0 0 333 600"><rect width="100%" height="100%" fill="${color}"/><text x="50%" y="30%" font-family="Arial" font-size="30" fill="white" text-anchor="middle" dominant-baseline="middle">${cardType.toUpperCase()}</text><text x="50%" y="50%" font-family="Arial" font-size="25" fill="white" text-anchor="middle" dominant-baseline="middle">${cardName}</text><text x="50%" y="70%" font-family="Arial" font-size="20" fill="white" text-anchor="middle" dominant-baseline="middle">IMAGE LOADING ERROR</text></svg>`;
+        }
         
-        inspector.appendChild(inspectorCard);
-        console.log('Inspector card created and added');
+        // Create the card image with CRITICAL styling for proper scaling
+        const cardImage = document.createElement('img');
+        cardImage.className = 'inspector-card-image';
+        cardImage.alt = card.name;
+        
+        // Set fixed max dimensions to ensure proper scaling
+        cardImage.style.maxHeight = '95%';
+        cardImage.style.maxWidth = '95%';
+        cardImage.style.width = 'auto';
+        cardImage.style.height = 'auto';
+        cardImage.style.objectFit = 'contain'; // Ensure entire image is visible
+        cardImage.style.display = 'block'; // Block removes extra space beneath the image
+        cardImage.style.borderRadius = '5px';
+        cardImage.style.margin = 'auto'; // Center the image
+        
+        // Store the card data as an attribute to allow retrieval later
+        cardImage.dataset.cardId = card.id;
+        cardImage.dataset.cardType = card.type;
+        
+        // Handle image load events
+        cardImage.onload = function() {
+            loadingText.remove();
+            
+            // Adjust image size based on its natural dimensions
+            const containerHeight = imageWrapper.clientHeight;
+            const containerWidth = imageWrapper.clientWidth;
+            const imageRatio = this.naturalWidth / this.naturalHeight;
+            const containerRatio = containerWidth / containerHeight;
+            
+            if (imageRatio > containerRatio) {
+                // Wide card - prioritize fitting width
+                this.style.width = '95%';
+                this.style.height = 'auto';
+            } else {
+                // Tall or square card - prioritize fitting height
+                this.style.height = '95%';
+                this.style.width = 'auto';
+            }
+        };
+        
+        cardImage.onerror = function() {
+            loadingText.textContent = `Could not load image for ${card.name}`;
+            loadingText.style.color = '#e24a4a';
+            
+            // Use a placeholder SVG for the error state
+            cardImage.src = createInspectorPlaceholder(card.name, card.type);
+        };
+        
+        // Add the image to the wrapper first
+        imageWrapper.appendChild(cardImage);
+        
+        // Add card name display
+        const nameLabel = document.createElement('div');
+        nameLabel.className = 'inspector-card-name';
+        nameLabel.textContent = card.name;
+        nameLabel.style.width = '100%';
+        nameLabel.style.textAlign = 'center';
+        nameLabel.style.color = 'white';
+        nameLabel.style.padding = '10px 0';
+        nameLabel.style.fontSize = '16px';
+        nameLabel.style.fontWeight = 'bold';
+        nameLabel.style.position = 'absolute';
+        nameLabel.style.bottom = '5px';
+        nameLabel.style.left = '0';
+        
+        // Add the wrapper and label to the container
+        cardContainer.appendChild(imageWrapper);
+        cardContainer.appendChild(nameLabel);
+        
+        // Add container to inspector
+        inspector.appendChild(cardContainer);
+        
+        // Set source to trigger loading
+        if (card.imageUrl) {
+            cardImage.src = card.imageUrl;
+        } else {
+            // No image URL provided
+            cardImage.src = createInspectorPlaceholder(card.name, card.type);
+            loadingText.textContent = `No image available for ${card.name}`;
+        }
+        
+        // Store the currently displayed card in the inspector for later reference
+        inspector.dataset.currentCardId = card.id;
+        
+        // Remove loading text after a timeout even if image is still loading
+        setTimeout(() => {
+            if (loadingText.parentNode === imageWrapper) {
+                loadingText.remove();
+            }
+        }, 5000);
     }
 }
 
@@ -1141,118 +1105,4098 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Render main discard pile
-function renderMainDiscard() {
-    const discardElement = document.getElementById('mainDiscard');
+// Card back path
+const CARD_BACK_PATH = 'assets/JPG/cards/nonDeck/card_back/cardBack.jpg';
+
+// Character cards (non-deck cards)
+const CHARACTER_CARDS = [
+    {
+        id: 'characters_alleyWitch',
+        name: 'Alley Witch',
+        type: 'character',
+        imageUrl: 'assets/JPG/cards/nonDeck/character/characters_alleyWitch.jpg',
+        faceUp: true
+    },
+    {
+        id: 'characters_cursedScholar',
+        name: 'Cursed Scholar',
+        type: 'character',
+        imageUrl: 'assets/JPG/cards/nonDeck/character/characters_cursedScholar.jpg',
+        faceUp: true
+    },
+    {
+        id: 'characters_detective',
+        name: 'Detective',
+        type: 'character',
+        imageUrl: 'assets/JPG/cards/nonDeck/character/characters_detective.jpg',
+        faceUp: true
+    },
+    {
+        id: 'characters_monsterHunter',
+        name: 'Monster Hunter',
+        type: 'character',
+        imageUrl: 'assets/JPG/cards/nonDeck/character/characters_monsterHunter.jpg',
+        faceUp: true
+    },
+    {
+        id: 'characters_quietRogue',
+        name: 'Quiet Rogue',
+        type: 'character',
+        imageUrl: 'assets/JPG/cards/nonDeck/character/characters_quietRogue.jpg',
+        faceUp: true
+    },
+    {
+        id: 'characters_reluctantHero',
+        name: 'Reluctant Hero',
+        type: 'character',
+        imageUrl: 'assets/JPG/cards/nonDeck/character/characters_reluctantHero.jpg',
+        faceUp: true
+    },
+    {
+        id: 'characters_scarredShifter',
+        name: 'Scarred Shifter',
+        type: 'character',
+        imageUrl: 'assets/JPG/cards/nonDeck/character/characters_scarredShifter.jpg',
+        faceUp: true
+    },
+    {
+        id: 'characters_spiritMedium',
+        name: 'Spirit Medium',
+        type: 'character',
+        imageUrl: 'assets/JPG/cards/nonDeck/character/characters_spiritMedium.jpg',
+        faceUp: true
+    },
+    {
+        id: 'characters_techSavant',
+        name: 'Tech Savant',
+        type: 'character',
+        imageUrl: 'assets/JPG/cards/nonDeck/character/characters_techSavant.jpg',
+        faceUp: true
+    }
+];
+
+// Objective cards (also non-deck cards)
+const OBJECTIVE_CARDS = [
+    {
+        id: 'objective_bounty',
+        name: 'Bounty',
+        type: 'objective',
+        imageUrl: 'assets/JPG/cards/nonDeck/objective/objectives_bounty.jpg',
+        faceUp: true
+    },
+    {
+        id: 'objective_breachTheSanctuary',
+        name: 'Breach The Sanctuary',
+        type: 'objective',
+        imageUrl: 'assets/JPG/cards/nonDeck/objective/objectives_breachTheSanctuary.jpg',
+        faceUp: true
+    },
+    {
+        id: 'objective_buryTheTruth',
+        name: 'Bury The Truth',
+        type: 'objective',
+        imageUrl: 'assets/JPG/cards/nonDeck/objective/objectives_buryTheTruth.jpg',
+        faceUp: true
+    },
+    {
+        id: 'objective_closeTheRift',
+        name: 'Close The Rift',
+        type: 'objective',
+        imageUrl: 'assets/JPG/cards/nonDeck/objective/objectives_closeTheRift.jpg',
+        faceUp: true
+    },
+    {
+        id: 'objective_destroyTheArifacts',
+        name: 'Destroy The Artifacts',
+        type: 'objective',
+        imageUrl: 'assets/JPG/cards/nonDeck/objective/objectives_destroyTheArifacts.jpg',
+        faceUp: true
+    },
+    {
+        id: 'objective_endTheCycle',
+        name: 'End The Cycle',
+        type: 'objective',
+        imageUrl: 'assets/JPG/cards/nonDeck/objective/objectives_endTheCycle.jpg',
+        faceUp: true
+    },
+    {
+        id: 'objective_escort',
+        name: 'Escort',
+        type: 'objective',
+        imageUrl: 'assets/JPG/cards/nonDeck/objective/objectives_escort.jpg',
+        faceUp: true
+    },
+    {
+        id: 'objective_femmeFatale',
+        name: 'Femme Fatale',
+        type: 'objective',
+        imageUrl: 'assets/JPG/cards/nonDeck/objective/objectives_femmeFatale.jpg',
+        faceUp: true
+    },
+    {
+        id: 'objective_findTheHollow',
+        name: 'Find The Hollow',
+        type: 'objective',
+        imageUrl: 'assets/JPG/cards/nonDeck/objective/objectives_findTheHollow.jpg',
+        faceUp: true
+    },
+    {
+        id: 'objective_forbiddenLove',
+        name: 'Forbidden Love',
+        type: 'objective',
+        imageUrl: 'assets/JPG/cards/nonDeck/objective/objectives_forbiddenLove.jpg',
+        faceUp: true
+    },
+    {
+        id: 'objective_letThemGo',
+        name: 'Let Them Go',
+        type: 'objective',
+        imageUrl: 'assets/JPG/cards/nonDeck/objective/objectives_letThemGo.jpg',
+        faceUp: true
+    },
+    {
+        id: 'objective_oneLastJob',
+        name: 'One Last Job',
+        type: 'objective',
+        imageUrl: 'assets/JPG/cards/nonDeck/objective/objectives_oneLastJob.jpg',
+        faceUp: true
+    },
+    {
+        id: 'objective_raceTheEclipse',
+        name: 'Race The Eclipse',
+        type: 'objective',
+        imageUrl: 'assets/JPG/cards/nonDeck/objective/objectives_raceTheEclipse.jpg',
+        faceUp: true
+    },
+    {
+        id: 'objective_ransom',
+        name: 'Ransom',
+        type: 'objective',
+        imageUrl: 'assets/JPG/cards/nonDeck/objective/objectives_ransom.jpg',
+        faceUp: true
+    },
+    {
+        id: 'objective_realWorld',
+        name: 'Real World',
+        type: 'objective',
+        imageUrl: 'assets/JPG/cards/nonDeck/objective/objectives_realWorld.jpg',
+        faceUp: true
+    },
+    {
+        id: 'objective_rescue',
+        name: 'Rescue',
+        type: 'objective',
+        imageUrl: 'assets/JPG/cards/nonDeck/objective/objectives_rescue.jpg',
+        faceUp: true
+    },
+    {
+        id: 'objective_sayGoodbye',
+        name: 'Say Goodbye',
+        type: 'objective',
+        imageUrl: 'assets/JPG/cards/nonDeck/objective/objectives_sayGoodbye.jpg',
+        faceUp: true
+    },
+    {
+        id: 'objective_sealThePact',
+        name: 'Seal The Pact',
+        type: 'objective',
+        imageUrl: 'assets/JPG/cards/nonDeck/objective/objectives_sealThePact.jpg',
+        faceUp: true
+    },
+    {
+        id: 'objective_severTheSource',
+        name: 'Sever The Source',
+        type: 'objective',
+        imageUrl: 'assets/JPG/cards/nonDeck/objective/objectives_severTheSource.jpg',
+        faceUp: true
+    },
+    {
+        id: 'objective_smotherTheSpark',
+        name: 'Smother The Spark',
+        type: 'objective',
+        imageUrl: 'assets/JPG/cards/nonDeck/objective/objectives_smotherTheSpark.jpg',
+        faceUp: true
+    },
+    {
+        id: 'objective_trackThePredator',
+        name: 'Track The Predator',
+        type: 'objective',
+        imageUrl: 'assets/JPG/cards/nonDeck/objective/objectives_trackThePredator.jpg',
+        faceUp: true
+    }
+];
+
+// Deck cards by type - UPDATED to include all 98 cards
+const DECK_CARDS = {
+    // Monster cards - 12 cards
+    monster: [
+        {
+            id: 'monster_ashenWalker',
+            name: 'Ashen Walker',
+            type: 'monster',
+            imageUrl: 'assets/JPG/cards/deck/monster/monsters_ashenWalker.jpg',
+            faceUp: false
+        },
+        {
+            id: 'monster_blackEyedKid',
+            name: 'Black Eyed Kid',
+            type: 'monster',
+            imageUrl: 'assets/JPG/cards/deck/monster/monsters_blackEyedKid.jpg',
+            faceUp: false
+        },
+        {
+            id: 'monster_boneReaper',
+            name: 'Bone Reaper',
+            type: 'monster',
+            imageUrl: 'assets/JPG/cards/deck/monster/monsters_boneReaper.jpg',
+            faceUp: false
+        },
+        {
+            id: 'monster_carnivalCreep',
+            name: 'Carnival Creep',
+            type: 'monster',
+            imageUrl: 'assets/JPG/cards/deck/monster/monsters_carnivalCreep.jpg',
+            faceUp: false
+        },
+        {
+            id: 'monster_draugr',
+            name: 'Draugr',
+            type: 'monster',
+            imageUrl: 'assets/JPG/cards/deck/monster/monsters_draugr.jpg',
+            faceUp: false
+        },
+        {
+            id: 'monster_gargoyle',
+            name: 'Gargoyle',
+            type: 'monster',
+            imageUrl: 'assets/JPG/cards/deck/monster/monsters_gargolye.jpg',
+            faceUp: false
+        },
+        {
+            id: 'monster_ghoul',
+            name: 'Ghoul',
+            type: 'monster',
+            imageUrl: 'assets/JPG/cards/deck/monster/monsters_ghoul.jpg',
+            faceUp: false
+        },
+        {
+            id: 'monster_manafuro',
+            name: 'Manafuro',
+            type: 'monster',
+            imageUrl: 'assets/JPG/cards/deck/monster/monsters_manafuro.jpg',
+            faceUp: false
+        },
+        {
+            id: 'monster_polterGeist',
+            name: 'Polter Geist',
+            type: 'monster',
+            imageUrl: 'assets/JPG/cards/deck/monster/monsters_polterGeist.jpg',
+            faceUp: false
+        },
+        {
+            id: 'monster_shadowWraith',
+            name: 'Shadow Wraith',
+            type: 'monster',
+            imageUrl: 'assets/JPG/cards/deck/monster/monsters_shadowWraith.jpg',
+            faceUp: false
+        },
+        {
+            id: 'monster_urbanChimera1',
+            name: 'Urban Chimera',
+            type: 'monster',
+            imageUrl: 'assets/JPG/cards/deck/monster/monsters_urbanChimera.jpg',
+            faceUp: false
+        },
+        {
+            id: 'monster_urbanChimera2',
+            name: 'Urban Chimera',
+            type: 'monster',
+            imageUrl: 'assets/JPG/cards/deck/monster/monsters_urbanChimera copy 2.jpg',
+            faceUp: false
+        }
+    ],
+    
+    // Item cards - 32 cards
+    item: [
+        {
+            id: 'item_amberSin',
+            name: 'Amber Sin',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_amberSin.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_atlantianDisc',
+            name: 'Atlantian Disc',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_atlantianDisc.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_blackGuitar',
+            name: 'Black Guitar',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_blackGuitar.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_bloodCandle',
+            name: 'Blood Candle',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_bloodCandle.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_bottomlessBag',
+            name: 'Bottomless Bag',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_bottomlessBag.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_chainsOfTheBound',
+            name: 'Chains Of The Bound',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_chainsOfTheBound.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_charcoalPendant',
+            name: 'Charcoal Pendant',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_charcoalPendant.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_curatorsNotebook',
+            name: 'Curators Notebook',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_curatorsNotebook.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_cursedMobile',
+            name: 'Cursed Mobile',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_cursedMobile.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_devilsContract',
+            name: 'Devils Contract',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_devilsContract.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_diabloSauce',
+            name: 'Diablo Sauce',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_diabloSauce.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_dragonBoots',
+            name: 'Dragon Boots',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_dragonBoots.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_enchantedMap',
+            name: 'Enchanted Map',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_enchantedMap.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_ghoulPie',
+            name: 'Ghoul Pie',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_ghoulPie.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_gildedCross',
+            name: 'Gilded Cross',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_gildedCross.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_graveSpade',
+            name: 'Grave Spade',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_graveSpade.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_heartOfStone',
+            name: 'Heart Of Stone',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_heartOfStone.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_hollowCoin',
+            name: 'Hollow Coin',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_hollowCoin.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_huntersPal',
+            name: 'Hunters Pal',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_huntersPal.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_marinersFlask',
+            name: 'Mariners Flask',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_marinersFlask.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_oracle8Ball',
+            name: 'Oracle 8 Ball',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_oracle8Ball.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_ravenCup',
+            name: 'Raven Cup',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_ravenCup.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_ricetteDiFamiglia',
+            name: 'Ricette Di Famiglia',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_ricetteDiFamiglia.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_saltTin',
+            name: 'Salt Tin',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_saltTin.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_shadowCloak',
+            name: 'Shadow Cloak',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_shadowCloak.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_silverSpoon',
+            name: 'Silver Spoon',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_silverSpoon.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_spiritFlask',
+            name: 'Spirit Flask',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_spiritFlask.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_theEidolon',
+            name: 'The Eidolon',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_theEidolon.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_theGodSpike',
+            name: 'The God Spike',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_theGodSpike.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_trustyLighter',
+            name: 'Trusty Lighter',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_trustyLighter.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_vampireKey',
+            name: 'Vampire Key',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_vampireKey.jpg',
+            faceUp: false
+        },
+        {
+            id: 'item_viceDice',
+            name: 'Vice Dice',
+            type: 'item',
+            imageUrl: 'assets/JPG/cards/deck/item/items_viceDice.jpg',
+            faceUp: false
+        }
+    ],
+    
+    // Location cards - 21 cards
+    location: [
+        {
+            id: 'location_4thStreetForge',
+            name: '4th Street Forge',
+            type: 'location',
+            imageUrl: 'assets/JPG/cards/deck/location/locations_4thStreetForge.jpg',
+            faceUp: false
+        },
+        {
+            id: 'location_bloodedBathHouse',
+            name: 'Blooded Bath House',
+            type: 'location',
+            imageUrl: 'assets/JPG/cards/deck/location/locations_bloodedBathHouse.jpg',
+            faceUp: false
+        },
+        {
+            id: 'location_crimsonHall',
+            name: 'Crimson Hall',
+            type: 'location',
+            imageUrl: 'assets/JPG/cards/deck/location/locations_crimsonHall.jpg',
+            faceUp: false
+        },
+        {
+            id: 'location_crossroadStation',
+            name: 'Crossroad Station',
+            type: 'location',
+            imageUrl: 'assets/JPG/cards/deck/location/locations_crossroadStation.jpg',
+            faceUp: false
+        },
+        {
+            id: 'location_darkBazaar',
+            name: 'Dark Bazaar',
+            type: 'location',
+            imageUrl: 'assets/JPG/cards/deck/location/locations_darkBazaar.jpg',
+            faceUp: false
+        },
+        {
+            id: 'location_echoingAlley',
+            name: 'Echoing Alley',
+            type: 'location',
+            imageUrl: 'assets/JPG/cards/deck/location/locations_echoingAlley.jpg',
+            faceUp: false
+        },
+        {
+            id: 'location_forgottenAltar',
+            name: 'Forgotten Altar',
+            type: 'location',
+            imageUrl: 'assets/JPG/cards/deck/location/locations_forgottenAltar.jpg',
+            faceUp: false
+        },
+        {
+            id: 'location_goldenArchive',
+            name: 'Golden Archive',
+            type: 'location',
+            imageUrl: 'assets/JPG/cards/deck/location/locations_goldenArchive.jpg',
+            faceUp: false
+        },
+        {
+            id: 'location_grandeRoma',
+            name: 'Grande Roma',
+            type: 'location',
+            imageUrl: 'assets/JPG/cards/deck/location/locations_grandeRoma.jpg',
+            faceUp: false
+        },
+        {
+            id: 'location_hopeSanitarium',
+            name: 'Hope Sanitarium',
+            type: 'location',
+            imageUrl: 'assets/JPG/cards/deck/location/locations_hopeSanitarium.jpg',
+            faceUp: false
+        },
+        {
+            id: 'location_legendsHospital',
+            name: 'Legends Hospital',
+            type: 'location',
+            imageUrl: 'assets/JPG/cards/deck/location/locations_legendsHospital.jpg',
+            faceUp: false
+        },
+        {
+            id: 'location_monarchsCourt',
+            name: 'Monarchs Court',
+            type: 'location',
+            imageUrl: 'assets/JPG/cards/deck/location/locations_monarchsCourt.jpg',
+            faceUp: false
+        },
+        {
+            id: 'location_neonGraveyard',
+            name: 'Neon Graveyard',
+            type: 'location',
+            imageUrl: 'assets/JPG/cards/deck/location/locations_neonGraveyard.jpg',
+            faceUp: false
+        },
+        {
+            id: 'location_newPartyPub',
+            name: 'New Party Pub',
+            type: 'location',
+            imageUrl: 'assets/JPG/cards/deck/location/locations_newPartyPub.jpg',
+            faceUp: false
+        },
+        {
+            id: 'location_oracleAvenue',
+            name: 'Oracle Avenue',
+            type: 'location',
+            imageUrl: 'assets/JPG/cards/deck/location/locations_oracleAvenue.jpg',
+            faceUp: false
+        },
+        {
+            id: 'location_rustedFairground',
+            name: 'Rusted Fairground',
+            type: 'location',
+            imageUrl: 'assets/JPG/cards/deck/location/locations_rustedFairground.jpg',
+            faceUp: false
+        },
+        {
+            id: 'location_thePhantomLine',
+            name: 'The Phantom Line',
+            type: 'location',
+            imageUrl: 'assets/JPG/cards/deck/location/locations_thePhantomLine.jpg',
+            faceUp: false
+        },
+        {
+            id: 'location_unseelieGarden',
+            name: 'Unseelie Garden',
+            type: 'location',
+            imageUrl: 'assets/JPG/cards/deck/location/locations_unseelieGarden.jpg',
+            faceUp: false
+        },
+        {
+            id: 'location_veinousOssuary',
+            name: 'Veinous Ossuary',
+            type: 'location',
+            imageUrl: 'assets/JPG/cards/deck/location/locations_veinousOssuary.jpg',
+            faceUp: false
+        },
+        {
+            id: 'location_wholeGrocer',
+            name: 'Whole Grocer',
+            type: 'location',
+            imageUrl: 'assets/JPG/cards/deck/location/locations_wholeGrocer.jpg',
+            faceUp: false
+        },
+        {
+            id: 'location_wickedBrew',
+            name: 'Wicked Brew',
+            type: 'location',
+            imageUrl: 'assets/JPG/cards/deck/location/locations_wickedBrew.jpg',
+            faceUp: false
+        }
+    ],
+    
+    // NPC cards - 21 cards
+    NPC: [
+        {
+            id: 'npc_daddysLilPrincess',
+            name: 'Daddy\'s Lil Princess',
+            type: 'NPC',
+            imageUrl: 'assets/JPG/cards/deck/NPC/NPCs_daddysLilPrincess.jpg',
+            faceUp: false
+        },
+        {
+            id: 'npc_dreamingGirl',
+            name: 'Dreaming Girl',
+            type: 'NPC',
+            imageUrl: 'assets/JPG/cards/deck/NPC/NPCs_dreamingGirl.jpg',
+            faceUp: false
+        },
+        {
+            id: 'npc_enigmaticTraveler',
+            name: 'Enigmatic Traveler',
+            type: 'NPC',
+            imageUrl: 'assets/JPG/cards/deck/NPC/NPCs_enigmaticTraveler.jpg',
+            faceUp: false
+        },
+        {
+            id: 'npc_exploitedDancer',
+            name: 'Exploited Dancer',
+            type: 'NPC',
+            imageUrl: 'assets/JPG/cards/deck/NPC/NPCs_exploitedDancer.jpg',
+            faceUp: false
+        },
+        {
+            id: 'npc_fence',
+            name: 'Fence',
+            type: 'NPC',
+            imageUrl: 'assets/JPG/cards/deck/NPC/NPCs_fence.jpg',
+            faceUp: false
+        },
+        {
+            id: 'npc_formerLarper',
+            name: 'Former Larper',
+            type: 'NPC',
+            imageUrl: 'assets/JPG/cards/deck/NPC/NPCs_formerLarper.jpg',
+            faceUp: false
+        },
+        {
+            id: 'npc_influentialHipster',
+            name: 'Influential Hipster',
+            type: 'NPC',
+            imageUrl: 'assets/JPG/cards/deck/NPC/NPCs_influentialHipster.jpg',
+            faceUp: false
+        },
+        {
+            id: 'npc_loveInterest',
+            name: 'Love Interest',
+            type: 'NPC',
+            imageUrl: 'assets/JPG/cards/deck/NPC/NPCs_loveInterest.jpg',
+            faceUp: false
+        },
+        {
+            id: 'npc_lushwithaStory',
+            name: 'Lush with a Story',
+            type: 'NPC',
+            imageUrl: 'assets/JPG/cards/deck/NPC/NPCs_lushwithaStory.jpg',
+            faceUp: false
+        },
+        {
+            id: 'npc_mercenary',
+            name: 'Mercenary',
+            type: 'NPC',
+            imageUrl: 'assets/JPG/cards/deck/NPC/NPCs_mercenary.jpg',
+            faceUp: false
+        },
+        {
+            id: 'npc_officeBurearat',
+            name: 'Office Burearat',
+            type: 'NPC',
+            imageUrl: 'assets/JPG/cards/deck/NPC/NPCs_officeBurearat.jpg',
+            faceUp: false
+        },
+        {
+            id: 'npc_pensiveNoble',
+            name: 'Pensive Noble',
+            type: 'NPC',
+            imageUrl: 'assets/JPG/cards/deck/NPC/NPCs_pensiveNoble.jpg',
+            faceUp: false
+        },
+        {
+            id: 'npc_seelieHouseServant',
+            name: 'Seelie House Servant',
+            type: 'NPC',
+            imageUrl: 'assets/JPG/cards/deck/NPC/NPCs_seelieHouseServant.jpg',
+            faceUp: false
+        },
+        {
+            id: 'npc_sexyJournalist',
+            name: 'Sexy Journalist',
+            type: 'NPC',
+            imageUrl: 'assets/JPG/cards/deck/NPC/NPCs_sexyJournalist.jpg',
+            faceUp: false
+        },
+        {
+            id: 'npc_sexyMechanic',
+            name: 'Sexy Mechanic',
+            type: 'NPC',
+            imageUrl: 'assets/JPG/cards/deck/NPC/NPCs_sexyMechanic.jpg',
+            faceUp: false
+        },
+        {
+            id: 'npc_smuggler',
+            name: 'Smuggler',
+            type: 'NPC',
+            imageUrl: 'assets/JPG/cards/deck/NPC/NPCs_smuggler.jpg',
+            faceUp: false
+        },
+        {
+            id: 'npc_snarkyShifter',
+            name: 'Snarky Shifter',
+            type: 'NPC',
+            imageUrl: 'assets/JPG/cards/deck/NPC/NPCs_snarkyShifter.jpg',
+            faceUp: false
+        },
+        {
+            id: 'npc_transitOracle',
+            name: 'Transit Oracle',
+            type: 'NPC',
+            imageUrl: 'assets/JPG/cards/deck/NPC/NPCs_transitOracle.jpg',
+            faceUp: false
+        },
+        {
+            id: 'npc_undeadCop',
+            name: 'Undead Cop',
+            type: 'NPC',
+            imageUrl: 'assets/JPG/cards/deck/NPC/NPCs_undeadCop.jpg',
+            faceUp: false
+        },
+        {
+            id: 'npc_upperWestLady',
+            name: 'Upper West Lady',
+            type: 'NPC',
+            imageUrl: 'assets/JPG/cards/deck/NPC/NPCs_upperWestLady.jpg',
+            faceUp: false
+        },
+        {
+            id: 'npc_zombieCoroner',
+            name: 'Zombie Coroner',
+            type: 'NPC',
+            imageUrl: 'assets/JPG/cards/deck/NPC/NPCs_zombieCoroner.jpg',
+            faceUp: false
+        }
+    ],
+    
+    // Spell cards - 12 cards
+    spell: [
+        {
+            id: 'spell_bagTrance',
+            name: 'Bag Trance',
+            type: 'spell',
+            imageUrl: 'assets/JPG/cards/deck/spell/spells_bagTrance.jpg',
+            faceUp: false
+        },
+        {
+            id: 'spell_borrowVisage',
+            name: 'Borrow Visage',
+            type: 'spell',
+            imageUrl: 'assets/JPG/cards/deck/spell/spells_borrowVisage.jpg',
+            faceUp: false
+        },
+        {
+            id: 'spell_ghostWalk',
+            name: 'Ghost Walk',
+            type: 'spell',
+            imageUrl: 'assets/JPG/cards/deck/spell/spells_ghostWalk.jpg',
+            faceUp: false
+        },
+        {
+            id: 'spell_hungerHex',
+            name: 'Hunger Hex',
+            type: 'spell',
+            imageUrl: 'assets/JPG/cards/deck/spell/spells_hungerHex.jpg',
+            faceUp: false
+        },
+        {
+            id: 'spell_marionette',
+            name: 'Marionette',
+            type: 'spell',
+            imageUrl: 'assets/JPG/cards/deck/spell/spells_marionette.jpg',
+            faceUp: false
+        },
+        {
+            id: 'spell_mirrorSnap',
+            name: 'Mirror Snap',
+            type: 'spell',
+            imageUrl: 'assets/JPG/cards/deck/spell/spells_mirrorSnap.jpg',
+            faceUp: false
+        },
+        {
+            id: 'spell_mothLight',
+            name: 'Moth Light',
+            type: 'spell',
+            imageUrl: 'assets/JPG/cards/deck/spell/spells_mothLight.jpg',
+            faceUp: false
+        },
+        {
+            id: 'spell_redTether',
+            name: 'Red Tether',
+            type: 'spell',
+            imageUrl: 'assets/JPG/cards/deck/spell/spells_redTether.jpg',
+            faceUp: false
+        },
+        {
+            id: 'spell_sociopathicMutter',
+            name: 'Sociopathic Mutter',
+            type: 'spell',
+            imageUrl: 'assets/JPG/cards/deck/spell/spells_sociopathicMutter.jpg',
+            faceUp: false
+        },
+        {
+            id: 'spell_stitchLight',
+            name: 'Stitch Light',
+            type: 'spell',
+            imageUrl: 'assets/JPG/cards/deck/spell/spells_stitchLight.jpg',
+            faceUp: false
+        },
+        {
+            id: 'spell_stoneBreath',
+            name: 'Stone Breath',
+            type: 'spell',
+            imageUrl: 'assets/JPG/cards/deck/spell/spells_stoneBreath.jpg',
+            faceUp: false
+        },
+        {
+            id: 'spell_wallFlower',
+            name: 'Wall Flower',
+            type: 'spell',
+            imageUrl: 'assets/JPG/cards/deck/spell/spells_wallFlower.jpg',
+            faceUp: false
+        }
+    ]
+};
+
+// Function to test loading an image
+function preloadImage(url) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(true);
+        img.onerror = () => {
+            console.error(`Failed to load image: ${url}`);
+            reject(new Error(`Failed to load image: ${url}`));
+        };
+        img.src = url;
+    });
+}
+
+// Function to load card data from a JSON file
+async function loadCardDataFromJson() {
+    try {
+        // Fetch card data from a JSON file
+        const response = await fetch('assets/card-data.json');
+        if (!response.ok) {
+            throw new Error(`Failed to load card data: ${response.status} ${response.statusText}`);
+        }
+        
+        // Parse the JSON response
+        const data = await response.json();
+        
+        // Return the card data
+        return data;
+    } catch (error) {
+        console.error('Error loading card data from JSON:', error);
+        
+        // If there's an error loading from JSON, fall back to hardcoded data
+        console.log('Falling back to hardcoded card data');
+        return {
+            deck: DECK_CARDS,
+            nonDeck: {
+                character: CHARACTER_CARDS,
+                objective: OBJECTIVE_CARDS
+            }
+        };
+    }
+}
+
+// Modified function to load all cards using the JSON data
+async function loadAllCards() {
+    const allCardData = {
+        deck: {},
+        nonDeck: {}
+    };
+    
+    // Initialize card data structure for each type
+    Object.values(CARD_TYPES).forEach(type => {
+        allCardData.deck[type] = [];
+    });
+    
+    // Initialize non-deck card data structure
+    Object.values(NON_DECK_TYPES).forEach(type => {
+        allCardData.nonDeck[type] = [];
+    });
+    
+    try {
+        // Verify card back exists first - this is critical
+        try {
+            await preloadImage(CARD_BACK_PATH);
+            console.log('Card back verified: ', CARD_BACK_PATH);
+        } catch (error) {
+            console.error('Card back not found! This is a critical error.', error);
+            throw new Error('Card back not found at ' + CARD_BACK_PATH);
+        }
+        
+        // Try to load card data from JSON
+        const jsonCardData = await loadCardDataFromJson();
+        
+        // If we have JSON data, use it
+        if (jsonCardData) {
+            console.log('Successfully loaded card data from JSON');
+            
+            // Load character cards
+            if (jsonCardData.nonDeck && jsonCardData.nonDeck.character) {
+                allCardData.nonDeck[NON_DECK_TYPES.CHARACTER] = [...jsonCardData.nonDeck.character];
+            } else {
+                // Fall back to hardcoded character cards
+                allCardData.nonDeck[NON_DECK_TYPES.CHARACTER] = [...CHARACTER_CARDS];
+            }
+            
+            // Load objective cards
+            if (jsonCardData.nonDeck && jsonCardData.nonDeck.objective) {
+                allCardData.nonDeck[NON_DECK_TYPES.OBJECTIVE] = [...jsonCardData.nonDeck.objective];
+            } else {
+                // Fall back to hardcoded objective cards
+                allCardData.nonDeck[NON_DECK_TYPES.OBJECTIVE] = [...OBJECTIVE_CARDS];
+            }
+            
+            // Load deck cards
+            if (jsonCardData.deck) {
+                Object.entries(jsonCardData.deck).forEach(([type, cards]) => {
+                    if (allCardData.deck[type]) {
+                        allCardData.deck[type] = [...cards];
+                    }
+                });
+            } else {
+                // Fall back to hardcoded deck cards
+                Object.entries(DECK_CARDS).forEach(([type, cards]) => {
+                    allCardData.deck[type] = [...cards];
+                });
+            }
+        } else {
+            // Fall back to hardcoded data if JSON loading failed
+            allCardData.nonDeck[NON_DECK_TYPES.CHARACTER] = [...CHARACTER_CARDS];
+            allCardData.nonDeck[NON_DECK_TYPES.OBJECTIVE] = [...OBJECTIVE_CARDS];
+            
+            Object.entries(DECK_CARDS).forEach(([type, cards]) => {
+                allCardData.deck[type] = [...cards];
+            });
+        }
+        
+        // Update card data object with card back path
+        cardData.cardBacks = {
+            small: CARD_BACK_PATH,
+            large: CARD_BACK_PATH
+        };
+        
+    } catch (error) {
+        console.error('Error loading cards:', error);
+        
+        // Fall back to hardcoded data if there was an error
+        allCardData.nonDeck[NON_DECK_TYPES.CHARACTER] = [...CHARACTER_CARDS];
+        allCardData.nonDeck[NON_DECK_TYPES.OBJECTIVE] = [...OBJECTIVE_CARDS];
+        
+        Object.entries(DECK_CARDS).forEach(([type, cards]) => {
+            allCardData.deck[type] = [...cards];
+        });
+    }
+    
+    return allCardData;
+}
+
+// Function to initialize all decks with loaded cards
+async function initializeDecks() {
+    // Show loading indicator
+    const gameBoard = document.getElementById('gameBoard');
+    const loadingDiv = document.createElement('div');
+    loadingDiv.id = 'loading-indicator';
+    loadingDiv.style.position = 'absolute';
+    loadingDiv.style.top = '50%';
+    loadingDiv.style.left = '50%';
+    loadingDiv.style.transform = 'translate(-50%, -50%)';
+    loadingDiv.style.padding = '20px';
+    loadingDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    loadingDiv.style.color = 'white';
+    loadingDiv.style.borderRadius = '10px';
+    loadingDiv.style.zIndex = '1000';
+    loadingDiv.style.textAlign = 'center';
+    loadingDiv.style.maxHeight = '80vh';
+    loadingDiv.style.overflowY = 'auto';
+    loadingDiv.innerHTML = '<h2>Loading Cards...</h2><p>Please wait while we load high-resolution cards</p>';
+    gameBoard.appendChild(loadingDiv);
+    
+    // Create a debug button to show all image paths for verification
+    const debugBtn = document.createElement('button');
+    debugBtn.textContent = 'Debug Images';
+    debugBtn.style.marginTop = '10px';
+    debugBtn.style.padding = '5px 10px';
+    debugBtn.style.borderRadius = '5px';
+    debugBtn.onclick = function() {
+        showImageDebugWindow();
+    };
+    loadingDiv.appendChild(debugBtn);
+    
+    function updateLoadingStatus(message) {
+        const statusElement = document.createElement('p');
+        statusElement.textContent = message;
+        loadingDiv.appendChild(statusElement);
+    }
+    
+    try {
+        updateLoadingStatus('Loading card data...');
+        const loadedCards = await loadAllCards();
+        
+        if (!loadedCards) {
+            updateLoadingStatus('Error: No card data loaded');
+            return false;
+        }
+        
+        // Store character cards in cardData for easier access
+        cardData.characterCards = loadedCards.nonDeck[NON_DECK_TYPES.CHARACTER] || [];
+        updateLoadingStatus(`Loaded ${cardData.characterCards ? cardData.characterCards.length : 0} character cards`);
+        
+        // Store objective cards in cardData for easier access
+        cardData.objectiveCards = loadedCards.nonDeck[NON_DECK_TYPES.OBJECTIVE] || [];
+        updateLoadingStatus(`Loaded ${cardData.objectiveCards ? cardData.objectiveCards.length : 0} objective cards`);
+        
+        // Get the selected alt deck card types 
+        const altDeckTypes = gameState.altDeckTypes || getSelectedAltDeckTypes();
+        updateLoadingStatus(`Using alt deck configuration: ${altDeckTypes.join(', ')}`);
+        
+        // Store alt deck configuration in game state
+        if (!gameState) {
+            gameState = { altDeckTypes };
+        } else {
+            gameState.altDeckTypes = altDeckTypes;
+        }
+        
+        // Initialize main deck and alt deck
+        mainDeck = [];
+        altDeck = [];
+        
+        // Track card counts for reporting
+        const deckCounts = {
+            main: {},
+            alt: {}
+        };
+        
+        // Process each card type
+        Object.entries(loadedCards.deck).forEach(([type, cards]) => {
+            if (cards && cards.length > 0) {
+                // Make type lowercase for consistent comparison
+                const lowercaseType = type.toLowerCase();
+                
+                // Check if this card type should go in the alt deck
+                if (altDeckTypes.includes(lowercaseType)) {
+                    updateLoadingStatus(`Adding ${cards.length} ${type} cards to the alt deck`);
+                    // Add to alt deck
+                    altDeck.push(...cards.map(card => ({...card, faceUp: false})));
+                    
+                    // Track count
+                    deckCounts.alt[type] = cards.length;
+                } else {
+                    updateLoadingStatus(`Adding ${cards.length} ${type} cards to the main deck`);
+                    // Add to main deck
+                    mainDeck.push(...cards.map(card => ({...card, faceUp: false})));
+                    
+                    // Track count
+                    deckCounts.main[type] = cards.length;
+                }
+            }
+        });
+        
+        // Add objective cards to alt deck if selected
+        if (altDeckTypes.includes('objective') && cardData.objectiveCards) {
+            updateLoadingStatus(`Adding ${cardData.objectiveCards.length} objective cards to the alt deck`);
+            altDeck.push(...cardData.objectiveCards.map(card => ({...card, faceUp: false})));
+            deckCounts.alt['objective'] = cardData.objectiveCards.length;
+        }
+        
+        // Display counts
+        updateLoadingStatus('Card distribution:');
+        Object.entries(deckCounts.main).forEach(([type, count]) => {
+            updateLoadingStatus(`Main deck - ${type}: ${count} cards`);
+        });
+        Object.entries(deckCounts.alt).forEach(([type, count]) => {
+            updateLoadingStatus(`Alt deck - ${type}: ${count} cards`);
+        });
+        
+        // If main deck is empty, use emergency placeholders
+        if (mainDeck.length === 0) {
+        }
+        
+        // If main deck is empty, use emergency placeholders
+        if (mainDeck.length === 0) {
+            updateLoadingStatus('No cards loaded for main deck, using emergency placeholders');
+            mainDeck = createTestDeck();
+            updateLoadingStatus(`Created emergency deck with ${mainDeck.length} placeholder cards`);
+        }
+        
+        // Shuffle both decks
+        updateLoadingStatus(`Shuffling main deck with ${mainDeck.length} cards`);
+        shuffleArray(mainDeck);
+        
+        if (altDeck.length > 0) {
+            updateLoadingStatus(`Shuffling alt deck with ${altDeck.length} cards`);
+            shuffleArray(altDeck);
+        }
+        
+        // Update the display
+        renderMainDeck();
+        renderMainDiscard();
+        
+        // Render alt deck if there are cards
+        if (altDeck.length > 0) {
+            updateLoadingStatus(`Rendering alt deck with ${altDeck.length} cards`);
+            renderAltDeck();
+            renderAltDiscard();
+            
+            // Set up alt deck event listeners
+            initializeAltDeckEventListeners();
+        }
+        
+        updateLoadingStatus(`Decks initialized: Main(${mainDeck.length}), Alt(${altDeck.length})`);
+        
+        // Remove loading indicator after a short delay
+        setTimeout(() => {
+            loadingDiv.remove();
+        }, 2000);
+        
+        return mainDeck.length > 0;
+    } catch (error) {
+        console.error('Error initializing decks:', error);
+        updateLoadingStatus(`Error: ${error.message}`);
+        
+        // Fallback to emergency placeholders
+        updateLoadingStatus('Using emergency placeholders due to error');
+        mainDeck = createTestDeck();
+        updateLoadingStatus(`Created emergency deck with ${mainDeck.length} placeholder cards`);
+        renderMainDeck();
+        renderMainDiscard();
+        
+        // Show error in loading indicator
+        updateLoadingStatus('ERROR: Could not load card assets');
+        updateLoadingStatus('Check browser console for details');
+        
+        // Keep debug button available but hide other info after a delay
+        setTimeout(() => {
+            while (loadingDiv.firstChild) {
+                if (loadingDiv.firstChild === debugBtn) {
+                    break;
+                }
+                loadingDiv.removeChild(loadingDiv.firstChild);
+            }
+            loadingDiv.innerHTML = '<h3>Card Loading Error</h3><p>Click Debug Images to troubleshoot</p>';
+            loadingDiv.appendChild(debugBtn);
+        }, 5000);
+        
+        return true; // Return true to continue game initialization
+    }
+}
+
+// Render alt deck
+function renderAltDeck() {
+    const deckElement = document.getElementById('altDeck');
+    if (!deckElement) {
+        console.error('Alt deck element not found');
+        return;
+    }
+    
+    deckElement.innerHTML = '';
+    
+    // Add deck count indicator
+    const deckCount = document.createElement('div');
+    deckCount.className = 'deck-count';
+    deckCount.textContent = altDeck.length;
+    deckElement.appendChild(deckCount);
+    
+    // Only create a clickable deck card if there are cards in the deck
+    if (altDeck.length > 0) {
+        // Create a draggable container for the top card
+        const deckCardContainer = document.createElement('div');
+        deckCardContainer.className = 'deck-card-container';
+        deckCardContainer.draggable = true;
+        deckCardContainer.dataset.fromAltDeck = 'true';
+        
+        // Add card images (back is shown by default)
+        const cardBack = document.createElement('img');
+        cardBack.className = 'deck-card-back';
+        cardBack.src = cardData.cardBacks.small;
+        cardBack.alt = 'Card Back';
+        deckCardContainer.appendChild(cardBack);
+        
+        // Add the top card's front image (hidden by default)
+        const topCard = altDeck[0];
+        if (topCard) {
+            const cardFront = document.createElement('img');
+            cardFront.className = 'deck-card-front';
+            cardFront.src = topCard.imageUrl || createPlaceholderSVG(topCard.name, topCard.type);
+            cardFront.alt = topCard.name;
+            cardFront.style.display = 'none'; // Hide front by default
+            deckCardContainer.appendChild(cardFront);
+            
+            // Store the card ID on the container
+            deckCardContainer.dataset.cardId = topCard.id;
+        }
+        
+        // Add click event for flipping the top card
+        deckCardContainer.addEventListener('dblclick', function(e) {
+            e.stopPropagation();
+            const cardFront = this.querySelector('.deck-card-front');
+            const cardBack = this.querySelector('.deck-card-back');
+            
+            if (cardFront && cardBack) {
+                // Toggle visibility of front and back
+                if (cardFront.style.display === 'none') {
+                    cardFront.style.display = 'block';
+                    cardBack.style.display = 'none';
+                    // Update the card in the deck to be face up
+                    if (altDeck.length > 0) {
+                        altDeck[0].faceUp = true;
+                    }
+                } else {
+                    cardFront.style.display = 'none';
+                    cardBack.style.display = 'block';
+                    // Update the card in the deck to be face down
+                    if (altDeck.length > 0) {
+                        altDeck[0].faceUp = false;
+                    }
+                }
+            }
+        });
+        
+        // Add drag event for dragging the top card
+        deckCardContainer.addEventListener('dragstart', function(e) {
+            e.stopPropagation();
+            this.classList.add('dragging');
+            draggedCard = this;
+        });
+        
+        deckCardContainer.addEventListener('dragend', function(e) {
+            e.stopPropagation();
+            this.classList.remove('dragging');
+            draggedCard = null;
+        });
+        
+        deckElement.appendChild(deckCardContainer);
+    } else {
+        // Empty deck indicator
+        const emptyIndicator = document.createElement('div');
+        emptyIndicator.className = 'empty-deck';
+        emptyIndicator.textContent = 'Empty';
+        emptyIndicator.style.color = '#888';
+        emptyIndicator.style.fontSize = '12px';
+        emptyIndicator.style.position = 'absolute';
+        emptyIndicator.style.top = '50%';
+        emptyIndicator.style.left = '50%';
+        emptyIndicator.style.transform = 'translate(-50%, -50%)';
+        deckElement.appendChild(emptyIndicator);
+    }
+    
+    // Function to create placeholder SVG for missing cards
+    function createPlaceholderSVG(cardName, cardType) {
+        const colors = {
+            'monster': '#d35f5f',
+            'spell': '#5f5fd3',
+            'item': '#5fd35f',
+            'location': '#d3aa5f',
+            'NPC': '#aa5fd3',
+            'character': '#e5a619',
+            'objective': '#19e5e5'
+        };
+        const color = colors[cardType] || '#5a5a5a';
+        
+        return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="144" viewBox="0 0 80 144"><rect width="100%" height="100%" fill="${color}"/><text x="50%" y="30%" font-family="Arial" font-size="10" fill="white" text-anchor="middle" dominant-baseline="middle">${cardType.toUpperCase()}</text><text x="50%" y="50%" font-family="Arial" font-size="8" fill="white" text-anchor="middle" dominant-baseline="middle">${cardName}</text><text x="50%" y="70%" font-family="Arial" font-size="8" fill="white" text-anchor="middle" dominant-baseline="middle">IMAGE ERROR</text></svg>`;
+    }
+}
+
+// Initialize alt deck event listeners
+function initializeAltDeckEventListeners() {
+    // Get the alt deck element
+    const altDeckElement = document.getElementById('altDeck');
+    if (!altDeckElement) {
+        console.error('Alt deck element not found');
+        return;
+    }
+
+    // Make the alt deck a valid drop target
+    altDeckElement.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        this.classList.add('drag-over');
+    });
+    
+    altDeckElement.addEventListener('dragleave', function() {
+        this.classList.remove('drag-over');
+    });
+    
+    altDeckElement.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('drag-over');
+        
+        // Handle dropping a card onto the alt deck
+        if (draggedCard) {
+            const cardId = draggedCard.dataset.cardId;
+            if (cardId) {
+                // Find the card data
+                const card = findCardById(cardId);
+                if (card) {
+                    // Add to the top of the alt deck
+                    altDeck.unshift({...card, faceUp: false});
+                    
+                    // Remove the card from its original location
+                    draggedCard.remove();
+                    
+                    // Update the alt deck display
+                    renderAltDeck();
+                }
+            }
+        }
+    });
+    
+    // Add event listeners for the alt discard pile
+    const altDiscardElement = document.getElementById('altDiscard');
+    if (altDiscardElement) {
+        altDiscardElement.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        });
+        altDiscardElement.addEventListener('drop', handleAltDiscardDrop);
+    }
+}
+
+// Render alt discard pile
+function renderAltDiscard() {
+    const discardElement = document.getElementById('altDiscard');
+    if (!discardElement) return;
+    
     discardElement.innerHTML = '';
     
     // Add discard count indicator
     const discardCount = document.createElement('div');
     discardCount.className = 'deck-count';
-    discardCount.textContent = mainDiscard.length;
+    discardCount.textContent = altDiscard.length;
     discardElement.appendChild(discardCount);
     
     // Only render the top card if the discard has cards
-    if (mainDiscard.length > 0) {
-        const topCard = mainDiscard[mainDiscard.length - 1];
+    if (altDiscard.length > 0) {
+        const topCard = altDiscard[altDiscard.length - 1];
         const cardElement = createCardElement({...topCard, faceUp: true}); // Always show face-up
         cardElement.classList.add('discard-card');
         // Discard cards are always face up
         cardElement.classList.remove('face-down');
         cardElement.style.transform = 'rotateY(0deg)';
         
+        // Make the top discard card draggable
+        cardElement.setAttribute('draggable', 'true');
+        cardElement.dataset.fromAltDiscard = 'true';
+        
+        // Add drag event handlers
+        cardElement.addEventListener('dragstart', function(e) {
+            e.stopPropagation();
+            this.classList.add('dragging');
+            draggedCard = this;
+        });
+        
+        cardElement.addEventListener('dragend', function(e) {
+            e.stopPropagation();
+            this.classList.remove('dragging');
+            draggedCard = null;
+        });
+        
         discardElement.appendChild(cardElement);
+    } else {
+        // Empty discard pile
+        const emptyIndicator = document.createElement('div');
+        emptyIndicator.className = 'empty-discard';
+        emptyIndicator.textContent = 'Empty';
+        emptyIndicator.style.color = '#888';
+        emptyIndicator.style.fontSize = '12px';
+        emptyIndicator.style.position = 'absolute';
+        emptyIndicator.style.top = '50%';
+        emptyIndicator.style.left = '50%';
+        emptyIndicator.style.transform = 'translate(-50%, -50%)';
+        discardElement.appendChild(emptyIndicator);
+    }
+    
+    // Add drop event handlers
+    discardElement.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        this.classList.add('drag-over');
+    });
+    
+    discardElement.addEventListener('dragleave', function() {
+        this.classList.remove('drag-over');
+    });
+    
+    discardElement.addEventListener('drop', handleAltDiscardDrop);
+}
+
+// Handle dropping cards onto the alt discard pile
+function handleAltDiscardDrop(event) {
+    event.preventDefault();
+    event.currentTarget.classList.remove('drag-over');
+    
+    if (!draggedCard) return;
+    
+    // Check if we're dragging from the alt deck wrapper
+    if (draggedCard.dataset.fromAltDeck === 'true') {
+        // Move top card from alt deck to alt discard
+        if (altDeck.length > 0) {
+            const card = altDeck.shift();
+            card.faceUp = true; // Cards in discard are always face up
+            altDiscard.push(card);
+            
+            // Update the display
+            renderAltDeck();
+            renderAltDiscard();
+        }
+        return;
+    }
+    
+    // Check if we're dragging from the alt discard pile itself
+    if (draggedCard.dataset.fromAltDiscard === 'true') {
+        // We don't need to do anything if dragging to same pile
+        return;
+    }
+    
+    // Handle cards dragged from other places (slots, hand, etc.)
+    const cardId = draggedCard.dataset.cardId;
+    if (cardId) {
+        // Find the card data
+        let foundCard;
+        let foundInDeck = false;
+        let cardIndex = -1;
+        
+        // Search for card in all possible locations
+        // Search in player hands
+        for (let i = 0; i < playerHands.length; i++) {
+            if (playerHands[i]) {
+                cardIndex = playerHands[i].findIndex(c => c.id === cardId);
+                if (cardIndex !== -1) {
+                    foundCard = {...playerHands[i][cardIndex]};
+                    playerHands[i].splice(cardIndex, 1); // Remove from hand
+                    foundInDeck = true;
+                    break;
+                }
+            }
+        }
+        
+        // Search in main deck
+        if (!foundInDeck) {
+            cardIndex = mainDeck.findIndex(c => c.id === cardId);
+            if (cardIndex !== -1) {
+                foundCard = {...mainDeck[cardIndex]};
+                mainDeck.splice(cardIndex, 1); // Remove from deck
+                foundInDeck = true;
+            }
+        }
+        
+        // Search in alt deck
+        if (!foundInDeck) {
+            cardIndex = altDeck.findIndex(c => c.id === cardId);
+            if (cardIndex !== -1) {
+                foundCard = {...altDeck[cardIndex]};
+                altDeck.splice(cardIndex, 1); // Remove from deck
+                foundInDeck = true;
+            }
+        }
+        
+        // If card was not found in any data structure, create a new card object
+        if (!foundInDeck) {
+            // Handle emergency placeholder cards 
+            if (cardId.startsWith('emergency')) {
+                const match = cardId.match(/emergency(\d+)/);
+                if (match) {
+                    const cardNum = parseInt(match[1]);
+                    if (!isNaN(cardNum)) {
+                        // Determine card type based on number
+                        const cardType = cardNum % 5 === 0 ? 'monster' : 
+                                       cardNum % 5 === 1 ? 'spell' : 
+                                       cardNum % 5 === 2 ? 'item' : 
+                                       cardNum % 5 === 3 ? 'location' : 'NPC';
+                        
+                        // Create emergency card object
+                        foundCard = {
+                            id: cardId,
+                            name: `Placeholder ${cardType.charAt(0).toUpperCase() + cardType.slice(1)} ${cardNum}`,
+                            type: cardType
+                        };
+                    }
+                }
+            } else {
+                // Try to find the card in the other card collections
+                const allCardTypes = [...Object.keys(CARD_TYPES), ...Object.keys(NON_DECK_TYPES)];
+                for (const type of allCardTypes) {
+                    if (cardId.startsWith(type.toLowerCase() + '_')) {
+                        // Extract the card name from the ID
+                        const cardName = cardId.replace(type.toLowerCase() + '_', '');
+                        foundCard = {
+                            id: cardId,
+                            name: cardName.charAt(0).toUpperCase() + cardName.slice(1),
+                            type: type.toLowerCase()
+                        };
+                        break;
+                    }
+                }
+            }
+        }
+        
+        if (foundCard) {
+            // Ensure the card is face up in the discard pile
+            foundCard.faceUp = true;
+            
+            // Add to alt discard
+            altDiscard.push(foundCard);
+            
+            // Remove from original position
+            draggedCard.remove();
+            
+            // Update display
+            renderAltDiscard();
+        }
     }
 }
 
-// Function to validate and load card pairs
-async function loadCardPairs() {
-    const cardData = {};
+// Create test deck for fallback - only used when no real cards are found
+function createTestDeck() {
+    // Create a small number of cards just so the game can function
+    return Array.from({ length: 20 }, (_, i) => {
+        // Convert index to padded number (01-20)
+        const cardNum = String(i + 1).padStart(2, '0');
+        const cardType = i % 5 === 0 ? 'monster' : 
+                       i % 5 === 1 ? 'spell' : 
+                       i % 5 === 2 ? 'item' : 
+                       i % 5 === 3 ? 'location' : 'NPC';
+        
+        // Generate a color based on the card type
+        const colors = {
+            'monster': '#d35f5f',
+            'spell': '#5f5fd3',
+            'item': '#5fd35f',
+            'location': '#d3aa5f',
+            'NPC': '#aa5fd3'
+        };
+        const color = colors[cardType] || '#5a5a5a';
+        
+        return {
+            id: `emergency${cardNum}`,
+            type: cardType,
+            name: `Placeholder ${cardType.charAt(0).toUpperCase() + cardType.slice(1)} ${cardNum}`,
+            description: `Emergency placeholder card`,
+            // Use SVG placeholder
+            imageUrl: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="144" viewBox="0 0 80 144"><rect width="100%" height="100%" fill="${color}"/><text x="50%" y="30%" font-family="Arial" font-size="12" fill="white" text-anchor="middle" dominant-baseline="middle">PLACEHOLDER</text><text x="50%" y="50%" font-family="Arial" font-size="20" fill="white" text-anchor="middle" dominant-baseline="middle">${cardType}</text><text x="50%" y="70%" font-family="Arial" font-size="10" fill="white" text-anchor="middle" dominant-baseline="middle">EMERGENCY</text></svg>`,
+            faceUp: false
+        };
+    });
+}
+
+// Initialize the turn timer with proper controls
+function initializeTimer() {
+    const turnTimer = document.getElementById('turnTimer');
+    const toggleBtn = document.getElementById('toggleBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const timerMinutesInput = turnTimer.querySelector('#timerMinutes');
+    const timerSecondsInput = turnTimer.querySelector('#timerSeconds');
+    const setDurationBtn = document.getElementById('setDurationBtn');
     
-    // Initialize card data structure for each type
-    Object.values(CARD_TYPES).forEach(type => {
-        cardData[type] = [];
+    if (!turnTimer || !toggleBtn || !resetBtn || !setDurationBtn) {
+        console.error('Timer elements not found');
+        return;
+    }
+    
+    // Get duration from inputs or use default (2 minutes)
+    const minutes = parseInt(timerMinutesInput.value) || 2;
+    const seconds = parseInt(timerSecondsInput.value) || 0;
+    const totalSeconds = minutes * 60 + seconds;
+    
+    // Create a new timer instance
+    gameTimer = new TurnTimer('turnTimer', totalSeconds);
+    
+    // Initialize display
+    gameTimer.updateDisplay();
+    
+    // Set up toggle button
+    toggleBtn.addEventListener('click', function() {
+        if (gameTimer.isRunning) {
+            gameTimer.pause();
+        } else {
+            gameTimer.start();
+        }
     });
     
-    // Function to get all files in a directory
-    async function getFilesInDirectory(path) {
-        try {
-            const response = await fetch(path);
-            const text = await response.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(text, 'text/html');
-            return Array.from(doc.querySelectorAll('a'))
-                .map(a => a.href)
-                .filter(href => href.match(/\.(jpg|jpeg|png)$/i));
-        } catch (error) {
-            console.error(`Error reading directory ${path}:`, error);
-            return [];
+    // Set up reset button
+    resetBtn.addEventListener('click', function() {
+        gameTimer.reset();
+    });
+    
+    // Set up duration button
+    setDurationBtn.addEventListener('click', function() {
+        const newMinutes = parseInt(timerMinutesInput.value) || 0;
+        const newSeconds = parseInt(timerSecondsInput.value) || 0;
+        const newDuration = newMinutes * 60 + newSeconds;
+        
+        if (newDuration > 0) {
+            gameTimer.setDuration(newDuration);
+        } else {
+            alert('Please set a valid duration greater than 0 seconds.');
+        }
+    });
+    
+    console.log('Timer initialized with duration:', totalSeconds, 'seconds');
+}
+
+// Add a call to initialize the timer when the game starts
+function startGame() {
+    // Get selected player count
+    const playerCountSelect = document.getElementById('playerCount');
+    playerCount = parseInt(playerCountSelect.value);
+    
+    if (playerCount < 1 || playerCount > 4) {
+        console.error('Invalid player count:', playerCount);
+        return;
+    }
+
+    // Get the selected character
+    const characterSelect = document.getElementById('characterSelect');
+    const selectedCharacterId = characterSelect.value;
+    
+    // Ensure a character is selected
+    if (!selectedCharacterId) {
+        alert('Please select a character before starting the game');
+        return;
+    }
+    
+    // Get the selected objective
+    const objectiveSelect = document.getElementById('objectiveSelect');
+    const selectedObjectiveId = objectiveSelect.value;
+    
+    // Ensure an objective is selected
+    if (!selectedObjectiveId) {
+        alert('Please select an objective before starting the game');
+        return;
+    }
+    
+    // Get the number of scenes
+    const scenesCountInput = document.getElementById('scenesCount');
+    let scenesCount = 10; // Default value
+    if (scenesCountInput) {
+        scenesCount = parseInt(scenesCountInput.value);
+        if (isNaN(scenesCount) || scenesCount < 3) {
+            scenesCount = 3;
+        } else if (scenesCount > 40) {
+            scenesCount = 40;
         }
     }
     
-    // Function to validate a card pair
-    function validateCardPair(smallPath, bigPath) {
-        // Extract the base filename without extension and size suffix
-        const smallBase = smallPath.replace(/\/[^/]+$/, '').replace(/\/[^/]+$/, '');
-        const bigBase = bigPath.replace(/\/[^/]+$/, '').replace(/\/[^/]+$/, '');
+    // Get selected alt deck card types
+    const altDeckTypes = getSelectedAltDeckTypes();
+    
+    // Load card data and start the game
+    loadCardDataFromJson().then(async (jsonCardData) => {
+        let characterCards = [];
+        let objectiveCards = [];
         
-        // Check if the base names match
-        return smallBase === bigBase;
+        // Get character cards either from JSON or fallback to hardcoded
+        if (jsonCardData && jsonCardData.nonDeck && jsonCardData.nonDeck.character) {
+            characterCards = jsonCardData.nonDeck.character;
+        } else {
+            characterCards = CHARACTER_CARDS;
+        }
+        
+        // Get objective cards either from JSON or fallback to hardcoded
+        if (jsonCardData && jsonCardData.nonDeck && jsonCardData.nonDeck.objective) {
+            objectiveCards = jsonCardData.nonDeck.objective;
+        } else {
+            objectiveCards = OBJECTIVE_CARDS;
+        }
+        
+        // Find selected character and objective
+        const selectedCharacter = characterCards.find(char => char.id === selectedCharacterId);
+        const selectedObjective = objectiveCards.find(obj => obj.id === selectedObjectiveId);
+        
+        if (!selectedCharacter) {
+            console.error('Selected character not found:', selectedCharacterId);
+            alert('Selected character not found. Please try again.');
+            return;
+        }
+        
+        if (!selectedObjective) {
+            console.error('Selected objective not found:', selectedObjectiveId);
+            alert('Selected objective not found. Please try again.');
+            return;
+        }
+        
+        // Store the selected objective, scene count, and alt deck types in the game state
+        gameState = {
+            ...gameState || {},
+            selectedObjective,
+            scenesCount,
+            finalSceneIndex: scenesCount - 1, // 0-based index
+            altDeckTypes: altDeckTypes
+        };
+        
+        // Create an array to track which characters have been assigned
+        const assignedCharacters = [selectedCharacter];
+        
+        // Shuffle the remaining characters for random assignment
+        const remainingCharacters = characterCards.filter(char => char.id !== selectedCharacterId);
+        shuffleArray(remainingCharacters);
+        
+        // Initialize game state
+        gameStarted = true;
+        playerHands = Array(playerCount).fill().map(() => []);
+        
+        // Store the selected character for player 1 and random characters for other players
+        playerCharacters = [selectedCharacter];
+        
+        // Assign random characters to other players
+        for (let i = 1; i < playerCount; i++) {
+            if (remainingCharacters.length > 0) {
+                const randomChar = remainingCharacters.pop();
+                playerCharacters.push(randomChar);
+                assignedCharacters.push(randomChar);
+            }
+        }
+        
+        // Initialize player tokens
+        initializePlayerTokens();
+        
+        // Generate story grid slots
+        const storyGrid = document.getElementById('storyGrid');
+        storyGrid.innerHTML = ''; // Clear existing slots
+        for (let i = 0; i < 40; i++) { // 4x10 grid
+            const slot = document.createElement('div');
+            slot.className = 'gridSlot';
+            slot.dataset.index = i;
+            slot.addEventListener('dragover', handleDragOver);
+            slot.addEventListener('drop', handleDrop);
+            storyGrid.appendChild(slot);
+        }
+    
+        // Initialize mutable column slots
+        const mutableColumn = document.getElementById('mutableColumn');
+        mutableColumn.innerHTML = ''; // Clear existing slots
+        for (let i = 0; i < 4; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'mutableSlot';
+            slot.dataset.index = i;
+            slot.addEventListener('dragover', handleDragOver);
+            slot.addEventListener('drop', handleDrop);
+            mutableColumn.appendChild(slot);
+        }
+    
+        // Initialize d20 with starting value of 20 in green
+        const d20Area = document.getElementById('d20Area');
+        const rollDisplay = document.createElement('div');
+        rollDisplay.className = 'roll-number';
+        rollDisplay.textContent = '20';
+        rollDisplay.style.color = '#4ae24a'; // Green for 20
+        d20Area.innerHTML = '';
+        d20Area.appendChild(rollDisplay);
+    
+        // Show only the active player hands
+        const playerHandElements = document.querySelectorAll('.playerHand');
+        playerHandElements.forEach((hand, index) => {
+            hand.style.display = index < playerCount ? 'flex' : 'none';
+        });
+    
+        // Initialize turn timer with global reference
+        initializeTimer();
+    
+        // Initialize the deck with our function
+        const success = await initializeDecks();
+        if (!success) {
+            console.error('Failed to initialize decks. No cards loaded.');
+            alert('Failed to load cards. Check the console for details.');
+            return;
+        }
+        
+        // Save assigned characters to cardData for access in renderHands
+        cardData.characterCards = assignedCharacters;
+        
+        // Deal 5 cards to each player
+        dealInitialCards(5);
+        
+        // Place the objective card in the final scene slot
+        placeObjectiveCard(selectedObjective, gameState.finalSceneIndex);
+        
+        // Display the objective card in the inspector
+        updateInspector(selectedObjective);
+        
+        // Render character cards and hand slots
+        renderHands();
+        
+        // Initialize deck event listeners
+        initializeDeckEventListeners();
+        
+        // Hide setup screen and show game board
+        document.getElementById('setup').style.display = 'none';
+        document.getElementById('gameBoard').style.display = 'block';
+    }).catch(error => {
+        console.error('Error starting game:', error);
+        alert('Failed to start game: ' + error.message);
+    });
+}
+
+// Initialize deck event listeners
+function initializeDeckEventListeners() {
+    // Add event listeners for the discard pile
+    const mainDiscardElement = document.getElementById('mainDiscard');
+    mainDiscardElement.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    });
+    mainDiscardElement.addEventListener('drop', handleDiscardDrop);
+    
+    // Make sure all grid slots, hand slots, and mutable slots accept drops
+    const allDropTargets = [
+        ...document.querySelectorAll('.gridSlot'),
+        ...document.querySelectorAll('.handCard'),
+        ...document.querySelectorAll('.mutableSlot')
+    ];
+    
+    allDropTargets.forEach(target => {
+        target.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            this.classList.add('drag-over');
+        });
+        
+        target.addEventListener('dragleave', function() {
+            this.classList.remove('drag-over');
+        });
+        
+        target.addEventListener('drop', handleDrop);
+    });
+}
+
+// Render player hands
+function renderHands() {
+    console.log('Rendering player hands with character cards:', cardData.characterCards);
+    
+    // Clear existing hands
+    const hands = document.querySelectorAll('.playerHand');
+    hands.forEach(hand => {
+        const playerIndex = parseInt(hand.id.replace('player', '').replace('Hand', '')) - 1;
+        console.log(`Processing hand for player ${playerIndex + 1}`);
+        
+        // Store existing elements before clearing
+        const existingElements = Array.from(hand.children);
+        const tokenContainer = existingElements.find(el => el.classList.contains('tokenContainer'));
+        const existingCards = existingElements.filter(el => el.classList.contains('card'));
+        
+        // Clear the hand
+        hand.innerHTML = '';
+        
+        // Restore token container if it exists
+        if (tokenContainer) {
+            hand.appendChild(tokenContainer);
+        }
+
+        // Add character card if this is an active player
+        if (playerIndex < playerCount) {
+            console.log(`Rendering hand for player ${playerIndex + 1} (active)`);
+            
+            // First add a character card slot
+            const charCardSlot = document.createElement('div');
+            charCardSlot.className = 'handCard charCard';
+            charCardSlot.style.width = '80px';
+            charCardSlot.style.height = '144px';
+            charCardSlot.style.position = 'relative';
+            charCardSlot.style.marginRight = '8px';
+            charCardSlot.setAttribute('data-player', playerIndex);
+            charCardSlot.setAttribute('data-slot-type', 'character');
+            
+            // Get the character card for this player
+            const characterCard = cardData.characterCards[playerIndex];
+            
+            if (characterCard) {
+                console.log(`Character card for player ${playerIndex + 1}:`, characterCard);
+                
+                // Create and add character card with explicit faceUp setting
+                const charCard = createCardElement({
+                    ...characterCard,
+                    faceUp: true  // Force character cards to be face up
+                });
+                
+                charCard.classList.add('character-card');
+                charCardSlot.appendChild(charCard);
+                
+                // Log successful character card creation
+                console.log(`Added character card ${characterCard.name} to player ${playerIndex + 1}`);
+            } else {
+                console.warn(`No character card available for player ${playerIndex + 1}`);
+                
+                // Create a placeholder for missing character
+                const placeholderDiv = document.createElement('div');
+                placeholderDiv.className = 'card-placeholder';
+                placeholderDiv.textContent = `Player ${playerIndex + 1}`;
+                placeholderDiv.style.width = '100%';
+                placeholderDiv.style.height = '100%';
+                placeholderDiv.style.display = 'flex';
+                placeholderDiv.style.justifyContent = 'center';
+                placeholderDiv.style.alignItems = 'center';
+                placeholderDiv.style.backgroundColor = '#1a1a1a';
+                placeholderDiv.style.color = 'white';
+                placeholderDiv.style.borderRadius = '5px';
+                charCardSlot.appendChild(placeholderDiv);
+            }
+            
+            hand.appendChild(charCardSlot);
+
+            // Always create 5 hand card slots
+            for (let i = 0; i < 5; i++) {
+                const cardSlot = document.createElement('div');
+                cardSlot.className = 'handCard';
+                cardSlot.style.width = '80px';
+                cardSlot.style.height = '144px';
+                cardSlot.style.position = 'relative';
+                cardSlot.setAttribute('data-player', playerIndex);
+                cardSlot.setAttribute('data-slot', i);
+                cardSlot.setAttribute('data-slot-type', 'hand');
+                
+                // Set up drag and drop
+                cardSlot.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    this.classList.add('drag-over');
+                });
+                
+                cardSlot.addEventListener('dragleave', function() {
+                    this.classList.remove('drag-over');
+                });
+                
+                cardSlot.addEventListener('drop', handleDrop);
+                
+                // Add a card to this slot if there's one in the player's hand at this position
+                if (playerHands[playerIndex] && playerHands[playerIndex][i]) {
+                    const cardData = playerHands[playerIndex][i];
+                    const cardElement = createCardElement(cardData);
+                    cardSlot.appendChild(cardElement);
+                }
+                
+                hand.appendChild(cardSlot);
+            }
+        } else {
+            // For inactive players, just hide the hand
+            hand.style.display = 'none';
+        }
+    });
+    
+    console.log('Finished rendering hands');
+}
+
+// Handle drag over
+function handleDragOver(event) {
+    event.preventDefault();
+    const target = event.currentTarget;
+    
+    // Only add drag-over class to valid drop targets
+    if (target.classList.contains('handCard') || 
+        target.classList.contains('gridSlot') || 
+        target.classList.contains('mutableSlot')) {
+        target.classList.add('drag-over');
+    }
+}
+
+// Create card element
+function createCardElement(card, isInspector = false) {
+    const cardDiv = document.createElement('div');
+    cardDiv.className = 'card';
+    cardDiv.dataset.cardId = card.id;
+    
+    // Set proper attributes for click handling
+    cardDiv.setAttribute('draggable', 'true');
+    
+    // Track whether the card is face-up or face-down
+    const isFaceDown = card.faceUp === false;
+    if (isFaceDown) {
+        cardDiv.classList.add('face-down');
+        cardDiv.style.transform = 'rotateY(180deg)';
+    } else {
+        cardDiv.style.transform = 'rotateY(0deg)';
     }
     
-    // Process each card type
-    for (const [type, typeName] of Object.entries(CARD_TYPES)) {
-        const smallPath = `assets/JPG/cards/${typeName}_cards/${typeName}_smalls/`;
-        const bigPath = `assets/JPG/cards/${typeName}_cards/${typeName}_bigs/`;
+    // Add placeholder while loading
+    const placeholderDiv = document.createElement('div');
+    placeholderDiv.className = 'card-placeholder';
+    placeholderDiv.style.width = '100%';
+    placeholderDiv.style.height = '100%';
+    placeholderDiv.style.backgroundColor = '#1a1a1a';
+    placeholderDiv.style.color = 'white';
+    placeholderDiv.style.display = 'flex';
+    placeholderDiv.style.justifyContent = 'center';
+    placeholderDiv.style.alignItems = 'center';
+    placeholderDiv.style.textAlign = 'center';
+    placeholderDiv.style.padding = '5px';
+    placeholderDiv.style.position = 'absolute';
+    placeholderDiv.style.borderRadius = '5px';
+    placeholderDiv.style.zIndex = '3'; // Higher than front/back
+    placeholderDiv.textContent = card.name || 'Loading...';
+    cardDiv.appendChild(placeholderDiv);
+    
+    // Function to create placeholder SVG for missing cards
+    function createPlaceholderSVG(cardName, cardType) {
+        const colors = {
+            'monster': '#d35f5f',
+            'spell': '#5f5fd3',
+            'item': '#5fd35f',
+            'location': '#d3aa5f',
+            'NPC': '#aa5fd3',
+            'character': '#e5a619',
+            'objective': '#19e5e5'
+        };
+        const color = colors[cardType] || '#5a5a5a';
         
-        // Get all files in both directories
-        const smallFiles = await getFilesInDirectory(smallPath);
-        const bigFiles = await getFilesInDirectory(bigPath);
+        return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="144" viewBox="0 0 80 144"><rect width="100%" height="100%" fill="${color}"/><text x="50%" y="30%" font-family="Arial" font-size="10" fill="white" text-anchor="middle" dominant-baseline="middle">${cardType.toUpperCase()}</text><text x="50%" y="50%" font-family="Arial" font-size="8" fill="white" text-anchor="middle" dominant-baseline="middle">${cardName}</text><text x="50%" y="70%" font-family="Arial" font-size="8" fill="white" text-anchor="middle" dominant-baseline="middle">IMAGE ERROR</text></svg>`;
+    }
+    
+    // Create back image element immediately
+    const backImg = document.createElement('img');
+    backImg.src = cardData.cardBacks.small;
+    backImg.alt = 'Card Back';
+    backImg.className = 'card-back';
+    backImg.style.width = '100%';
+    backImg.style.height = '100%';
+    backImg.style.objectFit = isInspector ? 'contain' : 'cover';
+    backImg.style.borderRadius = '5px';
+    backImg.style.position = 'absolute';
+    backImg.style.top = '0';
+    backImg.style.left = '0';
+    backImg.style.backfaceVisibility = 'hidden';
+    backImg.style.zIndex = isFaceDown ? '2' : '1';
+    cardDiv.appendChild(backImg);
+    
+    // Handle card back image errors
+    backImg.onerror = function() {
+        console.error(`Failed to load card back image`);
+        backImg.src = createPlaceholderSVG('Card Back', 'card_back');
+    };
+    
+    // Create front image element (use direct creation for more reliability)
+    if (card.imageUrl) {
+        const frontImg = document.createElement('img');
+        frontImg.className = 'card-front';
+        frontImg.style.width = '100%';
+        frontImg.style.height = '100%';
+        frontImg.style.objectFit = isInspector ? 'contain' : 'cover';
+        frontImg.style.borderRadius = '5px';
+        frontImg.style.position = 'absolute';
+        frontImg.style.top = '0';
+        frontImg.style.left = '0';
+        frontImg.style.backfaceVisibility = 'hidden';
+        frontImg.style.zIndex = isFaceDown ? '1' : '2';
         
-        // Match pairs
-        for (const smallFile of smallFiles) {
-            const matchingBigFile = bigFiles.find(bigFile => 
-                validateCardPair(smallFile, bigFile)
-            );
+        // Set attributes after setting up error handler to catch initial load
+        frontImg.alt = card.name;
+        
+        // Add the front image
+        cardDiv.appendChild(frontImg);
+        
+        // Handle image load events
+        frontImg.onload = function() {
+            if (placeholderDiv.parentNode === cardDiv) {
+                placeholderDiv.remove();
+            }
+        };
+        
+        frontImg.onerror = function() {
+            console.error(`Failed to load image: ${card.imageUrl}`);
+            placeholderDiv.textContent = `Failed to load: ${card.name}`;
+            placeholderDiv.style.backgroundColor = '#5a1a1a';
             
-            if (matchingBigFile) {
-                // Extract card ID from filename
-                const cardId = smallFile.split('/').pop().replace(/\.[^/.]+$/, '');
-                
-                // Add card to the appropriate type array
-                cardData[type].push({
-                    id: cardId,
-                    name: cardId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-                    imageUrl: {
-                        small: smallFile,
-                        large: matchingBigFile
-                    },
-                    faceUp: false
-                });
-            } else {
-                console.warn(`No matching large version found for ${smallFile}`);
+            // Try with an alternative path or use a placeholder SVG
+            frontImg.src = createPlaceholderSVG(card.name, card.type);
+        };
+        
+        // Now set the source to begin loading
+        frontImg.src = card.imageUrl;
+        
+        // Remove placeholder after a short delay even if image is still loading
+        setTimeout(() => {
+            if (placeholderDiv.parentNode === cardDiv) {
+                placeholderDiv.remove();
+            }
+        }, 2000);
+    } else {
+        // No image URL provided, use placeholder SVG
+        const frontImg = document.createElement('img');
+        frontImg.className = 'card-front';
+        frontImg.alt = card.name;
+        frontImg.src = createPlaceholderSVG(card.name, card.type);
+        frontImg.style.width = '100%';
+        frontImg.style.height = '100%';
+        frontImg.style.objectFit = isInspector ? 'contain' : 'cover';
+        frontImg.style.borderRadius = '5px';
+        frontImg.style.position = 'absolute';
+        frontImg.style.top = '0';
+        frontImg.style.left = '0';
+        frontImg.style.backfaceVisibility = 'hidden';
+        frontImg.style.zIndex = isFaceDown ? '1' : '2';
+        
+        cardDiv.appendChild(frontImg);
+        placeholderDiv.style.backgroundColor = '#5a1a1a';
+        placeholderDiv.textContent = `No image: ${card.name}`;
+        
+        // Remove placeholder after a delay
+        setTimeout(() => {
+            if (placeholderDiv.parentNode === cardDiv) {
+                placeholderDiv.remove();
+            }
+        }, 1000);
+    }
+    
+    // Add interaction event listeners directly
+    cardDiv.addEventListener('click', function(e) {
+        e.stopPropagation();
+        handleCardClick(e);
+    });
+    
+    cardDiv.addEventListener('dblclick', function(e) {
+        e.stopPropagation();
+        handleCardDoubleClick(e);
+    });
+    
+    cardDiv.addEventListener('dragstart', function(e) {
+        e.stopPropagation();
+        handleCardDragStart(e);
+    });
+    
+    cardDiv.addEventListener('dragend', function(e) {
+        e.stopPropagation();
+        handleCardDragEnd(e);
+    });
+    
+    return cardDiv;
+}
+
+// Handle card click
+function handleCardClick(event) {
+    const card = event.currentTarget;
+    
+    if (!card || !card.dataset || !card.dataset.cardId) {
+        console.error('Invalid card element clicked:', card);
+        return;
+    }
+    
+    const cardId = card.dataset.cardId;
+    
+    // Remove highlight from previously highlighted card
+    if (highlightedCard) {
+        highlightedCard.classList.remove('highlighted');
+    }
+    
+    // Highlight this card
+    card.classList.add('highlighted');
+    highlightedCard = card;
+    
+    // Find the card data
+    let foundCard = null;
+    
+    // Check ALL possible card sources
+    // Check character cards
+    if (cardData.characterCards) {
+        foundCard = cardData.characterCards.find(c => c.id === cardId);
+    }
+    
+    // Check objective cards if not found
+    if (!foundCard && cardData.objectiveCards) {
+        foundCard = cardData.objectiveCards.find(c => c.id === cardId);
+    }
+    
+    // Check main deck if not found
+    if (!foundCard && mainDeck.length > 0) {
+        foundCard = mainDeck.find(c => c.id === cardId);
+    }
+    
+    // Check main discard if not found
+    if (!foundCard && mainDiscard.length > 0) {
+        foundCard = mainDiscard.find(c => c.id === cardId);
+    }
+    
+    // Check all player hands if not found
+    if (!foundCard) {
+        for (let i = 0; i < playerHands.length; i++) {
+            if (playerHands[i]) {
+                foundCard = playerHands[i].find(c => c.id === cardId);
+                if (foundCard) break;
             }
         }
     }
     
-    return cardData;
+    // If still not found, create a card object from the HTML element
+    if (!foundCard) {
+        // Determine the card type from the ID
+        let cardType = 'unknown';
+        
+        if (cardId.startsWith('monster_')) cardType = 'monster';
+        else if (cardId.startsWith('spell_')) cardType = 'spell';
+        else if (cardId.startsWith('item_')) cardType = 'item';
+        else if (cardId.startsWith('location_')) cardType = 'location';
+        else if (cardId.startsWith('npc_')) cardType = 'NPC';
+        else if (cardId.startsWith('characters_')) cardType = 'character';
+        else if (cardId.startsWith('objective_')) cardType = 'objective';
+        
+        // Get name from displayed text or from ID
+        let cardName = card.getAttribute('aria-label') || 
+                        card.querySelector('.card-placeholder')?.textContent || 
+                        cardId.split('_').pop().replace(/([A-Z])/g, ' $1').trim();
+        
+        // Get image URL from the front image if available
+        const frontImg = card.querySelector('.card-front');
+        const imgUrl = frontImg ? frontImg.src : null;
+        
+        foundCard = {
+            id: cardId,
+            name: cardName,
+            type: cardType,
+            imageUrl: imgUrl
+        };
+    }
+    
+    // Update inspector if card data found
+    if (foundCard) {
+        updateInspector(foundCard);
+    } else {
+        console.error('Could not find data for card ID:', cardId);
+    }
 }
 
-// Function to initialize all decks with loaded cards
-async function initializeDecks() {
-    const loadedCards = await loadCardPairs();
+// Handle card double click for flipping
+function handleCardDoubleClick(event) {
+    const card = event.currentTarget;
     
-    // Initialize main deck with all cards
-    mainDeck = [];
-    Object.values(loadedCards).forEach(cardArray => {
-        mainDeck.push(...cardArray.map(card => ({...card, faceUp: false})));
+    // If card is already being animated, ignore this click
+    if (card.dataset.isFlipping === 'true') {
+        return;
+    }
+    
+    const isFaceDown = !card.classList.contains('face-down');
+    
+    // Mark as currently flipping to prevent double animations
+    card.dataset.isFlipping = 'true';
+    
+    // Toggle the face-down class
+    if (isFaceDown) {
+        card.classList.add('face-down');
+    } else {
+        card.classList.remove('face-down');
+    }
+    
+    // Apply the flip animation
+    card.style.transform = isFaceDown ? 'rotateY(180deg)' : 'rotateY(0deg)';
+    
+    // Add transition end event handler
+    const transitionEndHandler = function() {
+        // Make sure the correct side is visible
+        const frontImg = card.querySelector('.card-front');
+        const backImg = card.querySelector('.card-back');
+        
+        if (frontImg && backImg) {
+            // Ensure proper z-index and visibility
+            if (isFaceDown) {
+                frontImg.style.zIndex = '1';
+                backImg.style.zIndex = '2';
+            } else {
+                frontImg.style.zIndex = '2';
+                backImg.style.zIndex = '1';
+            }
+        }
+        
+        // Clear flipping flag when animation is complete
+        card.dataset.isFlipping = 'false';
+        
+        // Remove the event handler
+        card.removeEventListener('transitionend', transitionEndHandler);
+    };
+    
+    // Add the transition end listener
+    card.addEventListener('transitionend', transitionEndHandler);
+}
+
+// Handle drag start
+function handleCardDragStart(event) {
+    draggedCard = event.currentTarget;
+    event.dataTransfer.setData('text/plain', ''); // Required for Firefox
+    draggedCard.classList.add('dragging');
+}
+
+// Handle drag end
+function handleCardDragEnd(event) {
+    if (draggedCard) {
+        draggedCard.classList.remove('dragging');
+        draggedCard = null;
+    }
+}
+
+// Function to deal initial cards to all players
+function dealInitialCards(cardsPerPlayer) {
+    console.log(`Dealing ${cardsPerPlayer} cards to each of ${playerCount} players`);
+    
+    for (let playerIndex = 0; playerIndex < playerCount; playerIndex++) {
+        // Ensure player's hand array exists
+        if (!playerHands[playerIndex]) {
+            playerHands[playerIndex] = [];
+        }
+        
+        // Deal cards to this player
+        for (let i = 0; i < cardsPerPlayer; i++) {
+            if (mainDeck.length > 0) {
+                const card = mainDeck.shift();
+                card.faceUp = true; // Make cards face up so players can see them
+                playerHands[playerIndex].push(card);
+                console.log(`Dealt ${card.name} to player ${playerIndex + 1}`);
+            } else {
+                console.warn('Deck empty, cannot deal more cards');
+                break;
+            }
+        }
+    }
+    
+    // Update the deck display to reflect cards being removed
+    renderMainDeck();
+}
+
+// Add a game state object for tracking global game information
+let gameState = {
+    selectedObjective: null,
+    scenesCount: 10,
+    finalSceneIndex: 9
+};
+
+// Function to place the objective card in the specified grid slot
+function placeObjectiveCard(objectiveCard, slotIndex) {
+    if (!objectiveCard) {
+        console.error('No objective card provided to place in grid');
+        return;
+    }
+    
+    // Ensure index is within bounds (0-39)
+    const safeIndex = Math.min(Math.max(0, slotIndex), 39);
+    
+    // Get the grid slot at the specified index
+    const gridSlots = document.querySelectorAll('#storyGrid .gridSlot');
+    if (gridSlots.length <= safeIndex) {
+        console.error(`No grid slot found at index ${safeIndex}`);
+        return;
+    }
+    
+    const targetSlot = gridSlots[safeIndex];
+    
+    // Clear any existing card in the slot
+    while (targetSlot.firstChild) {
+        targetSlot.removeChild(targetSlot.firstChild);
+    }
+    
+    // Create the objective card element
+    const cardElement = createCardElement({...objectiveCard, faceUp: true});
+    
+    // Style the slot to highlight it as the objective slot
+    targetSlot.style.boxShadow = '0 0 10px 2px #e5a619'; // Golden glow
+    targetSlot.style.borderRadius = '5px';
+    
+    // Add the card to the slot
+    targetSlot.appendChild(cardElement);
+    
+    console.log(`Placed objective card "${objectiveCard.name}" in slot ${safeIndex}`);
+}
+
+// Show all objective cards in a popup overlay
+function showAllObjectives() {
+    // Check if we already have an overlay open
+    if (document.getElementById('objectives-overlay')) {
+        return;
+    }
+    
+    // Create overlay container
+    const overlay = document.createElement('div');
+    overlay.id = 'objectives-overlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
+    overlay.style.zIndex = '1000';
+    overlay.style.display = 'flex';
+    overlay.style.flexDirection = 'column';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    overlay.style.padding = '20px';
+    overlay.style.boxSizing = 'border-box';
+    overlay.style.overflow = 'auto';
+    
+    // Add a title
+    const title = document.createElement('h2');
+    title.textContent = 'All Objective Cards';
+    title.style.color = 'white';
+    title.style.marginBottom = '20px';
+    title.style.fontWeight = 'bold';
+    title.style.textShadow = '0 2px 4px rgba(0,0,0,0.5)';
+    overlay.appendChild(title);
+    
+    // Create a container for the cards grid
+    const cardsContainer = document.createElement('div');
+    cardsContainer.style.display = 'grid';
+    cardsContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
+    cardsContainer.style.gap = '20px';
+    cardsContainer.style.width = '90%';
+    cardsContainer.style.maxWidth = '1200px';
+    cardsContainer.style.padding = '20px';
+    cardsContainer.style.boxSizing = 'border-box';
+    cardsContainer.style.overflowY = 'auto';
+    cardsContainer.style.maxHeight = '80vh';
+    
+    // Add objective cards to the grid
+    OBJECTIVE_CARDS.forEach(card => {
+        // Create card container
+        const cardContainer = document.createElement('div');
+        cardContainer.style.display = 'flex';
+        cardContainer.style.flexDirection = 'column';
+        cardContainer.style.alignItems = 'center';
+        cardContainer.style.cursor = 'pointer';
+        cardContainer.style.transition = 'transform 0.2s';
+        cardContainer.style.backgroundColor = '#2a2a2a';
+        cardContainer.style.padding = '10px';
+        cardContainer.style.borderRadius = '10px';
+        cardContainer.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+        
+        // Add hover effect
+        cardContainer.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.05)';
+        });
+        
+        cardContainer.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+        
+        // Add click handler to show in inspector
+        cardContainer.addEventListener('click', function() {
+            // Close the overlay
+            overlay.remove();
+            
+            // Show the card in the inspector
+            updateInspector(card);
+        });
+        
+        // Create and add the card image
+        const cardImage = document.createElement('img');
+        cardImage.src = card.imageUrl;
+        cardImage.alt = card.name;
+        cardImage.style.width = '100%';
+        cardImage.style.height = 'auto';
+        cardImage.style.borderRadius = '5px';
+        cardImage.style.marginBottom = '10px';
+        cardImage.style.objectFit = 'contain';
+        cardContainer.appendChild(cardImage);
+        
+        // Create and add the card name
+        const cardName = document.createElement('div');
+        cardName.textContent = card.name;
+        cardName.style.color = 'white';
+        cardName.style.fontSize = '14px';
+        cardName.style.fontWeight = 'bold';
+        cardName.style.textAlign = 'center';
+        cardName.style.marginTop = '5px';
+        cardContainer.appendChild(cardName);
+        
+        // Add the card container to the grid
+        cardsContainer.appendChild(cardContainer);
     });
     
-    // Shuffle the deck
-    shuffleArray(mainDeck);
+    // Add the cards container to the overlay
+    overlay.appendChild(cardsContainer);
     
-    // Update the display
+    // Add a close button
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'Close';
+    closeButton.style.marginTop = '20px';
+    closeButton.style.padding = '10px 20px';
+    closeButton.style.backgroundColor = '#3a3a3a';
+    closeButton.style.color = 'white';
+    closeButton.style.border = 'none';
+    closeButton.style.borderRadius = '5px';
+    closeButton.style.cursor = 'pointer';
+    closeButton.style.fontWeight = 'bold';
+    closeButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+    
+    closeButton.addEventListener('mouseenter', function() {
+        this.style.backgroundColor = '#4a4a4a';
+    });
+    
+    closeButton.addEventListener('mouseleave', function() {
+        this.style.backgroundColor = '#3a3a3a';
+    });
+    
+    closeButton.addEventListener('click', function() {
+        overlay.remove();
+    });
+    
+    overlay.appendChild(closeButton);
+    
+    // Close overlay when clicking outside the cards (directly on the overlay)
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            overlay.remove();
+        }
+    });
+    
+    // Add the overlay to the document
+    document.body.appendChild(overlay);
+    
+    // Add a small delay before adding escape key handler to prevent immediate closing
+    setTimeout(() => {
+        // Close overlay when pressing escape
+        function handleEscKey(e) {
+            if (e.key === 'Escape') {
+                overlay.remove();
+                document.removeEventListener('keydown', handleEscKey);
+            }
+        }
+        
+        document.addEventListener('keydown', handleEscKey);
+    }, 100);
+}
+
+// Show settings menu with card browser options
+function showSettingsMenu() {
+    // Check if menu already exists
+    if (document.getElementById('settings-menu')) {
+        return;
+    }
+    
+    // Create settings menu container
+    const settingsMenu = document.createElement('div');
+    settingsMenu.id = 'settings-menu';
+    settingsMenu.style.position = 'absolute';
+    settingsMenu.style.top = '24px';
+    settingsMenu.style.right = '214px';
+    settingsMenu.style.width = '250px';
+    settingsMenu.style.backgroundColor = '#2a2a2a';
+    settingsMenu.style.border = '1px solid #555';
+    settingsMenu.style.borderRadius = '5px';
+    settingsMenu.style.padding = '15px';
+    settingsMenu.style.zIndex = '100';
+    settingsMenu.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+    
+    // Create title
+    const title = document.createElement('h3');
+    title.textContent = 'Card Library';
+    title.style.color = 'white';
+    title.style.margin = '0 0 15px 0';
+    title.style.borderBottom = '1px solid #555';
+    title.style.paddingBottom = '8px';
+    settingsMenu.appendChild(title);
+    
+    // Create options
+    const options = [
+        { id: 'view-objectives', name: 'View Objective Cards', handler: showAllObjectives },
+        { id: 'view-characters', name: 'View Character Cards', handler: () => showCardCollection(CHARACTER_CARDS, 'Character') },
+        { id: 'view-monsters', name: 'View Monster Cards', handler: () => showCardCollection(DECK_CARDS.monster, 'Monster') },
+        { id: 'view-spells', name: 'View Spell Cards', handler: () => showCardCollection(DECK_CARDS.spell, 'Spell') },
+        { id: 'view-items', name: 'View Item Cards', handler: () => showCardCollection(DECK_CARDS.item, 'Item') },
+        { id: 'view-locations', name: 'View Location Cards', handler: () => showCardCollection(DECK_CARDS.location, 'Location') },
+        { id: 'view-npcs', name: 'View NPC Cards', handler: () => showCardCollection(DECK_CARDS.NPC, 'NPC') }
+    ];
+    
+    // Create option buttons
+    options.forEach(option => {
+        const button = document.createElement('button');
+        button.id = option.id;
+        button.textContent = option.name;
+        button.style.display = 'block';
+        button.style.width = '100%';
+        button.style.padding = '8px 12px';
+        button.style.margin = '5px 0';
+        button.style.backgroundColor = '#3a3a3a';
+        button.style.border = 'none';
+        button.style.borderRadius = '3px';
+        button.style.color = 'white';
+        button.style.cursor = 'pointer';
+        button.style.textAlign = 'left';
+        button.style.transition = 'background-color 0.2s';
+        
+        // Add hover effect
+        button.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#4a4a4a';
+        });
+        
+        button.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '#3a3a3a';
+        });
+        
+        // Add click handler
+        button.addEventListener('click', function() {
+            settingsMenu.remove();
+            option.handler();
+        });
+        
+        settingsMenu.appendChild(button);
+    });
+    
+    // Add close button
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'Close';
+    closeButton.style.display = 'block';
+    closeButton.style.width = '100%';
+    closeButton.style.padding = '8px 12px';
+    closeButton.style.marginTop = '15px';
+    closeButton.style.backgroundColor = '#555';
+    closeButton.style.border = 'none';
+    closeButton.style.borderRadius = '3px';
+    closeButton.style.color = 'white';
+    closeButton.style.cursor = 'pointer';
+    closeButton.style.textAlign = 'center';
+    closeButton.style.fontWeight = 'bold';
+    
+    closeButton.addEventListener('click', function() {
+        settingsMenu.remove();
+    });
+    
+    settingsMenu.appendChild(closeButton);
+    
+    // Add click-outside-to-close behavior
+    document.addEventListener('click', function closeMenu(e) {
+        if (e.target !== settingsMenu && !settingsMenu.contains(e.target) && e.target.id !== 'settingsIcon') {
+            settingsMenu.remove();
+            document.removeEventListener('click', closeMenu);
+        }
+    });
+    
+    // Add to the game board
+    document.getElementById('gameBoard').appendChild(settingsMenu);
+}
+
+// Show a collection of cards in a grid view
+function showCardCollection(cards, collectionTitle) {
+    // Check if we already have an overlay open
+    if (document.getElementById('cards-overlay')) {
+        return;
+    }
+    
+    // Create overlay container
+    const overlay = document.createElement('div');
+    overlay.id = 'cards-overlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
+    overlay.style.zIndex = '1000';
+    overlay.style.display = 'flex';
+    overlay.style.flexDirection = 'column';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    overlay.style.padding = '20px';
+    overlay.style.boxSizing = 'border-box';
+    overlay.style.overflow = 'auto';
+    
+    // Add a title
+    const title = document.createElement('h2');
+    title.textContent = `All ${collectionTitle} Cards (${cards.length})`;
+    title.style.color = 'white';
+    title.style.marginBottom = '20px';
+    title.style.fontWeight = 'bold';
+    title.style.textShadow = '0 2px 4px rgba(0,0,0,0.5)';
+    overlay.appendChild(title);
+    
+    // Create a container for the cards grid
+    const cardsContainer = document.createElement('div');
+    cardsContainer.style.display = 'grid';
+    cardsContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
+    cardsContainer.style.gap = '20px';
+    cardsContainer.style.width = '90%';
+    cardsContainer.style.maxWidth = '1200px';
+    cardsContainer.style.padding = '20px';
+    cardsContainer.style.boxSizing = 'border-box';
+    cardsContainer.style.overflowY = 'auto';
+    cardsContainer.style.maxHeight = '80vh';
+    
+    // Add cards to the grid
+    cards.forEach(card => {
+        // Create card container
+        const cardContainer = document.createElement('div');
+        cardContainer.style.display = 'flex';
+        cardContainer.style.flexDirection = 'column';
+        cardContainer.style.alignItems = 'center';
+        cardContainer.style.cursor = 'pointer';
+        cardContainer.style.transition = 'transform 0.2s';
+        cardContainer.style.backgroundColor = '#2a2a2a';
+        cardContainer.style.padding = '10px';
+        cardContainer.style.borderRadius = '10px';
+        cardContainer.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+        
+        // Add hover effect
+        cardContainer.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.05)';
+        });
+        
+        cardContainer.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+        
+        // Add click handler to show in inspector
+        cardContainer.addEventListener('click', function() {
+            // Close the overlay
+            overlay.remove();
+            
+            // Show the card in the inspector
+            updateInspector(card);
+        });
+        
+        // Create and add the card image
+        const cardImage = document.createElement('img');
+        cardImage.src = card.imageUrl;
+        cardImage.alt = card.name;
+        cardImage.style.width = '100%';
+        cardImage.style.height = 'auto';
+        cardImage.style.borderRadius = '5px';
+        cardImage.style.marginBottom = '10px';
+        cardImage.style.objectFit = 'contain';
+        cardContainer.appendChild(cardImage);
+        
+        // Create and add the card name
+        const cardName = document.createElement('div');
+        cardName.textContent = card.name;
+        cardName.style.color = 'white';
+        cardName.style.fontSize = '14px';
+        cardName.style.fontWeight = 'bold';
+        cardName.style.textAlign = 'center';
+        cardName.style.marginTop = '5px';
+        cardContainer.appendChild(cardName);
+        
+        // Add the card container to the grid
+        cardsContainer.appendChild(cardContainer);
+    });
+    
+    // Add the cards container to the overlay
+    overlay.appendChild(cardsContainer);
+    
+    // Add a close button
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'Close';
+    closeButton.style.marginTop = '20px';
+    closeButton.style.padding = '10px 20px';
+    closeButton.style.backgroundColor = '#3a3a3a';
+    closeButton.style.color = 'white';
+    closeButton.style.border = 'none';
+    closeButton.style.borderRadius = '5px';
+    closeButton.style.cursor = 'pointer';
+    closeButton.style.fontWeight = 'bold';
+    closeButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+    
+    closeButton.addEventListener('mouseenter', function() {
+        this.style.backgroundColor = '#4a4a4a';
+    });
+    
+    closeButton.addEventListener('mouseleave', function() {
+        this.style.backgroundColor = '#3a3a3a';
+    });
+    
+    closeButton.addEventListener('click', function() {
+        overlay.remove();
+    });
+    
+    overlay.appendChild(closeButton);
+    
+    // Close overlay when clicking outside the cards (directly on the overlay)
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            overlay.remove();
+        }
+    });
+    
+    // Add the overlay to the document
+    document.body.appendChild(overlay);
+    
+    // Add a small delay before adding escape key handler to prevent immediate closing
+    setTimeout(() => {
+        // Close overlay when pressing escape
+        function handleEscKey(e) {
+            if (e.key === 'Escape') {
+                overlay.remove();
+                document.removeEventListener('keydown', handleEscKey);
+            }
+        }
+        
+        document.addEventListener('keydown', handleEscKey);
+    }, 100);
+}
+
+// Select a random objective card and display it in the inspector
+function selectRandomObjective() {
+    // Make sure we have objective cards to choose from
+    if (!OBJECTIVE_CARDS || OBJECTIVE_CARDS.length === 0) {
+        console.error('No objective cards available');
+        return;
+    }
+    
+    // Select a random objective card
+    const randomIndex = Math.floor(Math.random() * OBJECTIVE_CARDS.length);
+    const randomObjectiveCard = OBJECTIVE_CARDS[randomIndex];
+    
+    // Display the card in the inspector
+    updateInspector(randomObjectiveCard);
+    
+    // If a game is in progress, add a "Use" button to replace the current objective
+    if (gameStarted) {
+        // Find the inspector
+        const inspector = document.getElementById('inspector');
+        if (!inspector) return;
+        
+        // Create "Use" button container for proper positioning
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'use-objective-container';
+        buttonContainer.style.position = 'absolute';
+        buttonContainer.style.bottom = '15px';
+        buttonContainer.style.left = '0';
+        buttonContainer.style.width = '100%';
+        buttonContainer.style.display = 'flex';
+        buttonContainer.style.justifyContent = 'center';
+        buttonContainer.style.zIndex = '10';
+        
+        // Create the Use button
+        const useButton = document.createElement('button');
+        useButton.textContent = 'Use This Objective';
+        useButton.className = 'use-objective-btn';
+        useButton.style.padding = '8px 16px';
+        useButton.style.backgroundColor = '#2a6';
+        useButton.style.color = 'white';
+        useButton.style.border = 'none';
+        useButton.style.borderRadius = '5px';
+        useButton.style.cursor = 'pointer';
+        useButton.style.fontWeight = 'bold';
+        useButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+        
+        // Add hover effects
+        useButton.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#3b7';
+        });
+        
+        useButton.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '#2a6';
+        });
+        
+        // Add click handler to replace the current objective
+        useButton.addEventListener('click', function() {
+            // Replace the current objective with the new one
+            replaceCurrentObjective(randomObjectiveCard);
+            
+            // Remove the Use button after clicking
+            buttonContainer.remove();
+        });
+        
+        // Add button to container and container to inspector
+        buttonContainer.appendChild(useButton);
+        inspector.appendChild(buttonContainer);
+    }
+}
+
+// Replace the current objective card in the game grid with a new objective card
+function replaceCurrentObjective(newObjectiveCard) {
+    if (!gameStarted || !gameState.finalSceneIndex) {
+        console.error('Game not started or final scene index not set');
+        return;
+    }
+    
+    // Find the current objective card in the grid (at the final scene index)
+    const gridSlots = document.querySelectorAll('#storyGrid .gridSlot');
+    if (gridSlots.length <= gameState.finalSceneIndex) {
+        console.error(`No grid slot found at index ${gameState.finalSceneIndex}`);
+        return;
+    }
+    
+    const targetSlot = gridSlots[gameState.finalSceneIndex];
+    
+    // Clear the current objective from the slot
+    while (targetSlot.firstChild) {
+        targetSlot.removeChild(targetSlot.firstChild);
+    }
+    
+    // Create the new objective card element
+    const cardElement = createCardElement({...newObjectiveCard, faceUp: true});
+    
+    // Add the new card to the slot
+    targetSlot.appendChild(cardElement);
+    
+    // Update the game state to track the new objective
+    gameState.selectedObjective = newObjectiveCard;
+    
+    // Show confirmation message
+    const confirmationMessage = document.createElement('div');
+    confirmationMessage.textContent = `Objective replaced with: ${newObjectiveCard.name}`;
+    confirmationMessage.style.position = 'fixed';
+    confirmationMessage.style.top = '20px';
+    confirmationMessage.style.left = '50%';
+    confirmationMessage.style.transform = 'translateX(-50%)';
+    confirmationMessage.style.padding = '10px 20px';
+    confirmationMessage.style.backgroundColor = 'rgba(42, 102, 85, 0.9)';
+    confirmationMessage.style.color = 'white';
+    confirmationMessage.style.borderRadius = '5px';
+    confirmationMessage.style.zIndex = '1000';
+    confirmationMessage.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+    
+    // Add to the document and remove after a delay
+    document.body.appendChild(confirmationMessage);
+    setTimeout(() => {
+        confirmationMessage.style.opacity = '0';
+        confirmationMessage.style.transition = 'opacity 0.5s';
+        setTimeout(() => confirmationMessage.remove(), 500);
+    }, 3000);
+}
+
+// Show the save game dialog
+function showSaveGameDialog() {
+    // Check if a game is in progress
+    if (!gameStarted) {
+        alert('No game in progress to save.');
+        return;
+    }
+    
+    // Create overlay container
+    const overlay = document.createElement('div');
+    overlay.id = 'save-game-overlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
+    overlay.style.zIndex = '1000';
+    overlay.style.display = 'flex';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    
+    // Create dialog content
+    const dialog = document.createElement('div');
+    dialog.className = 'save-game-dialog';
+    dialog.style.width = '500px';
+    dialog.style.backgroundColor = '#2a2a2a';
+    dialog.style.borderRadius = '10px';
+    dialog.style.padding = '20px';
+    dialog.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.5)';
+    
+    // Add title
+    const title = document.createElement('h2');
+    title.textContent = 'Save Game';
+    title.style.color = 'white';
+    title.style.marginTop = '0';
+    title.style.marginBottom = '20px';
+    title.style.textAlign = 'center';
+    dialog.appendChild(title);
+    
+    // Add save name input
+    const saveNameContainer = document.createElement('div');
+    saveNameContainer.style.marginBottom = '20px';
+    
+    const saveNameLabel = document.createElement('label');
+    saveNameLabel.textContent = 'Save Name:';
+    saveNameLabel.style.display = 'block';
+    saveNameLabel.style.color = 'white';
+    saveNameLabel.style.marginBottom = '5px';
+    saveNameContainer.appendChild(saveNameLabel);
+    
+    const saveNameInput = document.createElement('input');
+    saveNameInput.type = 'text';
+    saveNameInput.id = 'save-name-input';
+    saveNameInput.placeholder = 'Enter a name for your save';
+    saveNameInput.value = `Soul Sworn Game - ${new Date().toLocaleString()}`;
+    saveNameInput.style.width = '100%';
+    saveNameInput.style.padding = '10px';
+    saveNameInput.style.backgroundColor = '#3a3a3a';
+    saveNameInput.style.border = 'none';
+    saveNameInput.style.borderRadius = '5px';
+    saveNameInput.style.color = 'white';
+    saveNameInput.style.boxSizing = 'border-box';
+    saveNameContainer.appendChild(saveNameInput);
+    
+    dialog.appendChild(saveNameContainer);
+    
+    // Add save options
+    const saveOptionsContainer = document.createElement('div');
+    saveOptionsContainer.style.marginBottom = '20px';
+    
+    // Create save buttons container
+    const saveButtonsContainer = document.createElement('div');
+    saveButtonsContainer.style.display = 'flex';
+    saveButtonsContainer.style.justifyContent = 'space-between';
+    saveButtonsContainer.style.gap = '10px';
+    saveButtonsContainer.style.marginBottom = '20px';
+    
+    // Create localStorage save button
+    const saveToLocalButton = document.createElement('button');
+    saveToLocalButton.textContent = 'Save to Browser';
+    saveToLocalButton.style.flex = '1';
+    saveToLocalButton.style.padding = '12px';
+    saveToLocalButton.style.backgroundColor = '#4CAF50';
+    saveToLocalButton.style.color = 'white';
+    saveToLocalButton.style.border = 'none';
+    saveToLocalButton.style.borderRadius = '5px';
+    saveToLocalButton.style.cursor = 'pointer';
+    saveToLocalButton.style.fontWeight = 'bold';
+    
+    saveToLocalButton.addEventListener('mouseenter', function() {
+        this.style.backgroundColor = '#45a049';
+    });
+    
+    saveToLocalButton.addEventListener('mouseleave', function() {
+        this.style.backgroundColor = '#4CAF50';
+    });
+    
+    saveToLocalButton.addEventListener('click', function() {
+        const saveName = document.getElementById('save-name-input').value.trim();
+        if (!saveName) {
+            alert('Please enter a name for your save.');
+            return;
+        }
+        
+        saveGame(saveName, 'localStorage');
+        overlay.remove();
+    });
+    
+    saveButtonsContainer.appendChild(saveToLocalButton);
+    
+    // Create JSON export button
+    const exportJsonButton = document.createElement('button');
+    exportJsonButton.textContent = 'Export as JSON';
+    exportJsonButton.style.flex = '1';
+    exportJsonButton.style.padding = '12px';
+    exportJsonButton.style.backgroundColor = '#2196F3';
+    exportJsonButton.style.color = 'white';
+    exportJsonButton.style.border = 'none';
+    exportJsonButton.style.borderRadius = '5px';
+    exportJsonButton.style.cursor = 'pointer';
+    exportJsonButton.style.fontWeight = 'bold';
+    
+    exportJsonButton.addEventListener('mouseenter', function() {
+        this.style.backgroundColor = '#0b7dda';
+    });
+    
+    exportJsonButton.addEventListener('mouseleave', function() {
+        this.style.backgroundColor = '#2196F3';
+    });
+    
+    exportJsonButton.addEventListener('click', function() {
+        const saveName = document.getElementById('save-name-input').value.trim();
+        if (!saveName) {
+            alert('Please enter a name for your save.');
+            return;
+        }
+        
+        saveGame(saveName, 'json');
+        overlay.remove();
+    });
+    
+    saveButtonsContainer.appendChild(exportJsonButton);
+    
+    dialog.appendChild(saveButtonsContainer);
+    
+    // Add close button
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'Cancel';
+    closeButton.style.width = '100%';
+    closeButton.style.padding = '12px';
+    closeButton.style.backgroundColor = '#888';
+    closeButton.style.color = 'white';
+    closeButton.style.border = 'none';
+    closeButton.style.borderRadius = '5px';
+    closeButton.style.cursor = 'pointer';
+    closeButton.style.fontWeight = 'bold';
+    
+    closeButton.addEventListener('mouseenter', function() {
+        this.style.backgroundColor = '#777';
+    });
+    
+    closeButton.addEventListener('mouseleave', function() {
+        this.style.backgroundColor = '#888';
+    });
+    
+    closeButton.addEventListener('click', function() {
+        overlay.remove();
+    });
+    
+    dialog.appendChild(closeButton);
+    
+    // Add dialog to overlay
+    overlay.appendChild(dialog);
+    
+    // Add overlay to document
+    document.body.appendChild(overlay);
+    
+    // Focus the save name input
+    setTimeout(() => saveNameInput.focus(), 100);
+    
+    // Add escape key handler
+    function handleEscKey(e) {
+        if (e.key === 'Escape') {
+            overlay.remove();
+            document.removeEventListener('keydown', handleEscKey);
+        }
+    }
+    
+    document.addEventListener('keydown', handleEscKey);
+    
+    // Close when clicking outside the dialog
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            overlay.remove();
+        }
+    });
+}
+
+// Show a notification toast
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.style.position = 'fixed';
+    notification.style.top = '20px';
+    notification.style.left = '50%';
+    notification.style.transform = 'translateX(-50%)';
+    notification.style.padding = '12px 20px';
+    notification.style.borderRadius = '5px';
+    notification.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+    notification.style.zIndex = '1000';
+    notification.style.fontWeight = 'bold';
+    notification.style.opacity = '0';
+    notification.style.transition = 'opacity 0.3s ease-in-out';
+    
+    // Set colors based on notification type
+    if (type === 'success') {
+        notification.style.backgroundColor = '#4CAF50';
+        notification.style.color = 'white';
+    } else if (type === 'error') {
+        notification.style.backgroundColor = '#f44336';
+        notification.style.color = 'white';
+    } else if (type === 'warning') {
+        notification.style.backgroundColor = '#ff9800';
+        notification.style.color = 'white';
+    } else {
+        notification.style.backgroundColor = '#2196F3';
+        notification.style.color = 'white';
+    }
+    
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    // Fade in
+    setTimeout(() => {
+        notification.style.opacity = '1';
+    }, 10);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }, 3000);
+}
+
+// Save the current game state
+function saveGame(saveName, saveType) {
+    try {
+        // Create a game state object with all relevant data
+        const gameStateData = {
+            version: 1, // For potential future compatibility
+            timestamp: Date.now(),
+            saveName: saveName,
+            playerCount: playerCount,
+            playerCharacters: playerCharacters.map(char => ({
+                id: char.id,
+                name: char.name,
+                type: char.type,
+                imageUrl: char.imageUrl
+            })),
+            playerHands: playerHands.map(hand => 
+                hand.map(card => ({
+                    id: card.id,
+                    name: card.name,
+                    type: card.type,
+                    imageUrl: card.imageUrl,
+                    faceUp: card.faceUp
+                }))
+            ),
+            // Save the state of the story grid
+            storyGrid: Array.from(document.querySelectorAll('#storyGrid .gridSlot')).map(slot => {
+                const cardElement = slot.querySelector('.card');
+                if (cardElement && cardElement.dataset.cardId) {
+                    return {
+                        index: parseInt(slot.dataset.index),
+                        cardId: cardElement.dataset.cardId,
+                        // Try to find the full card data
+                        card: findCardById(cardElement.dataset.cardId)
+                    };
+                }
+                return {
+                    index: parseInt(slot.dataset.index),
+                    cardId: null,
+                    card: null
+                };
+            }),
+            // Save the state of the mutable column
+            mutableColumn: Array.from(document.querySelectorAll('#mutableColumn .mutableSlot')).map(slot => {
+                const cardElement = slot.querySelector('.card');
+                if (cardElement && cardElement.dataset.cardId) {
+                    return {
+                        index: parseInt(slot.dataset.index),
+                        cardId: cardElement.dataset.cardId,
+                        card: findCardById(cardElement.dataset.cardId)
+                    };
+                }
+                return {
+                    index: parseInt(slot.dataset.index),
+                    cardId: null,
+                    card: null
+                };
+            }),
+            // Save main deck and discard pile
+            mainDeck: mainDeck.map(card => ({
+                id: card.id,
+                name: card.name,
+                type: card.type,
+                imageUrl: card.imageUrl,
+                faceUp: card.faceUp
+            })),
+            mainDiscard: mainDiscard.map(card => ({
+                id: card.id,
+                name: card.name,
+                type: card.type,
+                imageUrl: card.imageUrl,
+                faceUp: card.faceUp
+            })),
+            // Save alt deck and discard pile
+            altDeck: altDeck.map(card => ({
+                id: card.id,
+                name: card.name,
+                type: card.type,
+                imageUrl: card.imageUrl,
+                faceUp: card.faceUp
+            })),
+            altDiscard: altDiscard.map(card => ({
+                id: card.id,
+                name: card.name,
+                type: card.type,
+                imageUrl: card.imageUrl,
+                faceUp: card.faceUp
+            })),
+            // Save game settings and state
+            gameState: {
+                scenesCount: gameState.scenesCount,
+                finalSceneIndex: gameState.finalSceneIndex,
+                altDeckTypes: gameState.altDeckTypes,
+                selectedObjective: gameState.selectedObjective ? {
+                    id: gameState.selectedObjective.id,
+                    name: gameState.selectedObjective.name,
+                    type: gameState.selectedObjective.type,
+                    imageUrl: gameState.selectedObjective.imageUrl
+                } : null
+            }
+        };
+        
+        // Serialize the game state to JSON
+        const gameStateJson = JSON.stringify(gameStateData);
+        
+        if (saveType === 'localStorage') {
+            // Save to localStorage
+            try {
+                // Get existing saves
+                let savedGames = JSON.parse(localStorage.getItem('soulSwornSavedGames') || '{}');
+                
+                // Add the new save
+                savedGames[saveName] = gameStateJson;
+                
+                // Save back to localStorage
+                localStorage.setItem('soulSwornSavedGames', JSON.stringify(savedGames));
+                
+                // Show success message
+                showNotification('Game saved successfully!', 'success');
+            } catch (err) {
+                console.error('Error saving to localStorage:', err);
+                alert('Failed to save game to browser storage. The save data might be too large or your browser storage might be full.');
+            }
+        } else if (saveType === 'json') {
+            // Create JSON export for clipboard or file
+            const textArea = document.createElement('textarea');
+            textArea.value = gameStateJson;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                // Copy to clipboard
+                const successful = document.execCommand('copy');
+                
+                if (successful) {
+                    showNotification('Game data copied to clipboard!', 'success');
+                } else {
+                    // If copy fails, show the JSON in a dialog box
+                    alert('Failed to copy to clipboard. Please copy the following JSON manually:\n\n' + gameStateJson);
+                }
+            } catch (err) {
+                console.error('Error copying to clipboard:', err);
+                alert('Failed to copy to clipboard. Please manually save the following JSON:\n\n' + gameStateJson);
+            }
+            
+            document.body.removeChild(textArea);
+        }
+    } catch (err) {
+        console.error('Error saving game:', err);
+        alert('Failed to save game: ' + err.message);
+    }
+}
+
+// Find a card by its ID in all available card collections
+function findCardById(cardId) {
+    if (!cardId) return null;
+    
+    // Check character cards
+    const character = CHARACTER_CARDS.find(c => c.id === cardId);
+    if (character) return character;
+    
+    // Check objective cards
+    const objective = OBJECTIVE_CARDS.find(c => c.id === cardId);
+    if (objective) return objective;
+    
+    // Check deck cards
+    for (const type in DECK_CARDS) {
+        const card = DECK_CARDS[type].find(c => c.id === cardId);
+        if (card) return card;
+    }
+    
+    // Check main deck
+    const mainDeckCard = mainDeck.find(c => c.id === cardId);
+    if (mainDeckCard) return mainDeckCard;
+    
+    // Check main discard
+    const mainDiscardCard = mainDiscard.find(c => c.id === cardId);
+    if (mainDiscardCard) return mainDiscardCard;
+    
+    // Check alt deck
+    const altDeckCard = altDeck.find(c => c.id === cardId);
+    if (altDeckCard) return altDeckCard;
+    
+    // Check alt discard
+    const altDiscardCard = altDiscard.find(c => c.id === cardId);
+    if (altDiscardCard) return altDiscardCard;
+    
+    // Create a minimal card object from the ID if we can infer the type
+    if (cardId.startsWith('monster_')) {
+        return { id: cardId, type: 'monster', name: cardId.replace('monster_', '').replace(/([A-Z])/g, ' $1').trim() };
+    } else if (cardId.startsWith('spell_')) {
+        return { id: cardId, type: 'spell', name: cardId.replace('spell_', '').replace(/([A-Z])/g, ' $1').trim() };
+    } else if (cardId.startsWith('item_')) {
+        return { id: cardId, type: 'item', name: cardId.replace('item_', '').replace(/([A-Z])/g, ' $1').trim() };
+    } else if (cardId.startsWith('location_')) {
+        return { id: cardId, type: 'location', name: cardId.replace('location_', '').replace(/([A-Z])/g, ' $1').trim() };
+    } else if (cardId.startsWith('npc_')) {
+        return { id: cardId, type: 'NPC', name: cardId.replace('npc_', '').replace(/([A-Z])/g, ' $1').trim() };
+    } else if (cardId.startsWith('characters_')) {
+        return { id: cardId, type: 'character', name: cardId.replace('characters_', '').replace(/([A-Z])/g, ' $1').trim() };
+    } else if (cardId.startsWith('objective_')) {
+        return { id: cardId, type: 'objective', name: cardId.replace('objective_', '').replace(/([A-Z])/g, ' $1').trim() };
+    }
+    
+    // Last resort - return minimal info
+    return { id: cardId, name: 'Unknown Card', type: 'unknown' };
+}
+
+// Show the load game dialog
+function showLoadGameDialog() {
+    // Create overlay container
+    const overlay = document.createElement('div');
+    overlay.id = 'load-game-overlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
+    overlay.style.zIndex = '1000';
+    overlay.style.display = 'flex';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    
+    // Create dialog content
+    const dialog = document.createElement('div');
+    dialog.className = 'load-game-dialog';
+    dialog.style.width = '500px';
+    dialog.style.backgroundColor = '#2a2a2a';
+    dialog.style.borderRadius = '10px';
+    dialog.style.padding = '20px';
+    dialog.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.5)';
+    
+    // Add title
+    const title = document.createElement('h2');
+    title.textContent = 'Load Game';
+    title.style.color = 'white';
+    title.style.marginTop = '0';
+    title.style.marginBottom = '20px';
+    title.style.textAlign = 'center';
+    dialog.appendChild(title);
+    
+    // Create tabs for different loading methods
+    const tabsContainer = document.createElement('div');
+    tabsContainer.style.display = 'flex';
+    tabsContainer.style.borderBottom = '1px solid #444';
+    tabsContainer.style.marginBottom = '20px';
+    
+    const browserTab = document.createElement('div');
+    browserTab.textContent = 'Browser Saves';
+    browserTab.className = 'load-tab active';
+    browserTab.style.padding = '10px 15px';
+    browserTab.style.cursor = 'pointer';
+    browserTab.style.borderBottom = '2px solid #4CAF50';
+    browserTab.style.color = 'white';
+    browserTab.style.fontWeight = 'bold';
+    
+    const jsonTab = document.createElement('div');
+    jsonTab.textContent = 'Paste JSON';
+    jsonTab.className = 'load-tab';
+    jsonTab.style.padding = '10px 15px';
+    jsonTab.style.cursor = 'pointer';
+    jsonTab.style.color = '#999';
+    
+    tabsContainer.appendChild(browserTab);
+    tabsContainer.appendChild(jsonTab);
+    dialog.appendChild(tabsContainer);
+    
+    // Create content containers for each tab
+    const browserContent = document.createElement('div');
+    browserContent.className = 'tab-content';
+    browserContent.id = 'browser-tab-content';
+    browserContent.style.display = 'block';
+    
+    const jsonContent = document.createElement('div');
+    jsonContent.className = 'tab-content';
+    jsonContent.id = 'json-tab-content';
+    jsonContent.style.display = 'none';
+    
+    // Setup tab switching
+    browserTab.addEventListener('click', function() {
+        browserTab.style.borderBottom = '2px solid #4CAF50';
+        browserTab.style.color = 'white';
+        jsonTab.style.borderBottom = 'none';
+        jsonTab.style.color = '#999';
+        browserContent.style.display = 'block';
+        jsonContent.style.display = 'none';
+    });
+    
+    jsonTab.addEventListener('click', function() {
+        jsonTab.style.borderBottom = '2px solid #2196F3';
+        jsonTab.style.color = 'white';
+        browserTab.style.borderBottom = 'none';
+        browserTab.style.color = '#999';
+        jsonContent.style.display = 'block';
+        browserContent.style.display = 'none';
+    });
+    
+    // Load browser saved games
+    try {
+        const savedGames = JSON.parse(localStorage.getItem('soulSwornSavedGames') || '{}');
+        const savedGamesList = document.createElement('div');
+        savedGamesList.className = 'saved-games-list';
+        savedGamesList.style.maxHeight = '300px';
+        savedGamesList.style.overflowY = 'auto';
+        
+        // Create a message if no saved games
+        if (Object.keys(savedGames).length === 0) {
+            const noSavesMsg = document.createElement('div');
+            noSavesMsg.textContent = 'No saved games found in browser storage.';
+            noSavesMsg.style.color = '#999';
+            noSavesMsg.style.textAlign = 'center';
+            noSavesMsg.style.padding = '20px';
+            savedGamesList.appendChild(noSavesMsg);
+        } else {
+            // Add each saved game
+            Object.entries(savedGames).forEach(([name, gameData]) => {
+                // Parse the save to get timestamp
+                let saveInfo = { saveName: name };
+                try {
+                    const parsedData = JSON.parse(gameData);
+                    saveInfo.timestamp = parsedData.timestamp;
+                    saveInfo.playerCount = parsedData.playerCount;
+                } catch (err) {
+                    saveInfo.timestamp = Date.now();
+                }
+                
+                // Create save item
+                const saveItem = document.createElement('div');
+                saveItem.className = 'save-item';
+                saveItem.style.display = 'flex';
+                saveItem.style.justifyContent = 'space-between';
+                saveItem.style.alignItems = 'center';
+                saveItem.style.padding = '10px';
+                saveItem.style.margin = '5px 0';
+                saveItem.style.backgroundColor = '#3a3a3a';
+                saveItem.style.borderRadius = '5px';
+                saveItem.style.cursor = 'pointer';
+                
+                // Add hover effect
+                saveItem.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#4a4a4a';
+                });
+                
+                saveItem.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = '#3a3a3a';
+                });
+                
+                // Create save info
+                const saveInfoDiv = document.createElement('div');
+                saveInfoDiv.style.flex = '1';
+                
+                const saveName = document.createElement('div');
+                saveName.textContent = saveInfo.saveName;
+                saveName.style.fontWeight = 'bold';
+                saveName.style.color = 'white';
+                
+                const saveDate = document.createElement('div');
+                saveDate.textContent = saveInfo.timestamp ? new Date(saveInfo.timestamp).toLocaleString() : 'Unknown date';
+                saveDate.style.fontSize = '12px';
+                saveDate.style.color = '#999';
+                
+                const playerInfo = document.createElement('div');
+                playerInfo.textContent = saveInfo.playerCount ? `${saveInfo.playerCount} player${saveInfo.playerCount > 1 ? 's' : ''}` : '';
+                playerInfo.style.fontSize = '12px';
+                playerInfo.style.color = '#999';
+                
+                saveInfoDiv.appendChild(saveName);
+                saveInfoDiv.appendChild(saveDate);
+                if (saveInfo.playerCount) saveInfoDiv.appendChild(playerInfo);
+                
+                // Create action buttons
+                const actionsDiv = document.createElement('div');
+                actionsDiv.style.display = 'flex';
+                actionsDiv.style.gap = '5px';
+                
+                // Load button
+                const loadButton = document.createElement('button');
+                loadButton.textContent = 'Load';
+                loadButton.style.padding = '5px 10px';
+                loadButton.style.backgroundColor = '#4CAF50';
+                loadButton.style.color = 'white';
+                loadButton.style.border = 'none';
+                loadButton.style.borderRadius = '3px';
+                loadButton.style.cursor = 'pointer';
+                
+                loadButton.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent triggering the saveItem click
+                    loadGame(gameData);
+                    overlay.remove();
+                });
+                
+                // Delete button
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.style.padding = '5px 10px';
+                deleteButton.style.backgroundColor = '#f44336';
+                deleteButton.style.color = 'white';
+                deleteButton.style.border = 'none';
+                deleteButton.style.borderRadius = '3px';
+                deleteButton.style.cursor = 'pointer';
+                
+                deleteButton.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent triggering the saveItem click
+                    if (confirm(`Are you sure you want to delete the save "${name}"?`)) {
+                        // Remove the save
+                        delete savedGames[name];
+                        localStorage.setItem('soulSwornSavedGames', JSON.stringify(savedGames));
+                        saveItem.remove();
+                        
+                        // Show notification
+                        showNotification('Save deleted', 'info');
+                        
+                        // If no more saves, show empty message
+                        if (Object.keys(savedGames).length === 0) {
+                            const noSavesMsg = document.createElement('div');
+                            noSavesMsg.textContent = 'No saved games found in browser storage.';
+                            noSavesMsg.style.color = '#999';
+                            noSavesMsg.style.textAlign = 'center';
+                            noSavesMsg.style.padding = '20px';
+                            savedGamesList.appendChild(noSavesMsg);
+                        }
+                    }
+                });
+                
+                // Add buttons to actions div
+                actionsDiv.appendChild(loadButton);
+                actionsDiv.appendChild(deleteButton);
+                
+                // Add to save item
+                saveItem.appendChild(saveInfoDiv);
+                saveItem.appendChild(actionsDiv);
+                
+                // Add click handler to load save
+                saveItem.addEventListener('click', function() {
+                    loadGame(gameData);
+                    overlay.remove();
+                });
+                
+                // Add to list
+                savedGamesList.appendChild(saveItem);
+            });
+        }
+        
+        browserContent.appendChild(savedGamesList);
+    } catch (err) {
+        console.error('Error loading saved games:', err);
+        const errorMsg = document.createElement('div');
+        errorMsg.textContent = 'Error loading saved games: ' + err.message;
+        errorMsg.style.color = '#f44336';
+        errorMsg.style.textAlign = 'center';
+        errorMsg.style.padding = '20px';
+        browserContent.appendChild(errorMsg);
+    }
+    
+    // Add JSON paste area
+    const jsonTextarea = document.createElement('textarea');
+    jsonTextarea.placeholder = 'Paste your game save JSON here...';
+    jsonTextarea.style.width = '100%';
+    jsonTextarea.style.height = '200px';
+    jsonTextarea.style.padding = '10px';
+    jsonTextarea.style.backgroundColor = '#3a3a3a';
+    jsonTextarea.style.color = 'white';
+    jsonTextarea.style.border = 'none';
+    jsonTextarea.style.borderRadius = '5px';
+    jsonTextarea.style.resize = 'vertical';
+    jsonTextarea.style.marginBottom = '15px';
+    jsonTextarea.style.fontFamily = 'monospace';
+    jsonContent.appendChild(jsonTextarea);
+    
+    // Add JSON load button
+    const loadJsonButton = document.createElement('button');
+    loadJsonButton.textContent = 'Load from JSON';
+    loadJsonButton.style.width = '100%';
+    loadJsonButton.style.padding = '12px';
+    loadJsonButton.style.backgroundColor = '#2196F3';
+    loadJsonButton.style.color = 'white';
+    loadJsonButton.style.border = 'none';
+    loadJsonButton.style.borderRadius = '5px';
+    loadJsonButton.style.cursor = 'pointer';
+    loadJsonButton.style.fontWeight = 'bold';
+    
+    loadJsonButton.addEventListener('click', function() {
+        const jsonData = jsonTextarea.value.trim();
+        if (!jsonData) {
+            alert('Please paste a valid JSON save data.');
+            return;
+        }
+        
+        try {
+            // Test if it's valid JSON
+            JSON.parse(jsonData);
+            
+            // If valid, load it
+            loadGame(jsonData);
+            overlay.remove();
+        } catch (err) {
+            alert('Invalid JSON data: ' + err.message);
+        }
+    });
+    
+    jsonContent.appendChild(loadJsonButton);
+    
+    // Add content containers to dialog
+    dialog.appendChild(browserContent);
+    dialog.appendChild(jsonContent);
+    
+    // Add close button
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'Cancel';
+    closeButton.style.width = '100%';
+    closeButton.style.padding = '12px';
+    closeButton.style.backgroundColor = '#888';
+    closeButton.style.color = 'white';
+    closeButton.style.border = 'none';
+    closeButton.style.borderRadius = '5px';
+    closeButton.style.cursor = 'pointer';
+    closeButton.style.fontWeight = 'bold';
+    closeButton.style.marginTop = '20px';
+    
+    closeButton.addEventListener('mouseenter', function() {
+        this.style.backgroundColor = '#777';
+    });
+    
+    closeButton.addEventListener('mouseleave', function() {
+        this.style.backgroundColor = '#888';
+    });
+    
+    closeButton.addEventListener('click', function() {
+        overlay.remove();
+    });
+    
+    dialog.appendChild(closeButton);
+    
+    // Add dialog to overlay
+    overlay.appendChild(dialog);
+    
+    // Add overlay to document
+    document.body.appendChild(overlay);
+    
+    // Add escape key handler
+    function handleEscKey(e) {
+        if (e.key === 'Escape') {
+            overlay.remove();
+            document.removeEventListener('keydown', handleEscKey);
+        }
+    }
+    
+    document.addEventListener('keydown', handleEscKey);
+    
+    // Close when clicking outside the dialog
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            overlay.remove();
+        }
+    });
+}
+
+// Load a game from save data
+function loadGame(saveDataJson) {
+    try {
+        // Parse the save data
+        const saveData = JSON.parse(saveDataJson);
+        
+        // Display confirmation dialog
+        if (!confirm(`Are you sure you want to load the game "${saveData.saveName}"? This will replace your current game.`)) {
+            return;
+        }
+        
+        // Reset current game state
+        gameStarted = true;
+        
+        // Load player count
+        playerCount = saveData.playerCount;
+        
+        // Load player characters
+        playerCharacters = saveData.playerCharacters.map(char => ({...char}));
+        
+        // Load player hands
+        playerHands = saveData.playerHands.map(hand => hand.map(card => ({...card})));
+        
+        // Load main deck and discard
+        mainDeck = saveData.mainDeck.map(card => ({...card}));
+        mainDiscard = saveData.mainDiscard.map(card => ({...card}));
+        
+        // Load alt deck and discard
+        altDeck = saveData.altDeck.map(card => ({...card}));
+        altDiscard = saveData.altDiscard.map(card => ({...card}));
+        
+        // Load game state
+        gameState = {
+            scenesCount: saveData.gameState.scenesCount,
+            finalSceneIndex: saveData.gameState.finalSceneIndex,
+            altDeckTypes: saveData.gameState.altDeckTypes,
+            selectedObjective: saveData.gameState.selectedObjective ? {
+                ...saveData.gameState.selectedObjective
+            } : null
+        };
+        
+        // Show game board
+        document.getElementById('setup').style.display = 'none';
+        document.getElementById('gameBoard').style.display = 'block';
+        
+        // Initialize game board
+        initializeBoardFromSave(saveData);
+        
+        // Show success notification
+        showNotification('Game loaded successfully!', 'success');
+    } catch (err) {
+        console.error('Error loading game:', err);
+        alert('Failed to load game: ' + err.message);
+    }
+}
+
+// Initialize the game board from save data
+function initializeBoardFromSave(saveData) {
+    // Render player hands
+    renderHands();
+    
+    // Render decks
     renderMainDeck();
+    renderMainDiscard();
+    renderAltDeck();
+    renderAltDiscard();
     
-    console.log(`Main deck initialized with ${mainDeck.length} cards`);
+    // Render story grid
+    const storyGrid = document.getElementById('storyGrid');
+    storyGrid.innerHTML = ''; // Clear existing slots
+    
+    // Create all grid slots
+    for (let i = 0; i < 40; i++) {
+        const slot = document.createElement('div');
+        slot.className = 'gridSlot';
+        slot.dataset.index = i;
+        slot.addEventListener('dragover', handleDragOver);
+        slot.addEventListener('drop', handleDrop);
+        storyGrid.appendChild(slot);
+    }
+    
+    // Fill grid slots with cards from save data
+    const gridSlots = document.querySelectorAll('#storyGrid .gridSlot');
+    saveData.storyGrid.forEach(slotData => {
+        if (slotData.cardId && slotData.card && slotData.index < gridSlots.length) {
+            const slot = gridSlots[slotData.index];
+            const cardElement = createCardElement(slotData.card);
+            slot.appendChild(cardElement);
+            
+            // Highlight the objective card slot
+            if (slotData.index === gameState.finalSceneIndex) {
+                slot.style.boxShadow = '0 0 10px 2px #e5a619'; // Golden glow
+                slot.style.borderRadius = '5px';
+            }
+        }
+    });
+    
+    // Fill mutable column slots
+    const mutableSlots = document.querySelectorAll('#mutableColumn .mutableSlot');
+    saveData.mutableColumn.forEach(slotData => {
+        if (slotData.cardId && slotData.card && slotData.index < mutableSlots.length) {
+            const slot = mutableSlots[slotData.index];
+            const cardElement = createCardElement(slotData.card);
+            slot.appendChild(cardElement);
+        }
+    });
+    
+    // Initialize deck event listeners
+    initializeDeckEventListeners();
+}
+
+// Debug function to show all image paths
+function showImageDebugWindow() {
+    const debugWindow = document.createElement('div');
+    debugWindow.style.position = 'fixed';
+    debugWindow.style.top = '10%';
+    debugWindow.style.left = '10%';
+    debugWindow.style.width = '80%';
+    debugWindow.style.height = '80%';
+    debugWindow.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+    debugWindow.style.color = 'white';
+    debugWindow.style.padding = '20px';
+    debugWindow.style.zIndex = '10000';
+    debugWindow.style.overflowY = 'auto';
+    
+    // Add close button
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = 'Close';
+    closeBtn.style.position = 'absolute';
+    closeBtn.style.top = '10px';
+    closeBtn.style.right = '10px';
+    closeBtn.onclick = function() {
+        debugWindow.remove();
+    };
+    debugWindow.appendChild(closeBtn);
+    
+    // List all image paths
+    const imageList = document.createElement('div');
+    imageList.innerHTML = '<h3>Card Image Paths</h3>';
+    
+    // Check card back
+    const cardBackItem = document.createElement('div');
+    cardBackItem.innerHTML = `<p>Card Back: ${CARD_BACK_PATH} <button class="test-btn">Test</button></p>`;
+    const testBackBtn = cardBackItem.querySelector('.test-btn');
+    testBackBtn.onclick = function() {
+        preloadImage(CARD_BACK_PATH)
+            .then(() => {
+                cardBackItem.style.color = 'green';
+                cardBackItem.innerHTML += ' <span style="color:green">✓</span>';
+            })
+            .catch(() => {
+                cardBackItem.style.color = 'red';
+                cardBackItem.innerHTML += ' <span style="color:red">✗</span>';
+            });
+    };
+    imageList.appendChild(cardBackItem);
+    
+    // Check characters
+    imageList.innerHTML += '<h4>Character Cards</h4>';
+    (cardData.characterCards || CHARACTER_CARDS).forEach(card => {
+        const itemDiv = document.createElement('div');
+        itemDiv.innerHTML = `<p>${card.name}: ${card.imageUrl} <button class="test-btn">Test</button></p>`;
+        const testBtn = itemDiv.querySelector('.test-btn');
+        testBtn.onclick = function() {
+            preloadImage(card.imageUrl)
+                .then(() => {
+                    itemDiv.style.color = 'green';
+                    itemDiv.innerHTML += ' <span style="color:green">✓</span>';
+                })
+                .catch(() => {
+                    itemDiv.style.color = 'red';
+                    itemDiv.innerHTML += ' <span style="color:red">✗</span>';
+                });
+        };
+        imageList.appendChild(itemDiv);
+    });
+    
+    // Check deck cards
+    Object.entries(DECK_CARDS).forEach(([type, cards]) => {
+        imageList.innerHTML += `<h4>${type.charAt(0).toUpperCase() + type.slice(1)} Cards</h4>`;
+        cards.forEach(card => {
+            const itemDiv = document.createElement('div');
+            itemDiv.innerHTML = `<p>${card.name}: ${card.imageUrl} <button class="test-btn">Test</button></p>`;
+            const testBtn = itemDiv.querySelector('.test-btn');
+            testBtn.onclick = function() {
+                preloadImage(card.imageUrl)
+                    .then(() => {
+                        itemDiv.style.color = 'green';
+                        itemDiv.innerHTML += ' <span style="color:green">✓</span>';
+                    })
+                    .catch(() => {
+                        itemDiv.style.color = 'red';
+                        itemDiv.innerHTML += ' <span style="color:red">✗</span>';
+                    });
+            };
+            imageList.appendChild(itemDiv);
+        });
+    });
+    
+    debugWindow.appendChild(imageList);
+    document.body.appendChild(debugWindow);
+}
+
+// Animate the D20 dice roll
+function animateD20Roll() {
+    const d20Area = document.getElementById('d20Area');
+    const rollDisplay = d20Area.querySelector('.roll-number');
+    
+    if (!d20Area || !rollDisplay) {
+        console.error('D20 area or roll display not found');
+        return;
+    }
+    
+    // Disable clicks during animation
+    d20Area.style.pointerEvents = 'none';
+    
+    // Add rolling animation class
+    d20Area.classList.add('rolling');
+    
+    // Generate random numbers for the animation
+    const animationSteps = 10;
+    const animationDuration = 1500; // ms
+    const stepDuration = animationDuration / animationSteps;
+    let step = 0;
+    
+    // Start the animation
+    const rollAnimation = setInterval(() => {
+        // Generate a random number between 1 and 20
+        const randomRoll = Math.floor(Math.random() * 20) + 1;
+        rollDisplay.textContent = randomRoll;
+        
+        // Color based on roll value
+        if (randomRoll === 20) {
+            rollDisplay.style.color = '#4ae24a'; // Green for 20
+        } else if (randomRoll === 1) {
+            rollDisplay.style.color = '#e24a4a'; // Red for 1
+        } else if (randomRoll >= 15) {
+            rollDisplay.style.color = '#e5e54a'; // Yellow for high rolls
+        } else {
+            rollDisplay.style.color = 'white'; // White for normal rolls
+        }
+        
+        step++;
+        
+        // End the animation
+        if (step >= animationSteps) {
+            clearInterval(rollAnimation);
+            
+            // Generate the final roll
+            const finalRoll = Math.floor(Math.random() * 20) + 1;
+            rollDisplay.textContent = finalRoll;
+            
+            // Set final color based on roll value
+            if (finalRoll === 20) {
+                rollDisplay.style.color = '#4ae24a'; // Green for 20
+                // Add critical success flash
+                d20Area.classList.add('critical-success');
+                setTimeout(() => d20Area.classList.remove('critical-success'), 2000);
+            } else if (finalRoll === 1) {
+                rollDisplay.style.color = '#e24a4a'; // Red for 1
+                // Add critical failure flash
+                d20Area.classList.add('critical-failure');
+                setTimeout(() => d20Area.classList.remove('critical-failure'), 2000);
+            } else if (finalRoll >= 15) {
+                rollDisplay.style.color = '#e5e54a'; // Yellow for high rolls
+            } else {
+                rollDisplay.style.color = 'white'; // White for normal rolls
+            }
+            
+            // Remove rolling animation class
+            d20Area.classList.remove('rolling');
+            
+            // Enable clicks again
+            d20Area.style.pointerEvents = 'auto';
+        }
+    }, stepDuration);
 }
