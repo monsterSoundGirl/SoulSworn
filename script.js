@@ -948,8 +948,8 @@ function updateInspector(card) {
         // Create wrapper for the image to enforce aspect ratio
         const imageWrapper = document.createElement('div');
         imageWrapper.className = 'inspector-image-wrapper';
-        imageWrapper.style.width = '90%'; // Reduce from 100% to give some margin
-        imageWrapper.style.height = 'calc(90% - 40px)'; // Reduce height to ensure visibility
+        imageWrapper.style.width = '100%';
+        imageWrapper.style.height = '100%';
         imageWrapper.style.display = 'flex';
         imageWrapper.style.justifyContent = 'center';
         imageWrapper.style.alignItems = 'center';
@@ -989,8 +989,8 @@ function updateInspector(card) {
         cardImage.alt = card.name;
         
         // Set fixed max dimensions to ensure proper scaling
-        cardImage.style.maxHeight = '95%';
-        cardImage.style.maxWidth = '95%';
+        cardImage.style.maxHeight = '100%';
+        cardImage.style.maxWidth = '100%';
         cardImage.style.width = 'auto';
         cardImage.style.height = 'auto';
         cardImage.style.objectFit = 'contain'; // Ensure entire image is visible
@@ -1014,11 +1014,11 @@ function updateInspector(card) {
             
             if (imageRatio > containerRatio) {
                 // Wide card - prioritize fitting width
-                this.style.width = '95%';
+                this.style.width = '100%';
                 this.style.height = 'auto';
             } else {
                 // Tall or square card - prioritize fitting height
-                this.style.height = '95%';
+                this.style.height = '100%';
                 this.style.width = 'auto';
             }
         };
@@ -1031,26 +1031,11 @@ function updateInspector(card) {
             cardImage.src = createInspectorPlaceholder(card.name, card.type);
         };
         
-        // Add the image to the wrapper first
+        // Add the image to the wrapper
         imageWrapper.appendChild(cardImage);
         
-        // Add card name display
-        const nameLabel = document.createElement('div');
-        nameLabel.className = 'inspector-card-name';
-        nameLabel.textContent = card.name;
-        nameLabel.style.width = '100%';
-        nameLabel.style.textAlign = 'center';
-        nameLabel.style.color = 'white';
-        nameLabel.style.padding = '10px 0';
-        nameLabel.style.fontSize = '16px';
-        nameLabel.style.fontWeight = 'bold';
-        nameLabel.style.position = 'absolute';
-        nameLabel.style.bottom = '5px';
-        nameLabel.style.left = '0';
-        
-        // Add the wrapper and label to the container
+        // Add the wrapper to the container
         cardContainer.appendChild(imageWrapper);
-        cardContainer.appendChild(nameLabel);
         
         // Add container to inspector
         inspector.appendChild(cardContainer);
