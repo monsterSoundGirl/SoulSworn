@@ -66,7 +66,7 @@ body {
   width: 80px;
   height: 144px;
   background-color: #3a3a3a;
-  border-radius: 5px;
+  border-radius: 8px;
 }
 
 /* Settings Icon */
@@ -77,7 +77,7 @@ body {
   right: 24px;
   top: 24px;
   background-color: #3a3a3a;
-  border-radius: 5px;
+  border-radius: 8px;
 }
 
 /* Inspector */
@@ -88,7 +88,7 @@ body {
   left: 24px;
   top: 240px;
   background-color: #3a3a3a;
-  border-radius: 5px;
+  border-radius: 8px;
 }
 
 /* Story Grid */
@@ -106,7 +106,7 @@ body {
   width: 80px;
   height: 144px;
   background-color: #3a3a3a;
-  border-radius: 5px;
+  border-radius: 8px;
 }
 
 /* Mutable Column */
@@ -123,7 +123,7 @@ body {
   width: 80px;
   height: 144px;
   background-color: #3a3a3a;
-  border-radius: 5px;
+  border-radius: 8px;
 }
 
 /* Deck Area */
@@ -140,7 +140,7 @@ body {
   width: 80px;
   height: 144px;
   background-color: #3a3a3a;
-  border-radius: 5px;
+  border-radius: 8px;
 }
 
 /* D20 Die */
@@ -151,7 +151,7 @@ body {
   right: 120px;
   bottom: 32px;
   background-color: #3a3a3a;
-  border-radius: 5px;
+  border-radius: 8px;
 }
 
 /* Bottom Section */
@@ -170,7 +170,7 @@ body {
   width: 184px;
   height: 160px;
   background-color: #3a3a3a;
-  border-radius: 5px;
+  border-radius: 8px;
 }
 
 #turnTimer {
@@ -180,7 +180,7 @@ body {
   width: 184px;
   height: 160px;
   background-color: #3a3a3a;
-  border-radius: 5px;
+  border-radius: 8px;
 }
 
 /* Modal */
