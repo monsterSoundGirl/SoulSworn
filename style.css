@@ -486,6 +486,8 @@ body {
 
 #d20Area .roll-number {
   transition: color 0.2s;
+  position: relative;
+  top: 15px;
 }
 
 #d20Area.rolling {
