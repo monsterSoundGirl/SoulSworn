@@ -17,12 +17,12 @@ body {
 
 /* Game Board Container */
 #gameBoard {
-  width: 1712px;
+  width: 1712px; /* og width 1712px */
   height: 1088px;
   background-color: #2a2a2a;
-  position: relative;
+  position: fixed;
   background-image: url('assets/JPG/other/gameboard_background.jpg');
-  background-size: cover;
+  background-size: 1724px 1100px;
   background-position: center;
   background-repeat: no-repeat;
 }
