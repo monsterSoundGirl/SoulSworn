@@ -547,35 +547,50 @@ function renderMainDeck() {
             cardFront.className = 'deck-card-front';
             cardFront.src = topCard.imageUrl;
             cardFront.alt = topCard.name;
-            cardFront.style.display = 'none'; // Hide front by default
+            cardFront.style.display = topCard.faceUp ? 'block' : 'none'; // Show front if card is face up
+            cardBack.style.display = topCard.faceUp ? 'none' : 'block'; // Hide back if card is face up
             deckCardContainer.appendChild(cardFront);
             
             // Store the card ID on the container
             deckCardContainer.dataset.cardId = topCard.id;
         }
         
-        // Add click event for flipping the top card
+        // Add click event to view the card in the inspector
+        deckCardContainer.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            // Only show in inspector if we have cards and the top card exists
+            if (mainDeck.length > 0 && mainDeck[0]) {
+                // Show the card in the inspector
+                updateInspector(mainDeck[0]);
+                
+                // Highlight the clicked card
+                if (highlightedCard) highlightedCard.classList.remove('highlighted');
+                this.classList.add('highlighted');
+                highlightedCard = this;
+            }
+        });
+        
+        // Add double-click event for flipping the top card
         deckCardContainer.addEventListener('dblclick', function(e) {
             e.stopPropagation();
             const cardFront = this.querySelector('.deck-card-front');
             const cardBack = this.querySelector('.deck-card-back');
             
-            if (cardFront && cardBack) {
+            if (cardFront && cardBack && mainDeck.length > 0) {
                 // Toggle visibility of front and back
                 if (cardFront.style.display === 'none') {
                     cardFront.style.display = 'block';
                     cardBack.style.display = 'none';
                     // Update the card in the deck to be face up
-                    if (mainDeck.length > 0) {
-                        mainDeck[0].faceUp = true;
-                    }
+                    mainDeck[0].faceUp = true;
+                    showNotification('Card flipped face-up', 'info');
                 } else {
                     cardFront.style.display = 'none';
                     cardBack.style.display = 'block';
                     // Update the card in the deck to be face down
-                    if (mainDeck.length > 0) {
-                        mainDeck[0].faceUp = false;
-                    }
+                    mainDeck[0].faceUp = false;
+                    showNotification('Card flipped face-down', 'info');
                 }
             }
         });
@@ -585,6 +600,10 @@ function renderMainDeck() {
             e.stopPropagation();
             this.classList.add('dragging');
             draggedCard = this;
+            
+            // Set dragged card data
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.dataset.cardId);
         });
         
         deckCardContainer.addEventListener('dragend', function(e) {
@@ -668,28 +687,34 @@ function handleDiscardDrop(event) {
     event.preventDefault();
     event.currentTarget.classList.remove('drag-over');
     
-    // Check if we're dragging from the deck wrapper
+    // Check if there's a dragged card
     if (!draggedCard) return;
     
     // Determine if this is the main or alt discard pile
     const isMainDiscard = event.currentTarget.id === 'mainDiscard';
     const isAltDiscard = event.currentTarget.id === 'altDiscard';
     
-    // Check if we're dragging from the deck wrapper
-    if (draggedCard.dataset.fromDeck === 'true') {
+    // Check if we're dragging from a deck
+    if (draggedCard.dataset.fromDeck === 'true' || draggedCard.dataset.fromAltDeck === 'true') {
         // Check if we're dragging from the correct deck
-        if ((isMainDiscard && draggedCard.parentNode.id === 'mainDeck') ||
-            (isAltDiscard && draggedCard.parentNode.id === 'altDeck')) {
-            // Move top card from deck to discard
+        const isFromMain = draggedCard.dataset.fromDeck === 'true';
+        const isFromAlt = draggedCard.dataset.fromAltDeck === 'true';
+        
+        // Only allow drops to matching discard pile
+        if ((isMainDiscard && isFromMain) || (isAltDiscard && isFromAlt)) {
+            // Determine which deck and discard to work with
             const deck = isMainDiscard ? mainDeck : altDeck;
             const discard = isMainDiscard ? mainDiscard : altDiscard;
             
             if (deck.length > 0) {
-                const card = deck.shift();
+                // Get the top card (by reference, not creating a new copy)
+                const card = deck[0];
+                // Move it from deck to discard
+                deck.shift();
                 card.faceUp = true; // Cards in discard are always face up
                 discard.push(card);
                 
-                // Update the display
+                // Update the display once
                 if (isMainDiscard) {
                     renderMainDeck();
                     renderMainDiscard();
@@ -697,6 +722,9 @@ function handleDiscardDrop(event) {
                     renderAltDeck();
                     renderAltDiscard();
                 }
+                
+                // Show visual feedback
+                showNotification(`Card moved to ${isMainDiscard ? 'main' : 'alt'} discard pile`, 'info');
             }
         } else {
             // Wrong discard pile for this deck
@@ -705,9 +733,10 @@ function handleDiscardDrop(event) {
         return;
     }
     
-    // Check if we're dragging from the discard pile itself
-    if (draggedCard.dataset.fromDiscard === 'true' || draggedCard.dataset.fromAltDiscard === 'true') {
-        // Don't do anything when dragging from discard to same discard
+    // Check if we're dragging from a discard pile to the same discard pile
+    if ((isMainDiscard && draggedCard.dataset.fromDiscard === 'true') ||
+        (isAltDiscard && draggedCard.dataset.fromAltDiscard === 'true')) {
+        // Don't do anything when dragging to same discard
         return;
     }
     
@@ -745,19 +774,23 @@ function handleDiscardDrop(event) {
         
         // Now handle discarding the card from its source
         if (removeCardFromSource(cardId)) {
-            // Add card to appropriate discard pile
-            card.faceUp = true; // Cards in discard are always face up
+            // Make a copy of the card to avoid reference issues
+            const cardCopy = {...card, faceUp: true}; // Cards in discard are always face up
             
+            // Add card to appropriate discard pile
             if (isMainDiscard) {
-                mainDiscard.push(card);
+                mainDiscard.push(cardCopy);
                 renderMainDiscard();
             } else {
-                altDiscard.push(card);
+                altDiscard.push(cardCopy);
                 renderAltDiscard();
             }
             
             // Remove card element from its original location
             draggedCard.remove();
+            
+            // Show feedback
+            showNotification(`Card discarded to ${isMainDiscard ? 'main' : 'alt'} discard pile`, 'info');
         } else {
             showNotification('Failed to remove card from its source', 'error');
         }
@@ -2491,35 +2524,50 @@ function renderAltDeck() {
             cardFront.className = 'deck-card-front';
             cardFront.src = topCard.imageUrl || createPlaceholderSVG(topCard.name, topCard.type);
             cardFront.alt = topCard.name;
-            cardFront.style.display = 'none'; // Hide front by default
+            cardFront.style.display = topCard.faceUp ? 'block' : 'none'; // Show front if card is face up
+            cardBack.style.display = topCard.faceUp ? 'none' : 'block'; // Hide back if card is face up
             deckCardContainer.appendChild(cardFront);
             
             // Store the card ID on the container
             deckCardContainer.dataset.cardId = topCard.id;
         }
         
-        // Add click event for flipping the top card
+        // Add click event to view the card in the inspector
+        deckCardContainer.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            // Only show in inspector if we have cards and the top card exists
+            if (altDeck.length > 0 && altDeck[0]) {
+                // Show the card in the inspector
+                updateInspector(altDeck[0]);
+                
+                // Highlight the clicked card
+                if (highlightedCard) highlightedCard.classList.remove('highlighted');
+                this.classList.add('highlighted');
+                highlightedCard = this;
+            }
+        });
+        
+        // Add double-click event for flipping the top card
         deckCardContainer.addEventListener('dblclick', function(e) {
             e.stopPropagation();
             const cardFront = this.querySelector('.deck-card-front');
             const cardBack = this.querySelector('.deck-card-back');
             
-            if (cardFront && cardBack) {
+            if (cardFront && cardBack && altDeck.length > 0) {
                 // Toggle visibility of front and back
                 if (cardFront.style.display === 'none') {
                     cardFront.style.display = 'block';
                     cardBack.style.display = 'none';
                     // Update the card in the deck to be face up
-                    if (altDeck.length > 0) {
-                        altDeck[0].faceUp = true;
-                    }
+                    altDeck[0].faceUp = true;
+                    showNotification('Card flipped face-up', 'info');
                 } else {
                     cardFront.style.display = 'none';
                     cardBack.style.display = 'block';
                     // Update the card in the deck to be face down
-                    if (altDeck.length > 0) {
-                        altDeck[0].faceUp = false;
-                    }
+                    altDeck[0].faceUp = false;
+                    showNotification('Card flipped face-down', 'info');
                 }
             }
         });
@@ -2529,6 +2577,10 @@ function renderAltDeck() {
             e.stopPropagation();
             this.classList.add('dragging');
             draggedCard = this;
+            
+            // Set dragged card data
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.dataset.cardId);
         });
         
         deckCardContainer.addEventListener('dragend', function(e) {
