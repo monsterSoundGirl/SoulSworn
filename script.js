@@ -3348,6 +3348,30 @@ function renderHands() {
                 charCard.classList.add('character-card');
                 charCardSlot.appendChild(charCard);
                 
+                // Add player name label
+                const playerNameLabel = document.createElement('div');
+                playerNameLabel.className = 'player-name-label';
+                playerNameLabel.textContent = playerNames[playerIndex] || `Player ${playerIndex + 1}`;
+                playerNameLabel.style.position = 'absolute';
+                playerNameLabel.style.left = '0';
+                playerNameLabel.style.width = '100%';
+                playerNameLabel.style.textAlign = 'center';
+                playerNameLabel.style.fontWeight = 'bold';
+                playerNameLabel.style.fontSize = '14px';
+                playerNameLabel.style.color = 'white';
+                playerNameLabel.style.textShadow = '1px 1px 2px rgba(0, 0, 0, 0.8)';
+                
+                // Position label based on hand position (top or bottom of board)
+                if (hand.id === 'player1Hand' || hand.id === 'player2Hand') {
+                    // Top hands - label under character card
+                    playerNameLabel.style.top = '150px';  // Position below the card
+                } else {
+                    // Bottom hands - label above character card
+                    playerNameLabel.style.top = '-25px';  // Position above the card
+                }
+                
+                charCardSlot.appendChild(playerNameLabel);
+                
                 // Log successful character card creation
                 console.log(`Added character card ${characterCard.name} to player ${playerIndex + 1}`);
             } else {
