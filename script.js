@@ -194,7 +194,16 @@ window.addEventListener('DOMContentLoaded', () => {
     
     if (startBtn) {
         startBtn.addEventListener('click', () => {
-            startGame();
+            // Check if game is already in progress
+            if (gameStarted) {
+                // Just resume the game by showing the game board
+                document.getElementById('setup').style.display = 'none';
+                document.getElementById('gameBoard').style.display = 'block';
+                console.log('Resuming existing game');
+            } else {
+                // Initialize a new game
+                startGame();
+            }
         });
     } else {
         console.error('Start button not found in the DOM');
@@ -203,6 +212,15 @@ window.addEventListener('DOMContentLoaded', () => {
     // Menu icon
     document.getElementById('menuIcon').addEventListener('click', () => {
         console.log('Menu clicked');
+        // Hide game board but keep game active
+        document.getElementById('gameBoard').style.display = 'none';
+        document.getElementById('setup').style.display = 'flex';
+        
+        // Change button text to "Resume Game" since a game is active
+        document.getElementById('startGameBtn').textContent = 'Resume Game';
+        
+        // Disable game settings to prevent state changes
+        disableGameSettings(true);
     });
     
     // Settings icon
@@ -374,6 +392,11 @@ function initializeCardSelection(selectId, cardCollection) {
             const selectedCard = cardCollection.find(card => card.id === selectedCardId);
             if (selectedCard) {
                 updateCardPreview(selectedCard);
+                
+                // If a game is in progress and this is the character select dropdown, update player character
+                if (gameStarted && selectId === 'characterSelect') {
+                    updatePlayerCharacter(selectedCard);
+                }
             }
         }
     });
@@ -2986,6 +3009,12 @@ function startGame() {
         // Hide setup screen and show game board
         document.getElementById('setup').style.display = 'none';
         document.getElementById('gameBoard').style.display = 'block';
+        
+        // Disable game settings when game is in progress
+        disableGameSettings(true);
+        
+        // Change start button text to "Resume Game" for future returns to the menu
+        document.getElementById('startGameBtn').textContent = 'Resume Game';
     }).catch(error => {
         console.error('Error starting game:', error);
         alert('Failed to start game: ' + error.message);
@@ -5184,4 +5213,85 @@ function animateD20Roll() {
             d20Area.style.pointerEvents = 'auto';
         }
     }, stepDuration);
+}
+
+// Function to disable or enable game settings
+function disableGameSettings(disabled) {
+    // Settings that should be disabled during gameplay
+    const gameSettingsElements = [
+        document.getElementById('playerCount'),
+        document.getElementById('objectiveSelect'),
+        document.getElementById('scenesCount'),
+        document.getElementById('mainDeckType'),
+        ...document.querySelectorAll('#altDeckTypes input[type="checkbox"]'),
+        document.getElementById('timerMinutes'),
+        document.getElementById('timerSeconds'),
+        document.getElementById('dealerRole')
+    ];
+    
+    // Disable or enable each setting
+    gameSettingsElements.forEach(element => {
+        if (element) {
+            element.disabled = disabled;
+            
+            // Apply visual indication of disabled state
+            if (disabled) {
+                element.classList.add('disabled-setting');
+                // If it's a parent container with checkboxes, style it too
+                if (element.closest('.checkbox-item')) {
+                    element.closest('.checkbox-item').classList.add('disabled-setting');
+                }
+            } else {
+                element.classList.remove('disabled-setting');
+                // If it's a parent container with checkboxes, remove style
+                if (element.closest('.checkbox-item')) {
+                    element.closest('.checkbox-item').classList.remove('disabled-setting');
+                }
+            }
+        }
+    });
+    
+    // Add visual indication that settings are locked during gameplay
+    const gameSettingsSection = document.querySelector('#gameSettings .menu-section');
+    if (gameSettingsSection) {
+        if (disabled) {
+            // Add indicator that settings are locked
+            if (!document.getElementById('settings-locked-notice')) {
+                const lockedNotice = document.createElement('div');
+                lockedNotice.id = 'settings-locked-notice';
+                lockedNotice.className = 'settings-notice';
+                lockedNotice.innerHTML = '<b>Settings locked during gameplay</b>';
+                lockedNotice.style.color = '#ff9800';
+                lockedNotice.style.padding = '10px';
+                lockedNotice.style.marginBottom = '10px';
+                lockedNotice.style.textAlign = 'center';
+                lockedNotice.style.backgroundColor = 'rgba(255, 152, 0, 0.1)';
+                lockedNotice.style.borderRadius = '5px';
+                gameSettingsSection.insertBefore(lockedNotice, gameSettingsSection.firstChild);
+            }
+        } else {
+            // Remove the indicator
+            const lockedNotice = document.getElementById('settings-locked-notice');
+            if (lockedNotice) {
+                lockedNotice.remove();
+            }
+        }
+    }
+}
+
+// Function to update player character during gameplay
+function updatePlayerCharacter(characterCard) {
+    if (!gameStarted) return;
+    
+    // Update the player 1 character in the data
+    playerCharacters[0] = characterCard;
+    
+    // Update the character card in the data array
+    cardData.characterCards[0] = characterCard;
+    
+    // Re-render player hands to update the character card
+    renderHands();
+    
+    console.log(`Character updated to: ${characterCard.name}`);
+    showNotification(`Character updated to: ${characterCard.name}`, 'success');
 }
