@@ -33,16 +33,22 @@ body {
   width: 184px;
   height: 160px;
   left: 24px;
-  top: 24px;
+  border-radius: 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: transparent;
 }
 
 /* Settings Icon */
 #settingsIcon {
   position: absolute;
-  width: 184px;
-  height: 160px;
-  left: 1504px;
-  top: 24px;
+  width: 1px;
+  height: 1px;
+  left: 1px;
+  top: 2px;
 }
 
 /* Player Hands */
@@ -121,7 +127,11 @@ body {
   position: relative;
   width: 80px;
   height: 144px;
-  background-color: #3a3a3a;
+  background-color: #d89339;
+  background-image: url('assets/JPG/other/cardslot_background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   border-radius: 5px;
   display: flex;
   justify-content: center;
@@ -145,8 +155,12 @@ body {
   height: 144px;
   perspective: 1000px;
   border-radius: 5px;
-  overflow: hidden; /* Hide overflow to prevent question marks */
-  background-color: #3a3a3a; /* Add background color */
+  overflow: hidden;
+  background-color: #d89339;
+  background-image: url('assets/JPG/other/cardslot_background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .card .card-front,
@@ -269,6 +283,11 @@ body {
 .gridSlot {
   width: 80px;
   height: 144px;
+  background-color: #d89339;
+  background-image: url('assets/JPG/other/cardslot_background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 /* Mutable Column */
@@ -284,7 +303,11 @@ body {
 .mutableSlot {
   width: 80px;
   height: 144px;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: #d89339;
+  background-image: url('assets/JPG/other/cardslot_background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   border: 2px dashed rgba(255, 255, 255, 0.3);
   border-radius: 5px;
   position: relative;
@@ -320,7 +343,11 @@ body {
 #mainDeck, #mainDiscard, #altDeck, #altDiscard {
   width: 80px;
   height: 144px;
-  background-color: #3a3a3a;
+  background-color: #d89339;
+  background-image: url('assets/JPG/other/cardslot_background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   border-radius: 5px;
   position: absolute;
   cursor: pointer;
@@ -622,7 +649,11 @@ body {
 }
 
 .charCard, .handCard, .gridSlot, .mutableSlot, #mainDeck, #mainDiscard, #altDeck, #altDiscard {
-    background-color: #3a3a3a;
+    background-color: #d89339;
+    background-image: url('assets/JPG/other/cardslot_background.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     border-radius: 5px;
 }
 
@@ -704,7 +735,7 @@ body {
 #marketingSection {
   width: 100%;
   height: 100px;
-  background-color: #232323;
+  background-color: #000000;
   display: flex;
   justify-content: center;
   align-items: center;
