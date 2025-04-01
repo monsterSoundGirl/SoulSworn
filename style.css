@@ -710,7 +710,7 @@ body {
 
 #bannerSection {
   width: 100%;
-  height: 200px;
+  height: 100px;
   background-color: #000000;
   position: relative;
   display: flex;

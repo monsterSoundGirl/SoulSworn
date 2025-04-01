@@ -529,6 +529,14 @@ function initializeCardSelection(selectId, cardCollection) {
         dropdown.remove(1);
     }
     
+    // Add "No Predefined Objective" option at the top for objective selection
+    if (selectId === 'objectiveSelect') {
+        const noObjectiveOption = document.createElement('option');
+        noObjectiveOption.value = "no_objective";
+        noObjectiveOption.textContent = "No Predefined Objective";
+        dropdown.appendChild(noObjectiveOption);
+    }
+    
     // Add each card as an option
     cardCollection.forEach(card => {
         const option = document.createElement('option');
@@ -540,7 +548,7 @@ function initializeCardSelection(selectId, cardCollection) {
     // Show card in preview when selected
     dropdown.addEventListener('change', function() {
         const selectedCardId = this.value;
-        if (selectedCardId) {
+        if (selectedCardId && selectedCardId !== "no_objective") {
             const selectedCard = cardCollection.find(card => card.id === selectedCardId);
             if (selectedCard) {
                 updateCardPreview(selectedCard);
@@ -549,6 +557,12 @@ function initializeCardSelection(selectId, cardCollection) {
                 if (gameStarted && selectId === 'characterSelect') {
                     updatePlayerCharacter(selectedCard);
                 }
+            }
+        } else if (selectedCardId === "no_objective") {
+            // Clear the preview for "No Predefined Objective"
+            const previewContainer = document.querySelector('.preview-placeholder');
+            if (previewContainer) {
+                previewContainer.innerHTML = '<p>No Predefined Objective selected</p>';
             }
         }
     });
@@ -3128,8 +3142,11 @@ function startGame() {
     const objectiveSelect = document.getElementById('objectiveSelect');
     const selectedObjectiveId = objectiveSelect.value;
     
-    // Ensure an objective is selected
-    if (!selectedObjectiveId) {
+    // Special handling for "No Predefined Objective" or ensure an objective is selected
+    if (selectedObjectiveId === "no_objective") {
+        // Continue with no objective
+        console.log("Starting game with no predefined objective");
+    } else if (!selectedObjectiveId) {
         alert('Please select an objective before starting the game');
         return;
     }
@@ -3153,13 +3170,16 @@ function startGame() {
             objectiveCards = OBJECTIVE_CARDS;
         }
         
-        // Find selected objective 
-        const selectedObjective = objectiveCards.find(obj => obj.id === selectedObjectiveId);
-        
-        if (!selectedObjective) {
-            console.error('Selected objective not found:', selectedObjectiveId);
-            alert('Selected objective not found. Please try again.');
-            return;
+        // Find selected objective if there is one
+        let selectedObjective = null;
+        if (selectedObjectiveId && selectedObjectiveId !== "no_objective") {
+            selectedObjective = objectiveCards.find(obj => obj.id === selectedObjectiveId);
+            
+            if (!selectedObjective) {
+                console.error('Selected objective not found:', selectedObjectiveId);
+                alert('Selected objective not found. Please try again.');
+                return;
+            }
         }
         
         // Create an array to track which characters have been assigned
@@ -3256,11 +3276,16 @@ function startGame() {
         // Deal 5 cards to each player
         dealInitialCards(5);
         
-        // Place the objective card in the final scene slot
-        placeObjectiveCard(selectedObjective, gameState.finalSceneIndex);
-        
-        // Display the objective card in the inspector
-        updateInspector(selectedObjective);
+        // Place the objective card in the final scene slot (or mark the slot if no objective)
+        if (selectedObjective) {
+            placeObjectiveCard(selectedObjective, gameState.finalSceneIndex);
+            
+            // Display the objective card in the inspector
+            updateInspector(selectedObjective);
+        } else {
+            // Mark the final scene slot without a card
+            markFinalSceneSlot(gameState.finalSceneIndex);
+        }
         
         // Render character cards and hand slots
         renderHands();
@@ -5786,4 +5811,48 @@ function updatePlayerNameInUI(playerIndex) {
         // If we need to re-render the entire hand
         renderHands();
     }
+}
+
+// Function to mark the final scene slot with a label when no objective card is used
+function markFinalSceneSlot(slotIndex) {
+    // Ensure index is within bounds (0-39)
+    const safeIndex = Math.min(Math.max(0, slotIndex), 39);
+    
+    // Get the grid slot at the specified index
+    const gridSlots = document.querySelectorAll('#storyGrid .gridSlot');
+    if (gridSlots.length <= safeIndex) {
+        console.error(`No grid slot found at index ${safeIndex}`);
+        return;
+    }
+    
+    const targetSlot = gridSlots[safeIndex];
+    
+    // Clear any existing content in the slot
+    while (targetSlot.firstChild) {
+        targetSlot.removeChild(targetSlot.firstChild);
+    }
+    
+    // Style the slot to highlight it as the final scene slot
+    targetSlot.style.boxShadow = '0 0 10px 2px #e5a619'; // Golden glow
+    targetSlot.style.borderRadius = '5px';
+    
+    // Create and add a label to the slot
+    const label = document.createElement('div');
+    label.textContent = 'FINAL SCENE';
+    label.style.width = '100%';
+    label.style.height = '100%';
+    label.style.display = 'flex';
+    label.style.justifyContent = 'center';
+    label.style.alignItems = 'center';
+    label.style.textAlign = 'center';
+    label.style.color = 'white';
+    label.style.fontWeight = 'bold';
+    label.style.fontSize = '14px';
+    label.style.textShadow = '0 0 5px black';
+    label.style.background = 'rgba(0, 0, 0, 0.5)';
+    label.style.borderRadius = '5px';
+    
+    targetSlot.appendChild(label);
+    
+    console.log(`Marked slot ${safeIndex} as the final scene (no objective card)`);
 }
