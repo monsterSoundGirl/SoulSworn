@@ -146,6 +146,7 @@ const cardData = {
 let playerCount = 1;
 let playerHands = [];
 let gameStarted = false;
+let playerNames = []; // Array to store player names
 
 // Token state
 const MAX_TOKENS = 7;
@@ -255,14 +256,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // Initialize menu interactions
 function initializeMenuInteractions() {
-    // Deck type selections
-    const mainDeckSelect = document.getElementById('mainDeckType');
-    
-    if (mainDeckSelect) {
-        mainDeckSelect.addEventListener('change', () => {
-            console.log('Main deck type changed:', mainDeckSelect.value);
-        });
-    }
+    // Deck type selections - removed mainDeckSelect since it's no longer used
     
     // Initialize alt deck checkboxes
     initializeAltDeckCheckboxes();
@@ -290,6 +284,14 @@ function initializeMenuInteractions() {
             const joinCode = document.getElementById('joinCode').value;
             console.log('Join game button clicked with code:', joinCode);
         });
+    }
+
+    // Player count change handler to show/hide player setup sections
+    const playerCountSelect = document.getElementById('playerCount');
+    if (playerCountSelect) {
+        playerCountSelect.addEventListener('change', updatePlayerSetupVisibility);
+        // Initialize visibility based on default selection
+        updatePlayerSetupVisibility();
     }
 
     // Initialize card type selection dropdowns
@@ -401,8 +403,18 @@ function getDeckDistribution() {
 
 // Generalized function to handle card selection for different card types
 function initializeCardTypeDropdowns() {
-    // Initialize character selection dropdown
-    initializeCardSelection('characterSelect', CHARACTER_CARDS);
+    // Initialize character selection dropdowns for all players
+    for (let i = 1; i <= 4; i++) {
+        initializeCardSelection(`player${i}Character`, CHARACTER_CARDS);
+    }
+    
+    // Add change event listeners to character dropdowns to update available options
+    for (let i = 1; i <= 4; i++) {
+        const dropdown = document.getElementById(`player${i}Character`);
+        if (dropdown) {
+            dropdown.addEventListener('change', updateAvailableCharacters);
+        }
+    }
     
     // Initialize objective selection dropdown
     initializeCardSelection('objectiveSelect', OBJECTIVE_CARDS);
@@ -418,6 +430,69 @@ function initializeCardTypeDropdowns() {
                 this.value = 40;
             }
         });
+    }
+    
+    // Set initial player name defaults
+    setPlayerNameDefaults();
+    
+    // Update available characters initially
+    updateAvailableCharacters();
+}
+
+// Function to update available character selections
+function updateAvailableCharacters() {
+    const selectedCharacters = [];
+    
+    // Get all currently selected characters
+    for (let i = 1; i <= 4; i++) {
+        const dropdown = document.getElementById(`player${i}Character`);
+        if (dropdown && dropdown.value) {
+            selectedCharacters.push(dropdown.value);
+        }
+    }
+    
+    // Update the available options in each dropdown
+    for (let i = 1; i <= 4; i++) {
+        const dropdown = document.getElementById(`player${i}Character`);
+        if (!dropdown) continue;
+        
+        const currentValue = dropdown.value;
+        
+        // Store all options
+        const options = Array.from(dropdown.options);
+        
+        // Clear dropdown except first option (placeholder)
+        while (dropdown.options.length > 1) {
+            dropdown.remove(1);
+        }
+        
+        // Re-add character options
+        CHARACTER_CARDS.forEach(card => {
+            // Skip if this character is already selected by another player
+            if (selectedCharacters.includes(card.id) && card.id !== currentValue) {
+                return;
+            }
+            
+            const option = document.createElement('option');
+            option.value = card.id;
+            option.textContent = card.name;
+            dropdown.appendChild(option);
+        });
+        
+        // Restore the current selection
+        if (currentValue) {
+            dropdown.value = currentValue;
+        }
+    }
+}
+
+// Function to set default player names
+function setPlayerNameDefaults() {
+    for (let i = 1; i <= 4; i++) {
+        const nameInput = document.getElementById(`player${i}Name`);
+        if (nameInput && !nameInput.value.trim()) {
+            nameInput.value = `Player ${i}`;
+        }
     }
 }
 
@@ -2969,31 +3044,45 @@ function startGame() {
     const playerCountSelect = document.getElementById('playerCount');
     playerCount = parseInt(playerCountSelect.value);
     
-    if (playerCount < 1 || playerCount > 4) {
+    if (playerCount < 2 || playerCount > 4) {
         console.error('Invalid player count:', playerCount);
         return;
     }
 
-    // Get the selected character
-    const characterSelect = document.getElementById('characterSelect');
-    const selectedCharacterId = characterSelect.value;
+    // Create arrays to store player names and character selections
+    const selectedCharacterIds = [];
+    let playerNames = [];
     
-    // Ensure a character is selected
-    if (!selectedCharacterId) {
-        alert('Please select a character before starting the game');
-        return;
+    // Validate player inputs
+    for (let i = 1; i <= playerCount; i++) {
+        const playerNameInput = document.getElementById(`player${i}Name`);
+        let playerName = playerNameInput.value.trim();
+        const characterSelect = document.getElementById(`player${i}Character`);
+        const selectedCharacterId = characterSelect.value;
+        
+        // Set default name if empty
+        if (!playerName) {
+            playerName = `Player ${i}`;
+            playerNameInput.value = playerName;
+        }
+        
+        // Validate character selection
+        if (!selectedCharacterId) {
+            alert(`Please select a character for Player ${i}`);
+            return;
+        }
+        
+        // Check for duplicate character selections
+        if (selectedCharacterIds.includes(selectedCharacterId)) {
+            alert(`Duplicate character selection detected. Each player must have a unique character.`);
+            return;
+        }
+        
+        // Store player information
+        playerNames.push(playerName);
+        selectedCharacterIds.push(selectedCharacterId);
     }
-    
-    // Get the selected objective
-    const objectiveSelect = document.getElementById('objectiveSelect');
-    const selectedObjectiveId = objectiveSelect.value;
-    
-    // Ensure an objective is selected
-    if (!selectedObjectiveId) {
-        alert('Please select an objective before starting the game');
-        return;
-    }
-    
+
     // Get the number of scenes
     const scenesCountInput = document.getElementById('scenesCount');
     let scenesCount = 10; // Default value
@@ -3013,7 +3102,17 @@ function startGame() {
     const deckDistribution = getDeckDistribution();
     console.log('Deck distribution:', deckDistribution);
     
-    // Load card data and start the game
+    // Get the selected objective
+    const objectiveSelect = document.getElementById('objectiveSelect');
+    const selectedObjectiveId = objectiveSelect.value;
+    
+    // Ensure an objective is selected
+    if (!selectedObjectiveId) {
+        alert('Please select an objective before starting the game');
+        return;
+    }
+    
+    // Continue with game initialization
     loadCardDataFromJson().then(async (jsonCardData) => {
         let characterCards = [];
         let objectiveCards = [];
@@ -3032,20 +3131,31 @@ function startGame() {
             objectiveCards = OBJECTIVE_CARDS;
         }
         
-        // Find selected character and objective
-        const selectedCharacter = characterCards.find(char => char.id === selectedCharacterId);
+        // Find selected objective 
         const selectedObjective = objectiveCards.find(obj => obj.id === selectedObjectiveId);
-        
-        if (!selectedCharacter) {
-            console.error('Selected character not found:', selectedCharacterId);
-            alert('Selected character not found. Please try again.');
-            return;
-        }
         
         if (!selectedObjective) {
             console.error('Selected objective not found:', selectedObjectiveId);
             alert('Selected objective not found. Please try again.');
             return;
+        }
+        
+        // Create an array to track which characters have been assigned
+        const assignedCharacters = [];
+        
+        // Find selected characters
+        for (let i = 0; i < playerCount; i++) {
+            const characterId = selectedCharacterIds[i];
+            const character = characterCards.find(char => char.id === characterId);
+            
+            if (!character) {
+                console.error(`Selected character not found: ${characterId} for Player ${i+1}`);
+                alert(`Selected character not found for Player ${i+1}. Please try again.`);
+                return;
+            }
+            
+            // Add character to assigned characters
+            assignedCharacters.push(character);
         }
         
         // Store the selected objective, scene count, and alt deck types in the game state
@@ -3058,28 +3168,15 @@ function startGame() {
             deckDistribution: deckDistribution // Store the full distribution
         };
         
-        // Create an array to track which characters have been assigned
-        const assignedCharacters = [selectedCharacter];
-        
-        // Shuffle the remaining characters for random assignment
-        const remainingCharacters = characterCards.filter(char => char.id !== selectedCharacterId);
-        shuffleArray(remainingCharacters);
-        
         // Initialize game state
         gameStarted = true;
         playerHands = Array(playerCount).fill().map(() => []);
         
-        // Store the selected character for player 1 and random characters for other players
-        playerCharacters = [selectedCharacter];
+        // Store the characters for all players
+        playerCharacters = [...assignedCharacters];
         
-        // Assign random characters to other players
-        for (let i = 1; i < playerCount; i++) {
-            if (remainingCharacters.length > 0) {
-                const randomChar = remainingCharacters.pop();
-                playerCharacters.push(randomChar);
-                assignedCharacters.push(randomChar);
-            }
-        }
+        // Store player names
+        playerNames = [...playerNames];
         
         // Initialize player tokens
         initializePlayerTokens();
@@ -5368,11 +5465,9 @@ function disableGameSettings(disabled) {
         document.getElementById('playerCount'),
         document.getElementById('objectiveSelect'),
         document.getElementById('scenesCount'),
-        document.getElementById('mainDeckType'),
         ...document.querySelectorAll('#altDeckTypes input[type="checkbox"]'),
         document.getElementById('timerMinutes'),
-        document.getElementById('timerSeconds'),
-        document.getElementById('dealerRole')
+        document.getElementById('timerSeconds')
     ];
     
     // Disable deck type selection switches
@@ -5581,4 +5676,35 @@ function shuffleDiscardIntoDeck(deckType) {
     }
     
     showNotification(`Shuffled ${deckType} discard pile into deck`, 'success');
+}
+
+// Function to show/hide player setup sections based on player count
+function updatePlayerSetupVisibility() {
+    const playerCount = parseInt(document.getElementById('playerCount').value) || 2;
+    
+    // Show/hide player setup sections based on count
+    for (let i = 1; i <= 4; i++) {
+        const playerSetup = document.getElementById(`player${i}Setup`);
+        if (playerSetup) {
+            playerSetup.style.display = i <= playerCount ? 'block' : 'none';
+            
+            // Add styling to player setup containers
+            if (i <= playerCount) {
+                // Apply styles to visible player sections
+                playerSetup.style.backgroundColor = '#2a2a2a';
+                playerSetup.style.padding = '15px';
+                playerSetup.style.marginBottom = '10px';
+                playerSetup.style.borderRadius = '5px';
+                playerSetup.style.border = '1px solid #444';
+            }
+        }
+    }
+    
+    // Set default player names
+    setPlayerNameDefaults();
+    
+    // Update available characters
+    updateAvailableCharacters();
+    
+    console.log(`Updated player setup visibility for ${playerCount} players`);
 }

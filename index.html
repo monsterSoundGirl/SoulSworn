@@ -29,17 +29,67 @@
               <p>Do yourself a favor. Come up with an exit strategy today, right now. And surround yourself with people that aren't afraid to pull the trigger. Because if you think you're different, that you'll be the exception, that you're the ultimate survivor, you won't be. You'll end up soul sworn like the rest of the hopeful, and your friends will put a bullet through your head anyway.</p>
             </div>
           </div>
-          <div class="form-group">
-            <label for="playerName">Your Name:</label>
-            <input type="text" id="playerName" placeholder="Enter your name">
+          
+          <!-- Player 1 setup -->
+          <div class="player-setup-container" id="player1Setup">
+            <h3>Player 1 (Dealer)</h3>
+            <div class="form-group">
+              <label for="player1Name">Name:</label>
+              <input type="text" id="player1Name" placeholder="Enter player name">
+            </div>
+            <div class="form-group">
+              <label for="player1Character">Character:</label>
+              <select id="player1Character">
+                <option value="">Select a character...</option>
+              </select>
+            </div>
           </div>
-          <div class="form-group">
-            <label for="characterSelect">Character:</label>
-            <select id="characterSelect">
-              <option value="">Select a character...</option>
-              <!-- Character options will be populated dynamically -->
-            </select>
+          
+          <!-- Player 2 setup -->
+          <div class="player-setup-container" id="player2Setup">
+            <h3>Player 2</h3>
+            <div class="form-group">
+              <label for="player2Name">Name:</label>
+              <input type="text" id="player2Name" placeholder="Enter player name">
+            </div>
+            <div class="form-group">
+              <label for="player2Character">Character:</label>
+              <select id="player2Character">
+                <option value="">Select a character...</option>
+              </select>
+            </div>
           </div>
+          
+          <!-- Player 3 setup (initially hidden) -->
+          <div class="player-setup-container" id="player3Setup" style="display: none;">
+            <h3>Player 3</h3>
+            <div class="form-group">
+              <label for="player3Name">Name:</label>
+              <input type="text" id="player3Name" placeholder="Enter player name">
+            </div>
+            <div class="form-group">
+              <label for="player3Character">Character:</label>
+              <select id="player3Character">
+                <option value="">Select a character...</option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- Player 4 setup (initially hidden) -->
+          <div class="player-setup-container" id="player4Setup" style="display: none;">
+            <h3>Player 4</h3>
+            <div class="form-group">
+              <label for="player4Name">Name:</label>
+              <input type="text" id="player4Name" placeholder="Enter player name">
+            </div>
+            <div class="form-group">
+              <label for="player4Character">Character:</label>
+              <select id="player4Character">
+                <option value="">Select a character...</option>
+              </select>
+            </div>
+          </div>
+          
           <div class="instance-code">
             <label>Instance Code:</label>
             <span id="instanceCode">ABC123</span>
@@ -58,7 +108,6 @@
           <div class="form-group">
             <label for="playerCount">Number of Players:</label>
             <select id="playerCount">
-              <option value="1">1 Player</option>
               <option value="2">2 Players</option>
               <option value="3">3 Players</option>
               <option value="4">4 Players</option>
@@ -73,14 +122,6 @@
           <div class="form-group">
             <label for="scenesCount">Number of Scenes (3-40):</label>
             <input type="number" id="scenesCount" min="3" max="40" value="10">
-          </div>
-          <div class="form-group">
-            <label for="mainDeckType">Main Deck:</label>
-            <select id="mainDeckType">
-              <option value="standard">Standard (All Cards)</option>
-              <option value="basic">Basic</option>
-              <option value="advanced">Advanced</option>
-            </select>
           </div>
           <div class="form-group">
             <label>Card Type Deck Selection:</label>
@@ -160,15 +201,6 @@
               <span>:</span>
               <input type="number" id="timerSeconds" min="0" max="59" value="0">
             </div>
-          </div>
-          <div class="form-group">
-            <label for="dealerRole">Dealer Role:</label>
-            <select id="dealerRole">
-              <option value="player1">Player 1</option>
-              <option value="player2">Player 2</option>
-              <option value="player3">Player 3</option>
-              <option value="player4">Player 4</option>
-            </select>
           </div>
         </div>
         <button id="startGameBtn">Start Game</button>
