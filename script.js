@@ -245,6 +245,12 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // D20 area click handler
     document.getElementById('d20Area').addEventListener('click', animateD20Roll);
+    
+    // Deck control buttons
+    document.getElementById('mainDeckDraw').addEventListener('click', () => drawCards('main'));
+    document.getElementById('mainDeckShuffle').addEventListener('click', () => shuffleDiscardIntoDeck('main'));
+    document.getElementById('altDeckDraw').addEventListener('click', () => drawCards('alt'));
+    document.getElementById('altDeckShuffle').addEventListener('click', () => shuffleDiscardIntoDeck('alt'));
 });
 
 // Initialize menu interactions
@@ -662,113 +668,135 @@ function handleDiscardDrop(event) {
     event.preventDefault();
     event.currentTarget.classList.remove('drag-over');
     
+    // Check if we're dragging from the deck wrapper
     if (!draggedCard) return;
+    
+    // Determine if this is the main or alt discard pile
+    const isMainDiscard = event.currentTarget.id === 'mainDiscard';
+    const isAltDiscard = event.currentTarget.id === 'altDiscard';
     
     // Check if we're dragging from the deck wrapper
     if (draggedCard.dataset.fromDeck === 'true') {
-        // Move top card from deck to discard
-        if (mainDeck.length > 0) {
-            const card = mainDeck.shift();
-            card.faceUp = true; // Cards in discard are always face up
-            mainDiscard.push(card);
+        // Check if we're dragging from the correct deck
+        if ((isMainDiscard && draggedCard.parentNode.id === 'mainDeck') ||
+            (isAltDiscard && draggedCard.parentNode.id === 'altDeck')) {
+            // Move top card from deck to discard
+            const deck = isMainDiscard ? mainDeck : altDeck;
+            const discard = isMainDiscard ? mainDiscard : altDiscard;
             
-            // Update the display
-            renderMainDeck();
-            renderMainDiscard();
+            if (deck.length > 0) {
+                const card = deck.shift();
+                card.faceUp = true; // Cards in discard are always face up
+                discard.push(card);
+                
+                // Update the display
+                if (isMainDiscard) {
+                    renderMainDeck();
+                    renderMainDiscard();
+                } else {
+                    renderAltDeck();
+                    renderAltDiscard();
+                }
+            }
+        } else {
+            // Wrong discard pile for this deck
+            showNotification('Cards can only be discarded to their corresponding discard pile', 'error');
         }
         return;
     }
     
     // Check if we're dragging from the discard pile itself
-    if (draggedCard.dataset.fromDiscard === 'true') {
-        // We don't need to do anything if dragging to same pile
+    if (draggedCard.dataset.fromDiscard === 'true' || draggedCard.dataset.fromAltDiscard === 'true') {
+        // Don't do anything when dragging from discard to same discard
         return;
     }
     
     // Handle cards dragged from other places (slots, hand, etc.)
     const cardId = draggedCard.dataset.cardId;
     if (cardId) {
-        // Find the card data
-        let foundCard;
-        let foundInDeck = false;
-        let cardIndex = -1;
+        // Try to find the card in all data sources
+        let card = findCardById(cardId);
         
-        // Search for card in all possible locations
-        // Search in player hands
-        for (let i = 0; i < playerHands.length; i++) {
-            cardIndex = playerHands[i].findIndex(c => c.id === cardId);
-            if (cardIndex !== -1) {
-                foundCard = {...playerHands[i][cardIndex]};
-                playerHands[i].splice(cardIndex, 1); // Remove from hand
-                foundInDeck = true;
-                break;
-            }
+        if (!card) {
+            showNotification('Card data not found', 'error');
+            return;
         }
         
-        // Search in main deck
-        if (!foundInDeck) {
-            cardIndex = mainDeck.findIndex(c => c.id === cardId);
-            if (cardIndex !== -1) {
-                foundCard = {...mainDeck[cardIndex]};
-                mainDeck.splice(cardIndex, 1); // Remove from deck
-                foundInDeck = true;
-            }
+        // Check if the card type belongs to the correct deck
+        const cardType = card.type.toLowerCase();
+        
+        // Get deck distribution from game state
+        const deckDistribution = gameState?.deckDistribution || { 
+            main: [], 
+            alt: [],
+            none: []
+        };
+        
+        // Check if the card type belongs to the correct deck
+        if (isMainDiscard && deckDistribution.alt.includes(cardType)) {
+            showNotification(`${cardType} cards belong in the Alt discard pile`, 'error');
+            return;
         }
         
-        // If card was not found in any data structure, create a new card object
-        if (!foundInDeck) {
-            // Handle emergency placeholder cards 
-            if (cardId.startsWith('emergency')) {
-                const match = cardId.match(/emergency(\d+)/);
-                if (match) {
-                    const cardNum = parseInt(match[1]);
-                    if (!isNaN(cardNum)) {
-                        // Determine card type based on number
-                        const cardType = cardNum % 5 === 0 ? 'monster' : 
-                                       cardNum % 5 === 1 ? 'spell' : 
-                                       cardNum % 5 === 2 ? 'item' : 
-                                       cardNum % 5 === 3 ? 'location' : 'NPC';
-                        
-                        // Create emergency card object
-                        foundCard = {
-                            id: cardId,
-                            name: `Placeholder ${cardType.charAt(0).toUpperCase() + cardType.slice(1)} ${cardNum}`,
-                            type: cardType
-                        };
-                    }
-                }
+        if (isAltDiscard && deckDistribution.main.includes(cardType)) {
+            showNotification(`${cardType} cards belong in the Main discard pile`, 'error');
+            return;
+        }
+        
+        // Now handle discarding the card from its source
+        if (removeCardFromSource(cardId)) {
+            // Add card to appropriate discard pile
+            card.faceUp = true; // Cards in discard are always face up
+            
+            if (isMainDiscard) {
+                mainDiscard.push(card);
+                renderMainDiscard();
             } else {
-                // Try to find the card in the other card collections
-                const allCardTypes = [...Object.keys(CARD_TYPES), ...Object.keys(NON_DECK_TYPES)];
-                for (const type of allCardTypes) {
-                    if (cardId.startsWith(type.toLowerCase() + '_')) {
-                        // Extract the card name from the ID
-                        const cardName = cardId.replace(type.toLowerCase() + '_', '');
-                        foundCard = {
-                            id: cardId,
-                            name: cardName.charAt(0).toUpperCase() + cardName.slice(1),
-                            type: type.toLowerCase()
-                        };
-                        break;
-                    }
-                }
+                altDiscard.push(card);
+                renderAltDiscard();
             }
-        }
-        
-        if (foundCard) {
-            // Ensure the card is face up in the discard pile
-            foundCard.faceUp = true;
             
-            // Add to discard
-            mainDiscard.push(foundCard);
-            
-            // Remove from original position
+            // Remove card element from its original location
             draggedCard.remove();
-            
-            // Update display
-            renderMainDiscard();
+        } else {
+            showNotification('Failed to remove card from its source', 'error');
         }
     }
+}
+
+// Helper function to remove a card from its source by ID
+function removeCardFromSource(cardId) {
+    if (!cardId) return false;
+    
+    // Search in player hands
+    for (let i = 0; i < playerHands.length; i++) {
+        if (!playerHands[i]) continue;
+        
+        const cardIndex = playerHands[i].findIndex(c => c && c.id === cardId);
+        if (cardIndex !== -1) {
+            // Remove from hand
+            const card = playerHands[i][cardIndex];
+            playerHands[i][cardIndex] = null;
+            return true;
+        }
+    }
+    
+    // Search in main deck
+    const mainDeckIndex = mainDeck.findIndex(c => c.id === cardId);
+    if (mainDeckIndex !== -1) {
+        mainDeck.splice(mainDeckIndex, 1);
+        return true;
+    }
+    
+    // Search in alt deck
+    const altDeckIndex = altDeck.findIndex(c => c.id === cardId);
+    if (altDeckIndex !== -1) {
+        altDeck.splice(altDeckIndex, 1);
+        return true;
+    }
+    
+    // If card wasn't found in known sources, just return true to allow discarding
+    return true;
 }
 
 // Handle drop
@@ -2591,8 +2619,9 @@ function initializeAltDeckEventListeners() {
         altDiscardElement.addEventListener('dragover', (e) => {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
+            this.classList.add('drag-over');
         });
-        altDiscardElement.addEventListener('drop', handleAltDiscardDrop);
+        altDiscardElement.addEventListener('drop', handleDiscardDrop);
     }
 }
 
@@ -2661,7 +2690,7 @@ function renderAltDiscard() {
         this.classList.remove('drag-over');
     });
     
-    discardElement.addEventListener('drop', handleAltDiscardDrop);
+    discardElement.addEventListener('drop', handleDiscardDrop);
 }
 
 // Handle dropping cards onto the alt discard pile
@@ -2673,16 +2702,20 @@ function handleAltDiscardDrop(event) {
     
     // Check if we're dragging from the alt deck wrapper
     if (draggedCard.dataset.fromAltDeck === 'true') {
-        // Move top card from alt deck to alt discard
-        if (altDeck.length > 0) {
-            const card = altDeck.shift();
-            card.faceUp = true; // Cards in discard are always face up
-            altDiscard.push(card);
-            
-            // Update the display
-            renderAltDeck();
-            renderAltDiscard();
+        // Only proceed if we have cards in the alt deck
+        if (altDeck.length === 0) {
+            console.warn('Attempted to drag from empty alt deck');
+            return;
         }
+        
+        // Get a copy of the top card and remove it from the alt deck
+        const card = altDeck.shift();
+        card.faceUp = true; // Cards in discard are always face up
+        altDiscard.push(card);
+        
+        // Update the alt deck display
+        renderAltDeck();
+        renderAltDiscard();
         return;
     }
     
@@ -2691,7 +2724,7 @@ function handleAltDiscardDrop(event) {
         // We don't need to do anything if dragging to same pile
         return;
     }
-    
+
     // Handle cards dragged from other places (slots, hand, etc.)
     const cardId = draggedCard.dataset.cardId;
     if (cardId) {
@@ -5376,4 +5409,124 @@ function updatePlayerCharacter(characterCard) {
     
     console.log(`Character updated to: ${characterCard.name}`);
     showNotification(`Character updated to: ${characterCard.name}`, 'success');
+}
+
+// Draw cards from the specified deck
+function drawCards(deckType) {
+    console.log(`Drawing card from ${deckType} deck`);
+    
+    // Determine which deck to draw from
+    const deck = deckType === 'main' ? mainDeck : altDeck;
+    
+    if (deck.length === 0) {
+        showNotification(`${deckType === 'main' ? 'Main' : 'Alt'} deck is empty. Shuffle discard pile first.`, 'warning');
+        return;
+    }
+    
+    // Find all empty hand slots
+    const emptySlots = [];
+    
+    for (let playerIndex = 0; playerIndex < playerCount; playerIndex++) {
+        const playerHand = document.getElementById(`player${playerIndex + 1}Hand`);
+        if (!playerHand) continue;
+        
+        const handSlots = playerHand.querySelectorAll('.handCard:not(.charCard)');
+        handSlots.forEach((slot, slotIndex) => {
+            if (!slot.querySelector('.card')) {
+                emptySlots.push({
+                    slot,
+                    playerIndex,
+                    slotIndex
+                });
+            }
+        });
+    }
+    
+    if (emptySlots.length === 0) {
+        showNotification('No empty slots in player hands', 'info');
+        return;
+    }
+    
+    // Sort empty slots by player index and then slot index for round-robin dealing
+    emptySlots.sort((a, b) => {
+        if (a.playerIndex !== b.playerIndex) {
+            return a.playerIndex - b.playerIndex;
+        }
+        return a.slotIndex - b.slotIndex;
+    });
+    
+    // Deal cards to empty slots round-robin style
+    let cardsToDeal = Math.min(emptySlots.length, deck.length);
+    for (let i = 0; i < cardsToDeal; i++) {
+        const card = deck.shift(); // Take the top card
+        card.faceUp = false; // Make sure it's face down
+        
+        const targetSlot = emptySlots[i].slot;
+        const playerIdx = emptySlots[i].playerIndex;
+        const slotIdx = emptySlots[i].slotIndex;
+        
+        // Add card to player's hand data array
+        if (!playerHands[playerIdx]) {
+            playerHands[playerIdx] = [];
+        }
+        
+        // Ensure the slot exists in the player's hand
+        while (playerHands[playerIdx].length <= slotIdx) {
+            playerHands[playerIdx].push(null);
+        }
+        
+        // Add the card to the player's hand data
+        playerHands[playerIdx][slotIdx] = card;
+        
+        // Create a card element and add it to the slot
+        const cardElement = createCardElement(card);
+        targetSlot.appendChild(cardElement);
+    }
+    
+    // Update deck display
+    if (deckType === 'main') {
+        renderMainDeck();
+    } else {
+        renderAltDeck();
+    }
+    
+    showNotification(`Dealt ${cardsToDeal} card${cardsToDeal !== 1 ? 's' : ''} from ${deckType} deck`, 'success');
+}
+
+// Shuffle discard pile into the deck
+function shuffleDiscardIntoDeck(deckType) {
+    console.log(`Shuffling ${deckType} discard into deck`);
+    
+    // Determine which discard/deck to work with
+    const discard = deckType === 'main' ? mainDiscard : altDiscard;
+    const deck = deckType === 'main' ? mainDeck : altDeck;
+    
+    if (discard.length === 0) {
+        showNotification(`${deckType === 'main' ? 'Main' : 'Alt'} discard pile is empty`, 'warning');
+        return;
+    }
+    
+    // Add all cards from discard to deck
+    deck.push(...discard);
+    
+    // Clear the discard pile
+    if (deckType === 'main') {
+        mainDiscard = [];
+    } else {
+        altDiscard = [];
+    }
+    
+    // Shuffle the deck
+    shuffleArray(deck);
+    
+    // Update displays
+    if (deckType === 'main') {
+        renderMainDeck();
+        renderMainDiscard();
+    } else {
+        renderAltDeck();
+        renderAltDiscard();
+    }
+    
+    showNotification(`Shuffled ${deckType} discard pile into deck`, 'success');
 }

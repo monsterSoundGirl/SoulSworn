@@ -249,14 +249,32 @@
       <div class="mutableSlot"></div>
       <div class="mutableSlot"></div>
     </div>
+    
+    <!-- Main Deck Labels and Controls -->
+    <div class="deck-label" id="mainDeckLabel">Deck</div>
+    <div class="deck-label" id="mainDiscardLabel">Discard</div>
     <div id="mainDeck"></div>
     <div id="mainDiscard"></div>
-    <div id="altDeck"></div>
-    <div id="altDiscard"></div>
+    <div class="deck-control-buttons" id="mainDeckControls">
+      <button class="deck-button draw-button" id="mainDeckDraw">DRAW</button>
+      <button class="deck-button shuffle-button" id="mainDeckShuffle">SHUFFLE</button>
+    </div>
+    
+    <!-- D20 Area -->
     <div id="d20Area">
       <div class="roll-number">20</div>
     </div>
-
+    
+    <!-- Alt Deck Controls and Labels -->
+    <div class="deck-control-buttons" id="altDeckControls">
+      <button class="deck-button draw-button" id="altDeckDraw">DRAW</button>
+      <button class="deck-button shuffle-button" id="altDeckShuffle">SHUFFLE</button>
+    </div>
+    <div id="altDeck"></div>
+    <div id="altDiscard"></div>
+    <div class="deck-label" id="altDeckLabel">Alt</div>
+    <div class="deck-label" id="altDiscardLabel">Discard</div>
+    
     <!-- Player 3 Hand -->
     <div id="player3Hand" class="playerHand">
       <div class="tokenContainer">
