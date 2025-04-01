@@ -30,9 +30,10 @@ body {
 /* Menu Icon */
 #menuIcon {
   position: absolute;
-  width: 184px;
-  height: 160px;
-  left: 24px;
+  width: 82px;
+  height: 62px;
+  left: 80px;
+  top: 72px;
   border-radius: 5px;
   display: flex;
   justify-content: center;
