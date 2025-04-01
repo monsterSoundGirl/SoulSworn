@@ -21,6 +21,10 @@ body {
   height: 1088px;
   background-color: #2a2a2a;
   position: relative;
+  background-image: url('assets/JPG/other/gameboard_background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 /* Menu Icon */
@@ -441,6 +445,10 @@ body {
   user-select: none;
   top: 448px;
   left: 1504px;
+  background-image: url('assets/JPG/other/d20_back.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 #d20Area:hover {
@@ -1141,4 +1149,8 @@ body {
 
 #saveGameBtn:hover, #loadGameBtn:hover {
   background-color: #4a4a4a;
+}
+
+.card-info {
+  display: none;
 }
