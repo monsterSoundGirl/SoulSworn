@@ -293,6 +293,16 @@ function initializeMenuInteractions() {
         // Initialize visibility based on default selection
         updatePlayerSetupVisibility();
     }
+    
+    // Add event listeners to player name inputs for live updating
+    for (let i = 1; i <= 4; i++) {
+        const nameInput = document.getElementById(`player${i}Name`);
+        if (nameInput) {
+            nameInput.addEventListener('input', function() {
+                updatePlayerName(i - 1, this.value);
+            });
+        }
+    }
 
     // Initialize card type selection dropdowns
     initializeCardTypeDropdowns();
@@ -406,13 +416,22 @@ function initializeCardTypeDropdowns() {
     // Initialize character selection dropdowns for all players
     for (let i = 1; i <= 4; i++) {
         initializeCardSelection(`player${i}Character`, CHARACTER_CARDS);
-    }
-    
-    // Add change event listeners to character dropdowns to update available options
-    for (let i = 1; i <= 4; i++) {
+        
+        // Add change handler to update character in game
         const dropdown = document.getElementById(`player${i}Character`);
         if (dropdown) {
-            dropdown.addEventListener('change', updateAvailableCharacters);
+            dropdown.addEventListener('change', function() {
+                if (gameStarted) {
+                    // Find selected character
+                    const characterId = this.value;
+                    if (characterId) {
+                        updatePlayerCharacter(i - 1, characterId);
+                    }
+                }
+                
+                // Always update available characters for other dropdowns
+                updateAvailableCharacters();
+            });
         }
     }
     
@@ -3051,7 +3070,7 @@ function startGame() {
 
     // Create arrays to store player names and character selections
     const selectedCharacterIds = [];
-    let playerNames = [];
+    let tempPlayerNames = [];
     
     // Validate player inputs
     for (let i = 1; i <= playerCount; i++) {
@@ -3079,9 +3098,12 @@ function startGame() {
         }
         
         // Store player information
-        playerNames.push(playerName);
+        tempPlayerNames.push(playerName);
         selectedCharacterIds.push(selectedCharacterId);
     }
+    
+    // Store player names in the global array
+    playerNames = [...tempPlayerNames];
 
     // Get the number of scenes
     const scenesCountInput = document.getElementById('scenesCount');
@@ -3174,9 +3196,6 @@ function startGame() {
         
         // Store the characters for all players
         playerCharacters = [...assignedCharacters];
-        
-        // Store player names
-        playerNames = [...playerNames];
         
         // Initialize player tokens
         initializePlayerTokens();
@@ -5566,20 +5585,29 @@ function disableGameSettings(disabled) {
 }
 
 // Function to update player character during gameplay
-function updatePlayerCharacter(characterCard) {
+function updatePlayerCharacter(playerIndex, characterId) {
     if (!gameStarted) return;
     
-    // Update the player 1 character in the data
-    playerCharacters[0] = characterCard;
+    // Find the character card data
+    const character = CHARACTER_CARDS.find(c => c.id === characterId);
+    if (!character) {
+        console.error(`Character with ID ${characterId} not found`);
+        return;
+    }
     
-    // Update the character card in the data array
-    cardData.characterCards[0] = characterCard;
+    // Update the player character in the data arrays
+    playerCharacters[playerIndex] = character;
+    
+    // Update the character card in the character cards array
+    if (cardData.characterCards) {
+        cardData.characterCards[playerIndex] = character;
+    }
     
     // Re-render player hands to update the character card
     renderHands();
     
-    console.log(`Character updated to: ${characterCard.name}`);
-    showNotification(`Character updated to: ${characterCard.name}`, 'success');
+    console.log(`Character for Player ${playerIndex + 1} updated to: ${character.name}`);
+    showNotification(`Player ${playerIndex + 1} character updated to: ${character.name}`, 'success');
 }
 
 // Draw cards from the specified deck
@@ -5731,4 +5759,31 @@ function updatePlayerSetupVisibility() {
     updateAvailableCharacters();
     
     console.log(`Updated player setup visibility for ${playerCount} players`);
+}
+
+// Function to update player name in game state and UI
+function updatePlayerName(playerIndex, newName) {
+    // Update the player name in the global array
+    if (!playerNames[playerIndex] || playerNames[playerIndex] !== newName) {
+        playerNames[playerIndex] = newName || `Player ${playerIndex + 1}`;
+        
+        // If game is started, update the UI
+        if (gameStarted) {
+            updatePlayerNameInUI(playerIndex);
+        }
+    }
+}
+
+// Function to update player name in the UI
+function updatePlayerNameInUI(playerIndex) {
+    const playerHand = document.getElementById(`player${playerIndex + 1}Hand`);
+    if (!playerHand) return;
+    
+    const nameLabel = playerHand.querySelector('.player-name-label');
+    if (nameLabel) {
+        nameLabel.textContent = playerNames[playerIndex] || `Player ${playerIndex + 1}`;
+    } else {
+        // If we need to re-render the entire hand
+        renderHands();
+    }
 }
