@@ -83,34 +83,75 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="altDeckType">Alt Deck Card Types:</label>
-            <div id="altDeckTypes" class="checkbox-group">
-              <div class="checkbox-item">
-                <input type="checkbox" id="altDeck_objective" value="objective" checked>
-                <label for="altDeck_objective">Objective</label>
+            <label>Card Type Deck Selection:</label>
+            <div id="deckTypeSelection" class="deck-switch-container">
+              <div class="deck-switch-item objective" data-card-type="objective">
+                <div class="deck-switch-label">Objective</div>
+                <div class="deck-switch-track">
+                  <div class="deck-switch-positions">
+                    <div class="deck-switch-position none active" data-position="none">None</div>
+                    <div class="deck-switch-position alt" data-position="alt">Alt</div>
+                  </div>
+                  <div class="deck-switch-knob position-none"></div>
+                </div>
               </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="altDeck_monster" value="monster">
-                <label for="altDeck_monster">Monster</label>
+              <div class="deck-switch-item" data-card-type="monster">
+                <div class="deck-switch-label">Monster</div>
+                <div class="deck-switch-track">
+                  <div class="deck-switch-positions">
+                    <div class="deck-switch-position main active" data-position="main">Main</div>
+                    <div class="deck-switch-position none" data-position="none">None</div>
+                    <div class="deck-switch-position alt" data-position="alt">Alt</div>
+                  </div>
+                  <div class="deck-switch-knob position-main"></div>
+                </div>
               </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="altDeck_item" value="item">
-                <label for="altDeck_item">Item</label>
+              <div class="deck-switch-item" data-card-type="item">
+                <div class="deck-switch-label">Item</div>
+                <div class="deck-switch-track">
+                  <div class="deck-switch-positions">
+                    <div class="deck-switch-position main active" data-position="main">Main</div>
+                    <div class="deck-switch-position none" data-position="none">None</div>
+                    <div class="deck-switch-position alt" data-position="alt">Alt</div>
+                  </div>
+                  <div class="deck-switch-knob position-main"></div>
+                </div>
               </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="altDeck_location" value="location">
-                <label for="altDeck_location">Location</label>
+              <div class="deck-switch-item" data-card-type="location">
+                <div class="deck-switch-label">Location</div>
+                <div class="deck-switch-track">
+                  <div class="deck-switch-positions">
+                    <div class="deck-switch-position main active" data-position="main">Main</div>
+                    <div class="deck-switch-position none" data-position="none">None</div>
+                    <div class="deck-switch-position alt" data-position="alt">Alt</div>
+                  </div>
+                  <div class="deck-switch-knob position-main"></div>
+                </div>
               </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="altDeck_npc" value="NPC">
-                <label for="altDeck_npc">NPC</label>
+              <div class="deck-switch-item" data-card-type="NPC">
+                <div class="deck-switch-label">NPC</div>
+                <div class="deck-switch-track">
+                  <div class="deck-switch-positions">
+                    <div class="deck-switch-position main active" data-position="main">Main</div>
+                    <div class="deck-switch-position none" data-position="none">None</div>
+                    <div class="deck-switch-position alt" data-position="alt">Alt</div>
+                  </div>
+                  <div class="deck-switch-knob position-main"></div>
+                </div>
               </div>
-              <div class="checkbox-item">
-                <input type="checkbox" id="altDeck_spell" value="spell">
-                <label for="altDeck_spell">Spell</label>
+              <div class="deck-switch-item" data-card-type="spell">
+                <div class="deck-switch-label">Spell</div>
+                <div class="deck-switch-track">
+                  <div class="deck-switch-positions">
+                    <div class="deck-switch-position main active" data-position="main">Main</div>
+                    <div class="deck-switch-position none" data-position="none">None</div>
+                    <div class="deck-switch-position alt" data-position="alt">Alt</div>
+                  </div>
+                  <div class="deck-switch-knob position-main"></div>
+                </div>
               </div>
             </div>
-            <div class="help-text">Card types selected here will be moved from the main deck to the alternative deck.</div>
+            <div class="help-text">Select where each card type should be placed: Main deck, Alternative deck, or excluded (None).</div>
           </div>
           <div class="form-group">
             <label for="timerDuration">Timer Duration:</label>

@@ -189,6 +189,9 @@ window.addEventListener('DOMContentLoaded', () => {
     // Set up menu UI interactions
     initializeMenuInteractions();
     
+    // Initialize deck type selection
+    initializeDeckTypeSelection();
+    
     // Start game button
     const startBtn = document.getElementById('startGameBtn');
     
@@ -289,56 +292,105 @@ function initializeMenuInteractions() {
 
 // Initialize alt deck checkboxes with interactivity
 function initializeAltDeckCheckboxes() {
-    const checkboxes = document.querySelectorAll('#altDeckTypes input[type="checkbox"]');
+    // This function is deprecated in favor of initializeDeckTypeSelection
+    console.log('Initializing deck type selection');
+    initializeDeckTypeSelection();
+}
+
+// Initialize deck type selection switches
+function initializeDeckTypeSelection() {
+    const deckSwitches = document.querySelectorAll('.deck-switch-item');
     
-    checkboxes.forEach(checkbox => {
-        // Make the entire checkbox item clickable
-        const checkboxItem = checkbox.closest('.checkbox-item');
-        if (checkboxItem) {
-            checkboxItem.addEventListener('click', (e) => {
-                // Prevent double-triggering when clicking the actual checkbox
-                if (e.target !== checkbox) {
-                    checkbox.checked = !checkbox.checked;
-                    // Dispatch a change event for custom handlers
-                    checkbox.dispatchEvent(new Event('change'));
-                }
+    deckSwitches.forEach(switchItem => {
+        const cardType = switchItem.dataset.cardType;
+        const positions = switchItem.querySelectorAll('.deck-switch-position');
+        const knob = switchItem.querySelector('.deck-switch-knob');
+        
+        // Add click handler to each position
+        positions.forEach(position => {
+            position.addEventListener('click', function() {
+                // Remove active class from all positions
+                positions.forEach(p => p.classList.remove('active'));
+                
+                // Add active class to clicked position
+                this.classList.add('active');
+                
+                // Update knob position
+                const positionType = this.dataset.position;
+                knob.className = 'deck-switch-knob position-' + positionType;
+                
+                // Log the current selection
+                logDeckSelections();
             });
-        }
-        
-        // Add change listener to each checkbox
-        checkbox.addEventListener('change', () => {
-            // Highlight the selected options
-            const item = checkbox.closest('.checkbox-item');
-            if (item) {
-                if (checkbox.checked) {
-                    item.style.backgroundColor = '#4a90e2';
-                    item.style.borderColor = '#2a70c2';
-                } else {
-                    item.style.backgroundColor = '#3a3a3a';
-                    item.style.borderColor = '#555';
-                }
-            }
-            
-            // Log the current alt deck configuration
-            const selectedTypes = getSelectedAltDeckTypes();
-            console.log('Alt deck configuration updated:', selectedTypes);
         });
-        
-        // Initialize styling for checked checkboxes
-        if (checkbox.checked) {
-            const item = checkbox.closest('.checkbox-item');
-            if (item) {
-                item.style.backgroundColor = '#4a90e2';
-                item.style.borderColor = '#2a70c2';
-            }
-        }
     });
 }
 
-// Get the currently selected card types for the alt deck
+// Get the current deck selections for all card types
+function getDeckSelections() {
+    const selections = {};
+    const deckSwitches = document.querySelectorAll('.deck-switch-item');
+    
+    deckSwitches.forEach(switchItem => {
+        const cardType = switchItem.dataset.cardType;
+        const activePosition = switchItem.querySelector('.deck-switch-position.active');
+        
+        if (activePosition) {
+            selections[cardType] = activePosition.dataset.position;
+        }
+    });
+    
+    return selections;
+}
+
+// Log current deck selections to console
+function logDeckSelections() {
+    const selections = getDeckSelections();
+    console.log('Current deck selections:', selections);
+    
+    // Build and log formatted deck contents
+    const mainDeckTypes = [];
+    const altDeckTypes = [];
+    const excludedTypes = [];
+    
+    Object.entries(selections).forEach(([type, position]) => {
+        if (position === 'main') {
+            mainDeckTypes.push(type);
+        } else if (position === 'alt') {
+            altDeckTypes.push(type);
+        } else if (position === 'none') {
+            excludedTypes.push(type);
+        }
+    });
+    
+    console.log('Main deck will contain:', mainDeckTypes.join(', '));
+    console.log('Alt deck will contain:', altDeckTypes.join(', '));
+    console.log('Excluded card types:', excludedTypes.join(', '));
+}
+
+// Get alt deck types (for backward compatibility)
 function getSelectedAltDeckTypes() {
-    const checkboxes = document.querySelectorAll('#altDeckTypes input[type="checkbox"]:checked');
-    return Array.from(checkboxes).map(cb => cb.value);
+    const selections = getDeckSelections();
+    return Object.entries(selections)
+        .filter(([type, position]) => position === 'alt')
+        .map(([type]) => type);
+}
+
+// Get the deck distribution configuration
+function getDeckDistribution() {
+    const selections = getDeckSelections();
+    
+    return {
+        main: Object.entries(selections)
+            .filter(([type, position]) => position === 'main')
+            .map(([type]) => type),
+        alt: Object.entries(selections)
+            .filter(([type, position]) => position === 'alt')
+            .map(([type]) => type),
+        none: Object.entries(selections)
+            .filter(([type, position]) => position === 'none')
+            .map(([type]) => type)
+    };
 }
 
 // Generalized function to handle card selection for different card types
@@ -2234,15 +2286,20 @@ async function initializeDecks() {
         cardData.objectiveCards = loadedCards.nonDeck[NON_DECK_TYPES.OBJECTIVE] || [];
         updateLoadingStatus(`Loaded ${cardData.objectiveCards ? cardData.objectiveCards.length : 0} objective cards`);
         
-        // Get the selected alt deck card types 
-        const altDeckTypes = gameState.altDeckTypes || getSelectedAltDeckTypes();
-        updateLoadingStatus(`Using alt deck configuration: ${altDeckTypes.join(', ')}`);
+        // Get the deck distribution configuration
+        const deckDistribution = getDeckDistribution();
+        updateLoadingStatus(`Using deck distribution: Main ${deckDistribution.main.join(', ')}, Alt ${deckDistribution.alt.join(', ')}, None ${deckDistribution.none.join(', ')}`);
         
-        // Store alt deck configuration in game state
+        // Store configuration in game state
         if (!gameState) {
-            gameState = { altDeckTypes };
+            gameState = { deckDistribution };
         } else {
-            gameState.altDeckTypes = altDeckTypes;
+            gameState.deckDistribution = deckDistribution;
+        }
+        
+        // For backwards compatibility
+        if (!gameState.altDeckTypes) {
+            gameState.altDeckTypes = deckDistribution.alt;
         }
         
         // Initialize main deck and alt deck
@@ -2255,33 +2312,36 @@ async function initializeDecks() {
             alt: {}
         };
         
-        // Process each card type
+        // Process each card type based on configuration
         Object.entries(loadedCards.deck).forEach(([type, cards]) => {
             if (cards && cards.length > 0) {
                 // Make type lowercase for consistent comparison
                 const lowercaseType = type.toLowerCase();
                 
-                // Check if this card type should go in the alt deck
-                if (altDeckTypes.includes(lowercaseType)) {
+                // Check deck assignment based on distribution
+                if (deckDistribution.alt.includes(lowercaseType)) {
                     updateLoadingStatus(`Adding ${cards.length} ${type} cards to the alt deck`);
                     // Add to alt deck
                     altDeck.push(...cards.map(card => ({...card, faceUp: false})));
                     
                     // Track count
                     deckCounts.alt[type] = cards.length;
-                } else {
+                } else if (deckDistribution.main.includes(lowercaseType)) {
                     updateLoadingStatus(`Adding ${cards.length} ${type} cards to the main deck`);
                     // Add to main deck
                     mainDeck.push(...cards.map(card => ({...card, faceUp: false})));
                     
                     // Track count
                     deckCounts.main[type] = cards.length;
+                } else {
+                    // Card type is excluded (none)
+                    updateLoadingStatus(`Excluding ${cards.length} ${type} cards from both decks`);
                 }
             }
         });
         
         // Add objective cards to alt deck if selected
-        if (altDeckTypes.includes('objective') && cardData.objectiveCards) {
+        if (deckDistribution.alt.includes('objective') && cardData.objectiveCards) {
             updateLoadingStatus(`Adding ${cardData.objectiveCards.length} objective cards to the alt deck`);
             altDeck.push(...cardData.objectiveCards.map(card => ({...card, faceUp: false})));
             deckCounts.alt['objective'] = cardData.objectiveCards.length;
@@ -2295,10 +2355,6 @@ async function initializeDecks() {
         Object.entries(deckCounts.alt).forEach(([type, count]) => {
             updateLoadingStatus(`Alt deck - ${type}: ${count} cards`);
         });
-        
-        // If main deck is empty, use emergency placeholders
-        if (mainDeck.length === 0) {
-        }
         
         // If main deck is empty, use emergency placeholders
         if (mainDeck.length === 0) {
@@ -2868,6 +2924,10 @@ function startGame() {
     // Get selected alt deck card types
     const altDeckTypes = getSelectedAltDeckTypes();
     
+    // Get the full deck distribution from switches
+    const deckDistribution = getDeckDistribution();
+    console.log('Deck distribution:', deckDistribution);
+    
     // Load card data and start the game
     loadCardDataFromJson().then(async (jsonCardData) => {
         let characterCards = [];
@@ -2909,7 +2969,8 @@ function startGame() {
             selectedObjective,
             scenesCount,
             finalSceneIndex: scenesCount - 1, // 0-based index
-            altDeckTypes: altDeckTypes
+            altDeckTypes: altDeckTypes, // For backward compatibility
+            deckDistribution: deckDistribution // Store the full distribution
         };
         
         // Create an array to track which characters have been assigned
@@ -5228,6 +5289,27 @@ function disableGameSettings(disabled) {
         document.getElementById('timerSeconds'),
         document.getElementById('dealerRole')
     ];
+    
+    // Disable deck type selection switches
+    const deckSwitches = document.querySelectorAll('.deck-switch-item');
+    deckSwitches.forEach(switchItem => {
+        // Get all position elements within this switch
+        const positions = switchItem.querySelectorAll('.deck-switch-position');
+        const track = switchItem.querySelector('.deck-switch-track');
+        
+        if (track) {
+            if (disabled) {
+                // Add disabled styling
+                track.classList.add('disabled-setting');
+                // Disable click events when disabled
+                track.style.pointerEvents = disabled ? 'none' : 'auto';
+            } else {
+                // Remove disabled styling
+                track.classList.remove('disabled-setting');
+                track.style.pointerEvents = 'auto';
+            }
+        }
+    });
     
     // Disable or enable each setting
     gameSettingsElements.forEach(element => {
