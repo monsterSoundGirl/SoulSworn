@@ -5867,9 +5867,11 @@ function loadInstructions() {
   // ===========================================================
   const instructionsData = {
     "instructions": [
-      "Token Setup: Each player has 3 tokens representing their character attributes - Rational, Emotional, and Physical. You have 7 total points to distribute across all attributes.",
-      "Your character card shows a requisite token distribution for your character. Once the you have place those tokens, you may distribute the remaining tokens as you wish",
-      "To adjust your tokens, click on the token and type a number, or use the arrow keys to increase/decrease values. Each character has a maximum of 7 points total across all attributes."
+      "Assign your character's attributes using the token controls.",
+      "Each player has 3 tokens: Rational (purple), Emotional (orange), and Physical (grey).",
+      "You have a maximum of 7 points to distribute across all attributes.",
+      "Your character card shows the recommended token distribution, but you may adjust them as needed.",
+      "Check all boxes when you're ready to begin play."
     ]
   };
   // ===========================================================
@@ -5904,7 +5906,7 @@ function loadInstructions() {
       // Add fallback text if JSON is empty or malformed
       const fallbackItem = document.createElement('div');
       fallbackItem.className = 'instruction-item';
-      fallbackItem.textContent = 'Welcome to SoulSworn! Get ready to play.';
+      fallbackItem.textContent = 'Assign your character tokens before starting the game.';
       instructionsContainer.appendChild(fallbackItem);
     }
     
@@ -5913,24 +5915,310 @@ function loadInstructions() {
     console.error('Error processing instructions:', error);
     // Add fallback text if there's an error processing the data
     const instructionsContainer = document.getElementById('instructionsContainer');
-    instructionsContainer.innerHTML = '<div class="instruction-item"><input type="checkbox" class="instruction-checkbox" id="instruction-fallback"><div class="instruction-text">Welcome to SoulSworn! Get ready to play.</div></div>';
+    instructionsContainer.innerHTML = '<div class="instruction-item"><input type="checkbox" class="instruction-checkbox" id="instruction-fallback"><div class="instruction-text">Assign your character tokens before starting the game.</div></div>';
+  }
+
+  // Load character setup interface
+  loadCharacterSetup();
+}
+
+// Function to load character setup in the instructions overlay
+function loadCharacterSetup() {
+  const setupContainer = document.getElementById('characterSetupContainer');
+  if (!setupContainer) return;
+  
+  setupContainer.innerHTML = '';
+  
+  // For each player, create a character card with token controls
+  for (let i = 0; i < playerCount; i++) {
+    const playerIndex = i;
+    const character = playerCharacters[playerIndex];
+    
+    if (!character) {
+      console.error(`No character found for player ${playerIndex + 1}`);
+      continue;
+    }
+    
+    // Create setup card for this character
+    const setupCard = document.createElement('div');
+    setupCard.className = 'setup-character-card';
+    setupCard.dataset.playerIndex = playerIndex;
+    
+    // Add player name
+    const playerNameDiv = document.createElement('div');
+    playerNameDiv.className = 'setup-player-name';
+    playerNameDiv.textContent = playerNames[playerIndex] || `Player ${playerIndex + 1}`;
+    setupCard.appendChild(playerNameDiv);
+    
+    // Add character name
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'setup-character-name';
+    nameDiv.textContent = character.name;
+    setupCard.appendChild(nameDiv);
+    
+    // Add character image
+    const characterImg = document.createElement('img');
+    characterImg.className = 'setup-character-image';
+    characterImg.src = character.imageUrl;
+    characterImg.alt = character.name;
+    characterImg.onerror = function() {
+      // Fallback if image fails to load
+      this.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="280" height="400" viewBox="0 0 280 400"><rect width="100%" height="100%" fill="#333"/><text x="50%" y="50%" font-family="Arial" font-size="24" fill="white" text-anchor="middle" dominant-baseline="middle">${character.name}</text></svg>`;
+    };
+    setupCard.appendChild(characterImg);
+    
+    // Create token container (organized as a column like in the game)
+    const tokenContainer = document.createElement('div');
+    tokenContainer.className = 'setup-token-container';
+    
+    // Initialize token values if they don't exist
+    if (!playerTokens[playerIndex]) {
+      playerTokens[playerIndex] = {
+        rational: 2,
+        emotional: 2,
+        physical: 2,
+        total: 6
+      };
+    }
+    
+    // Token types (in the same order as in the game)
+    const tokenTypes = [
+      { name: 'rational', label: 'Rational', cssClass: 'rational-token' },
+      { name: 'emotional', label: 'Emotional', cssClass: 'emotional-token' },
+      { name: 'physical', label: 'Physical', cssClass: 'physical-token' }
+    ];
+    
+    // Create controls for each token type
+    tokenTypes.forEach(tokenType => {
+      const tokenRow = document.createElement('div');
+      tokenRow.className = 'setup-token-row';
+      
+      // Label
+      const label = document.createElement('div');
+      label.className = 'setup-token-label';
+      label.textContent = tokenType.label;
+      tokenRow.appendChild(label);
+      
+      // Control
+      const control = document.createElement('div');
+      control.className = 'setup-token-control';
+      
+      // Minus button
+      const minusBtn = document.createElement('button');
+      minusBtn.className = 'setup-token-button';
+      minusBtn.textContent = '-';
+      minusBtn.dataset.action = 'decrease';
+      minusBtn.dataset.tokenType = tokenType.name;
+      minusBtn.dataset.playerIndex = playerIndex;
+      minusBtn.addEventListener('click', handleTokenButtonClick);
+      control.appendChild(minusBtn);
+      
+      // Value display
+      const valueDisplay = document.createElement('div');
+      valueDisplay.className = `setup-token-value ${tokenType.cssClass}`;
+      valueDisplay.textContent = playerTokens[playerIndex][tokenType.name];
+      valueDisplay.id = `token-${playerIndex}-${tokenType.name}`;
+      control.appendChild(valueDisplay);
+      
+      // Plus button
+      const plusBtn = document.createElement('button');
+      plusBtn.className = 'setup-token-button';
+      plusBtn.textContent = '+';
+      plusBtn.dataset.action = 'increase';
+      plusBtn.dataset.tokenType = tokenType.name;
+      plusBtn.dataset.playerIndex = playerIndex;
+      plusBtn.addEventListener('click', handleTokenButtonClick);
+      control.appendChild(plusBtn);
+      
+      tokenRow.appendChild(control);
+      tokenContainer.appendChild(tokenRow);
+    });
+    
+    // Total points display
+    const totalPoints = document.createElement('div');
+    totalPoints.className = 'setup-total-points';
+    totalPoints.id = `total-points-${playerIndex}`;
+    totalPoints.textContent = `Total Points: ${playerTokens[playerIndex].total}/7`;
+    tokenContainer.appendChild(totalPoints);
+    
+    setupCard.appendChild(tokenContainer);
+    setupContainer.appendChild(setupCard);
+    
+    // Update button states based on initial values
+    updateTokenButtonStates(playerIndex);
   }
 }
 
-function checkAllInstructions() {
-  const checkboxes = document.querySelectorAll('.instruction-checkbox');
-  const startPlayBtn = document.getElementById('startPlayBtn');
+// Handle token button clicks in setup
+function handleTokenButtonClick(event) {
+  const action = event.currentTarget.dataset.action;
+  const tokenType = event.currentTarget.dataset.tokenType;
+  const playerIndex = parseInt(event.currentTarget.dataset.playerIndex);
   
-  // Check if all checkboxes are checked
-  const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
+  if (!playerTokens[playerIndex]) {
+    console.error(`No token data for player ${playerIndex + 1}`);
+    return;
+  }
   
-  // Enable or disable the Play button
-  startPlayBtn.disabled = !allChecked;
+  const MAX_TOTAL = 7; // Maximum total points allowed
+  
+  if (action === 'increase') {
+    // Check if we're at the max total
+    if (playerTokens[playerIndex].total < MAX_TOTAL) {
+      playerTokens[playerIndex][tokenType]++;
+      playerTokens[playerIndex].total++;
+    }
+  } else if (action === 'decrease') {
+    // Check if the token has points to decrease
+    if (playerTokens[playerIndex][tokenType] > 0) {
+      playerTokens[playerIndex][tokenType]--;
+      playerTokens[playerIndex].total--;
+    }
+  }
+  
+  // Update the display
+  const valueDisplay = document.getElementById(`token-${playerIndex}-${tokenType}`);
+  if (valueDisplay) {
+    valueDisplay.textContent = playerTokens[playerIndex][tokenType];
+  }
+  
+  // Update total points display
+  const totalDisplay = document.getElementById(`total-points-${playerIndex}`);
+  if (totalDisplay) {
+    totalDisplay.textContent = `Total Points: ${playerTokens[playerIndex].total}/7`;
+  }
+  
+  // Update button states
+  updateTokenButtonStates(playerIndex);
+}
+
+// Update button enabled/disabled states based on token values
+function updateTokenButtonStates(playerIndex) {
+  const MAX_TOTAL = 7;
+  const playerToken = playerTokens[playerIndex];
+  const atMax = playerToken.total >= MAX_TOTAL;
+  
+  // Get all buttons for this player
+  const tokenTypes = ['rational', 'emotional', 'physical'];
+  
+  tokenTypes.forEach(type => {
+    // Disable plus buttons when at max total
+    const plusBtn = document.querySelector(`button[data-action="increase"][data-token-type="${type}"][data-player-index="${playerIndex}"]`);
+    if (plusBtn) {
+      plusBtn.disabled = atMax;
+    }
+    
+    // Disable minus buttons when token value is 0
+    const minusBtn = document.querySelector(`button[data-action="decrease"][data-token-type="${type}"][data-player-index="${playerIndex}"]`);
+    if (minusBtn) {
+      minusBtn.disabled = playerToken[type] <= 0;
+    }
+  });
+  
+  // Highlight total points if at max
+  const totalDisplay = document.getElementById(`total-points-${playerIndex}`);
+  if (totalDisplay) {
+    if (atMax) {
+      totalDisplay.style.color = '#4CAF50'; // Green when at max
+    } else {
+      totalDisplay.style.color = '#fff'; // White otherwise
+    }
+  }
+}
+
+// Apply token values to the game board
+function applyTokenSetup() {
+  console.log("Applying token setup to game board");
+  
+  // For each player, update the token values in the game
+  for (let i = 0; i < playerCount; i++) {
+    const playerToken = playerTokens[i];
+    if (!playerToken) {
+      console.warn(`No token data found for player ${i + 1}`);
+      continue;
+    }
+    
+    console.log(`Setting tokens for player ${i + 1}:`, playerToken);
+    
+    // Update token displays in the game
+    updatePlayerTokenDisplay(i, 'rational', playerToken.rational);
+    updatePlayerTokenDisplay(i, 'emotional', playerToken.emotional);
+    updatePlayerTokenDisplay(i, 'physical', playerToken.physical);
+  }
+}
+
+// Update a player's token display with the given value
+function updatePlayerTokenDisplay(playerIndex, tokenType, value) {
+  const playerHand = document.getElementById(`player${playerIndex + 1}Hand`);
+  if (!playerHand) {
+    console.error(`Player hand not found for player ${playerIndex + 1}`);
+    return;
+  }
+  
+  // Find the token container
+  const tokenContainer = playerHand.querySelector('.tokenContainer');
+  if (!tokenContainer) {
+    console.error(`Token container not found for player ${playerIndex + 1}`);
+    return;
+  }
+  
+  // Find the specific token (could be an input or div)
+  const token = tokenContainer.querySelector(`.token[data-attribute="${tokenType}"]`);
+  if (!token) {
+    console.error(`Token not found for attribute ${tokenType} for player ${playerIndex + 1}`);
+    return;
+  }
+  
+  console.log(`Found token element:`, token);
+  
+  // Update the token value
+  if (token.tagName === 'INPUT') {
+    // For input elements
+    token.value = value;
+  } else {
+    // For div elements
+    token.textContent = value;
+  }
+  
+  // Add custom styling based on token type for better visibility
+  token.style.borderColor = tokenType === 'rational' ? '#60236a' : 
+                           tokenType === 'emotional' ? '#fbb03f' : 
+                           '#7f7f7f';
+                           
+  token.style.backgroundColor = tokenType === 'rational' ? '#60236a' : 
+                               tokenType === 'emotional' ? '#fbb03f' : 
+                               '#7f7f7f';
+                               
+  token.style.color = tokenType === 'emotional' ? '#000000' : '#ffffff';
+  
+  // Check if max tokens
+  const MAX_TOKENS = 7;
+  if (playerTokens[playerIndex] && playerTokens[playerIndex].total >= MAX_TOKENS) {
+    token.classList.add('maxed');
+  } else {
+    token.classList.remove('maxed');
+  }
+  
+  console.log(`Updated token for player ${playerIndex + 1}: ${tokenType} = ${value}`);
 }
 
 function setupInstructionsOverlay() {
   // Ensure overlay is visible
   document.getElementById('instructionsOverlay').style.display = 'flex';
+  
+  // Initialize player tokens if they don't exist yet
+  if (!playerTokens || !Array.isArray(playerTokens)) {
+    playerTokens = [];
+    for (let i = 0; i < playerCount; i++) {
+      playerTokens[i] = {
+        rational: 2,
+        emotional: 2,
+        physical: 2,
+        total: 6
+      };
+    }
+    console.log("Initialized player tokens:", playerTokens);
+  }
   
   // Load instructions
   loadInstructions();
@@ -5938,12 +6226,16 @@ function setupInstructionsOverlay() {
   // Close button functionality
   const closeBtn = document.querySelector('.close-overlay');
   closeBtn.addEventListener('click', () => {
+    // Apply token setup before closing
+    applyTokenSetup();
     document.getElementById('instructionsOverlay').style.display = 'none';
   });
   
   // Start play button functionality
   const startPlayBtn = document.getElementById('startPlayBtn');
   startPlayBtn.addEventListener('click', () => {
+    // Apply token setup before closing
+    applyTokenSetup();
     document.getElementById('instructionsOverlay').style.display = 'none';
   });
 }
@@ -5957,3 +6249,15 @@ document.getElementById('startGameBtn').addEventListener('click', function() {
   initializeGameBoard();
   setupInstructionsOverlay();
 });
+
+// Check if all instruction checkboxes are checked
+function checkAllInstructions() {
+  const checkboxes = document.querySelectorAll('.instruction-checkbox');
+  const startPlayBtn = document.getElementById('startPlayBtn');
+  
+  // Check if all checkboxes are checked
+  const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
+  
+  // Enable or disable the Play button
+  startPlayBtn.disabled = !allChecked;
+}
