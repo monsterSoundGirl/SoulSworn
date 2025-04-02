@@ -6296,6 +6296,12 @@ const superlatives = [
     title: 'Lord of Chaos Award',
     subtitle: 'Most likely to thrive in total narrative collapse',
     description: 'For the agent of entropy who poured fuel on every twist and laughed as it burned. Mayhem loves you.'
+  },
+  {
+    id: 'tiebreaker',
+    title: 'RPG All-Star Award',
+    subtitle: 'Best role-player',
+    description: 'This tie-breaker is based on the player that best role-played their character.'
   }
 ];
 
@@ -6530,18 +6536,98 @@ function nextSuperlative() {
 // Finalize the game and identify the Eidolon
 function finalizeGame() {
   const superlativeContainer = document.getElementById('superlativeContainer');
-  superlativeContainer.innerHTML = '<div class="superlative-title">Voting Complete!</div><div class="superlative-description">All awards have been assigned. The player with the most awards is named the Eidolon!</div>';
   
   // Count awards for each player
   let maxAwards = 0;
-  let eidolonIndex = -1;
+  let playersWithMaxAwards = [];
   
   for (const [playerIdx, awards] of Object.entries(playerAwards)) {
-    if (awards.length > maxAwards) {
-      maxAwards = awards.length;
-      eidolonIndex = parseInt(playerIdx);
+    const awardCount = awards.length;
+    
+    if (awardCount > maxAwards) {
+      maxAwards = awardCount;
+      playersWithMaxAwards = [parseInt(playerIdx)];
+    } else if (awardCount === maxAwards && maxAwards > 0) {
+      playersWithMaxAwards.push(parseInt(playerIdx));
     }
   }
+  
+  // Check if we have a tie
+  if (playersWithMaxAwards.length > 1 && maxAwards > 0) {
+    // Display tie-breaker voting
+    displayTieBreakerVoting(playersWithMaxAwards);
+    return;
+  }
+  
+  // If no tie or no awards, finalize the display
+  finalizeDisplay(playersWithMaxAwards[0], maxAwards);
+}
+
+// Display the tie-breaker voting
+function displayTieBreakerVoting(tiedPlayerIndices) {
+  const superlativeContainer = document.getElementById('superlativeContainer');
+  const tieBreaker = superlatives.find(s => s.id === 'tiebreaker');
+  
+  // Clear previous content
+  superlativeContainer.innerHTML = '';
+  
+  // Add tie-breaker title
+  const titleElement = document.createElement('div');
+  titleElement.className = 'superlative-title';
+  titleElement.textContent = `TIE BREAKER: ${tieBreaker.title} (${tieBreaker.subtitle})`;
+  superlativeContainer.appendChild(titleElement);
+  
+  // Add description
+  const descriptionElement = document.createElement('div');
+  descriptionElement.className = 'superlative-description';
+  descriptionElement.textContent = tieBreaker.description;
+  superlativeContainer.appendChild(descriptionElement);
+  
+  // Add voting buttons (one for each tied player)
+  const votingSection = document.createElement('div');
+  votingSection.className = 'vote-buttons';
+  
+  for (const playerIndex of tiedPlayerIndices) {
+    const playerName = playerNames[playerIndex] || `Player ${playerIndex + 1}`;
+    const character = playerCharacters[playerIndex];
+    
+    if (!character) continue;
+    
+    const voteButton = document.createElement('button');
+    voteButton.className = 'vote-button';
+    voteButton.textContent = `${character.name} (${playerName})`;
+    voteButton.dataset.playerIndex = playerIndex;
+    
+    voteButton.addEventListener('click', function() {
+      // Remove 'selected' class from all buttons
+      document.querySelectorAll('.vote-button').forEach(btn => {
+        btn.classList.remove('selected');
+      });
+      
+      // Add 'selected' class to this button
+      this.classList.add('selected');
+      
+      // Record the vote after a short delay
+      setTimeout(() => {
+        // Add the tie-breaker award
+        recordVote('tiebreaker', parseInt(this.dataset.playerIndex));
+        
+        // Finalize with the winner
+        finalizeDisplay(parseInt(this.dataset.playerIndex), 
+                       (playerAwards[this.dataset.playerIndex] || []).length);
+      }, 1000);
+    });
+    
+    votingSection.appendChild(voteButton);
+  }
+  
+  superlativeContainer.appendChild(votingSection);
+}
+
+// Finalize the display with the winner
+function finalizeDisplay(eidolonIndex, maxAwards) {
+  const superlativeContainer = document.getElementById('superlativeContainer');
+  superlativeContainer.innerHTML = '<div class="superlative-title">Voting Complete!</div><div class="superlative-description">All awards have been assigned. The player with the most awards is named the Eidolon!</div>';
   
   // If we have an Eidolon, mark them
   if (eidolonIndex >= 0 && maxAwards > 0) {
@@ -6580,6 +6666,16 @@ function startNewGame() {
   
   // Reset setup screen to initial state
   resetSetupScreen();
+  
+  // Ensure all controls are unlocked
+  disableGameSettings(false);
+  
+  // Reinitialize menu interactions
+  initializeMenuInteractions();
+  
+  // Reset event listeners
+  initializeDeckTypeSelection();
+  updateAvailableCharacters();
 }
 
 // Reset game state for a new game
@@ -6625,6 +6721,18 @@ function resetGameState() {
   playerNames = [];
   storyCards = [];
   objectiveCard = null;
+  
+  // Reset any locked UI states
+  document.querySelectorAll('.disabled-setting').forEach(element => {
+    element.classList.remove('disabled-setting');
+  });
+  
+  // Reset any locked form fields
+  document.querySelectorAll('input:disabled, select:disabled').forEach(element => {
+    if (!element.classList.contains('setup-token-button')) { // Don't reset token buttons
+      element.disabled = false;
+    }
+  });
 }
 
 // Reset setup screen to initial state
