@@ -6238,12 +6238,22 @@ function setupInstructionsOverlay() {
 
 // Add this to existing event listeners for the start game button
 document.getElementById('startGameBtn').addEventListener('click', function() {
+  // Check if we're coming from a reset game (Resume Game button)
+  const isResume = this.textContent === 'Resume Game';
+  
+  // Hide setup screen
   document.getElementById('setup').style.display = 'none';
+  
+  // Show game board
   document.getElementById('gameBoard').style.display = 'block';
   
-  // Initialize game board and show instructions overlay
-  initializeGameBoard();
-  setupInstructionsOverlay();
+  if (!isResume) {
+    // Initialize game board for new game
+    startGame();
+  } else {
+    // Just show the game board, game already initialized
+    setupInstructionsOverlay();
+  }
 });
 
 // Check if all instruction checkboxes are checked
@@ -6676,6 +6686,12 @@ function startNewGame() {
   // Reset event listeners
   initializeDeckTypeSelection();
   updateAvailableCharacters();
+  
+  // Update the Start Game button text back to "Start Game"
+  const startGameBtn = document.getElementById('startGameBtn');
+  if (startGameBtn) {
+    startGameBtn.textContent = 'Start Game';
+  }
 }
 
 // Reset game state for a new game
@@ -6815,4 +6831,153 @@ function resetSetupScreen() {
 document.addEventListener('DOMContentLoaded', function() {
   // Initialize end game button
   initializeEndGameButton();
+  
+  // Test PNG transparency (uncomment to test)
+  // testPngTransparency();
 });
+
+// Function to initialize the game board
+function initializeGameBoard() {
+  // This is a wrapper function that calls the appropriate initialization functions
+  console.log('Initializing game board...');
+  
+  // Initialize player tokens
+  initializePlayerTokens();
+  
+  // Generate story grid slots
+  const storyGrid = document.getElementById('storyGrid');
+  storyGrid.innerHTML = ''; // Clear existing slots
+  for (let i = 0; i < 40; i++) { // 4x10 grid
+    const slot = document.createElement('div');
+    slot.className = 'gridSlot';
+    slot.dataset.index = i;
+    slot.addEventListener('dragover', handleDragOver);
+    slot.addEventListener('drop', handleDrop);
+    storyGrid.appendChild(slot);
+  }
+
+  // Initialize mutable column slots
+  const mutableColumn = document.getElementById('mutableColumn');
+  mutableColumn.innerHTML = ''; // Clear existing slots
+  for (let i = 0; i < 4; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'mutableSlot';
+    slot.dataset.index = i;
+    slot.addEventListener('dragover', handleDragOver);
+    slot.addEventListener('drop', handleDrop);
+    mutableColumn.appendChild(slot);
+  }
+
+  // Initialize d20 with starting value of 20 in green
+  const d20Area = document.getElementById('d20Area');
+  const rollDisplay = document.createElement('div');
+  rollDisplay.className = 'roll-number';
+  rollDisplay.textContent = '20';
+  rollDisplay.style.color = '#4ae24a'; // Green for 20
+  d20Area.innerHTML = '';
+  d20Area.appendChild(rollDisplay);
+
+  // Show only the active player hands
+  const playerHandElements = document.querySelectorAll('.playerHand');
+  playerHandElements.forEach((hand, index) => {
+    hand.style.display = index < playerCount ? 'flex' : 'none';
+  });
+
+  // Initialize turn timer
+  initializeTimer();
+  
+  // Initialize deck event listeners
+  initializeDeckEventListeners();
+  
+  console.log('Game board initialized successfully');
+}
+
+// Function to test PNG transparency support
+function testPngTransparency() {
+  console.log('Testing PNG transparency support');
+  
+  // Create a test icon using PNG with transparency
+  const testIcon = document.createElement('div');
+  testIcon.style.position = 'absolute';
+  testIcon.style.top = '200px';
+  testIcon.style.left = '200px';
+  testIcon.style.width = '100px';
+  testIcon.style.height = '100px';
+  testIcon.style.zIndex = '1000';
+  testIcon.style.cursor = 'pointer';
+  
+  // Add the PNG image
+  const iconImg = document.createElement('img');
+  iconImg.src = 'assets/PNG/d20_back.png'; // Using existing PNG in the assets folder
+  iconImg.style.width = '100%';
+  iconImg.style.height = '100%';
+  iconImg.alt = 'PNG Test Icon';
+  
+  // Add a click handler to remove the test icon
+  testIcon.addEventListener('click', function() {
+    this.remove();
+  });
+  
+  // Append the image to the test icon
+  testIcon.appendChild(iconImg);
+  
+  // Append the test icon to the game board
+  document.getElementById('gameBoard').appendChild(testIcon);
+}
+
+// Function to add a PNG icon to the UI
+function addPngIcon(iconPath, elementId, options = {}) {
+  // Get default options
+  const {
+    width = '32px',
+    height = '32px',
+    position = 'relative',
+    top = 'auto',
+    left = 'auto',
+    zIndex = 'auto',
+    onClick = null
+  } = options;
+
+  // Get the target element
+  const targetElement = document.getElementById(elementId);
+  if (!targetElement) {
+    console.error(`Element with ID "${elementId}" not found`);
+    return null;
+  }
+
+  // Create icon container
+  const iconContainer = document.createElement('div');
+  iconContainer.className = 'png-icon';
+  iconContainer.style.position = position;
+  iconContainer.style.width = width;
+  iconContainer.style.height = height;
+  iconContainer.style.display = 'flex';
+  iconContainer.style.justifyContent = 'center';
+  iconContainer.style.alignItems = 'center';
+  
+  // Set positioning if provided
+  if (top !== 'auto') iconContainer.style.top = top;
+  if (left !== 'auto') iconContainer.style.left = left;
+  if (zIndex !== 'auto') iconContainer.style.zIndex = zIndex;
+  
+  // Create and add the image
+  const iconImg = document.createElement('img');
+  iconImg.src = iconPath;
+  iconImg.style.width = '100%';
+  iconImg.style.height = '100%';
+  iconImg.style.objectFit = 'contain';
+  
+  // Add click handler if provided
+  if (onClick && typeof onClick === 'function') {
+    iconContainer.style.cursor = 'pointer';
+    iconContainer.addEventListener('click', onClick);
+  }
+  
+  // Append the image to the container
+  iconContainer.appendChild(iconImg);
+  
+  // Append the container to the target element
+  targetElement.appendChild(iconContainer);
+  
+  return iconContainer;
+}
