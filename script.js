@@ -114,7 +114,6 @@ if (typeof TurnTimer === 'undefined') {
     // Make it globally available
     window.TurnTimer = TurnTimer;
 }
-
 // Create a reference to the timer class
 let timerClass = TurnTimer;
 let gameTimer = null;
@@ -226,6 +225,19 @@ window.addEventListener('DOMContentLoaded', () => {
         // Disable game settings to prevent state changes
         disableGameSettings(true);
     });
+    
+    // Notes tray button
+    document.getElementById('notesButton').addEventListener('click', () => {
+        toggleNotesTray();
+    });
+    
+    // Close notes button
+    document.getElementById('closeNotes').addEventListener('click', () => {
+        toggleNotesTray(false);
+    });
+    
+    // Initialize notes editor
+    initializeNotesEditor();
     
     // Settings icon
     document.getElementById('settingsIcon').addEventListener('click', () => {
@@ -3070,7 +3082,6 @@ function initializeTimer() {
     
     console.log('Timer initialized with duration:', totalSeconds, 'seconds');
 }
-
 // Add a call to initialize the timer when the game starts
 function startGame() {
     // Get selected player count
@@ -4692,6 +4703,10 @@ function showNotification(message, type = 'info') {
 
 // Save the current game state
 function saveGame(saveName, saveType) {
+    // Save notes content
+    const notesEditor = document.getElementById('notesEditor');
+    const notesContent = notesEditor ? notesEditor.innerHTML : '';
+    
     try {
         // Create a game state object with all relevant data
         const gameStateData = {
@@ -4699,6 +4714,7 @@ function saveGame(saveName, saveType) {
             timestamp: Date.now(),
             saveName: saveName,
             playerCount: playerCount,
+            notesContent: notesContent, // Save notes content
             playerCharacters: playerCharacters.map(char => ({
                 id: char.id,
                 name: char.name,
@@ -5291,6 +5307,15 @@ function loadGame(saveDataJson) {
                 ...saveData.gameState.selectedObjective
             } : null
         };
+        
+        // Load notes content if available
+        if (saveData.notesContent) {
+            const notesEditor = document.getElementById('notesEditor');
+            if (notesEditor) {
+                notesEditor.innerHTML = saveData.notesContent;
+                updateNotesPlaceholder();
+            }
+        }
         
         // Show game board
         document.getElementById('setup').style.display = 'none';
@@ -6267,7 +6292,6 @@ function checkAllInstructions() {
   // Enable or disable the Play button
   startPlayBtn.disabled = !allChecked;
 }
-
 // End Game Sequence Functions
 // Data for superlatives
 const superlatives = [
@@ -6981,3 +7005,128 @@ function addPngIcon(iconPath, elementId, options = {}) {
   
   return iconContainer;
 }
+
+// Toggle the notes tray
+function toggleNotesTray(show) {
+    const notesTray = document.getElementById('notesTray');
+    
+    if (show === undefined) {
+        // Toggle current state
+        notesTray.classList.toggle('open');
+    } else if (show) {
+        // Explicitly show
+        notesTray.classList.add('open');
+    } else {
+        // Explicitly hide
+        notesTray.classList.remove('open');
+    }
+    
+    // Save the notes content when closing
+    if (!notesTray.classList.contains('open')) {
+        saveNotesContent();
+    }
+}
+
+// Initialize the notes editor
+function initializeNotesEditor() {
+    const notesEditor = document.getElementById('notesEditor');
+    
+    // Load saved notes if available
+    const savedNotes = localStorage.getItem('gameNotes');
+    if (savedNotes) {
+        notesEditor.innerHTML = savedNotes;
+    }
+    
+    // Set empty attribute for placeholder styling
+    updateNotesPlaceholder();
+    
+    // Add input event listener to track content changes
+    notesEditor.addEventListener('input', () => {
+        updateNotesPlaceholder();
+    });
+    
+    // Setup toolbar functionality
+    setupNotesToolbar();
+}
+
+// Setup the rich text editor toolbar
+function setupNotesToolbar() {
+    const buttons = document.querySelectorAll('.notes-toolbar button');
+    
+    buttons.forEach(button => {
+        button.addEventListener('click', () => {
+            const command = button.dataset.command;
+            
+            if (command === 'createLink') {
+                const url = prompt('Enter a URL:', 'https://');
+                if (url) {
+                    document.execCommand(command, false, url);
+                }
+            } else {
+                document.execCommand(command, false, null);
+            }
+            
+            // Update button states
+            updateToolbarButtonStates();
+        });
+    });
+    
+    // Monitor editor selection changes to update toolbar button states
+    document.getElementById('notesEditor').addEventListener('mouseup', updateToolbarButtonStates);
+    document.getElementById('notesEditor').addEventListener('keyup', updateToolbarButtonStates);
+}
+
+// Update the toolbar button states based on current selection
+function updateToolbarButtonStates() {
+    const buttons = document.querySelectorAll('.notes-toolbar button');
+    
+    buttons.forEach(button => {
+        const command = button.dataset.command;
+        
+        // Skip for undo/redo
+        if (command === 'undo' || command === 'redo') return;
+        
+        try {
+            const commandState = document.queryCommandState(command);
+            
+            if (commandState) {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+        } catch (e) {
+            // Some commands might not support queryCommandState
+            console.log(`Command ${command} doesn't support state query`);
+        }
+    });
+}
+
+// Update the placeholder attribute
+function updateNotesPlaceholder() {
+    const notesEditor = document.getElementById('notesEditor');
+    if (notesEditor.textContent.trim() === '') {
+        notesEditor.setAttribute('data-empty', 'true');
+    } else {
+        notesEditor.removeAttribute('data-empty');
+    }
+}
+
+// Save notes content to localStorage
+function saveNotesContent() {
+    const notesEditor = document.getElementById('notesEditor');
+    if (notesEditor) {
+        localStorage.setItem('gameNotes', notesEditor.innerHTML || '');
+        console.log('Notes saved');
+    }
+}
+
+// Add save notes when game is saved
+function saveGame(saveName, saveType) {
+    // Save the notes content first
+    saveNotesContent();
+    
+    // Existing code follows...
+}
+
+
+

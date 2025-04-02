@@ -398,6 +398,36 @@
         <button id="setDurationBtn">Set</button>
       </div>
     </div>
+    
+    <!-- Notes Tray Button -->
+    <div id="notesButton" class="icon">
+      <img src="assets/PNG/menuIcon.png" alt="Notes" style="width:100%; height:100%; object-fit:contain;">
+      <div class="button-label">Notes</div>
+    </div>
+    
+    <!-- Notes Tray -->
+    <div id="notesTray">
+      <div class="notes-header">
+        <h3>Game Notes</h3>
+        <button id="closeNotes">&times;</button>
+      </div>
+      <div class="notes-toolbar">
+        <button data-command="bold" title="Bold"><strong>B</strong></button>
+        <button data-command="italic" title="Italic"><em>I</em></button>
+        <button data-command="underline" title="Underline"><u>U</u></button>
+        <button data-command="strikeThrough" title="Strike through"><s>S</s></button>
+        <span class="separator"></span>
+        <button data-command="insertUnorderedList" title="Bullet list">•</button>
+        <button data-command="insertOrderedList" title="Numbered list">1.</button>
+        <span class="separator"></span>
+        <button data-command="createLink" title="Insert link">🔗</button>
+        <button data-command="undo" title="Undo">↩</button>
+        <button data-command="redo" title="Redo">↪</button>
+      </div>
+      <div class="notes-content">
+        <div id="notesEditor" contenteditable="true" spellcheck="true"></div>
+      </div>
+    </div>
   </div>
 
   <!-- End Game Overlay -->
