@@ -313,6 +313,9 @@
     <!-- Random Objective Button -->
     <div id="randomObjectiveButton" class="icon">Random Objective</div>
 
+    <!-- Complete Game Button -->
+    <div id="completeGameBtn" class="icon">Complete Game</div>
+
     <!-- Main Game Area -->
     <div id="inspector"></div>
     <div id="storyGrid"></div>
@@ -392,6 +395,23 @@
         <input type="number" id="timerSeconds" min="0" max="59" value="0">
         <button id="setDurationBtn">Set</button>
       </div>
+    </div>
+  </div>
+
+  <!-- End Game Overlay -->
+  <div id="endGameOverlay">
+    <div id="endGameCharacters"></div>
+    <div id="superlativeContainer"></div>
+    <button id="newGameBtn">Reset Game</button>
+  </div>
+
+  <!-- Confirmation Dialog -->
+  <div id="confirmationDialog">
+    <div class="dialog-header">Complete Game</div>
+    <div class="dialog-message">This will clear the game board. Are you sure?</div>
+    <div class="dialog-buttons">
+      <button class="dialog-button dialog-confirm" id="confirmEndGame">Yes, End Game</button>
+      <button class="dialog-button dialog-cancel" id="cancelEndGame">Cancel</button>
     </div>
   </div>
 

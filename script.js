@@ -5867,11 +5867,7 @@ function loadInstructions() {
   // ===========================================================
   const instructionsData = {
     "instructions": [
-      "Assign your character's attributes using the token controls.",
-      "Each player has 3 tokens: Rational (purple), Emotional (orange), and Physical (grey).",
-      "You have a maximum of 7 points to distribute across all attributes.",
-      "Your character card shows the recommended token distribution, but you may adjust them as needed.",
-      "Check all boxes when you're ready to begin play."
+      "Assign your character's attributes using the token controls."
     ]
   };
   // ===========================================================
@@ -6261,3 +6257,454 @@ function checkAllInstructions() {
   // Enable or disable the Play button
   startPlayBtn.disabled = !allChecked;
 }
+
+// End Game Sequence Functions
+// Data for superlatives
+const superlatives = [
+  {
+    id: 'tolkien',
+    title: 'Tolkien Award',
+    subtitle: 'Most likely to be accused of writing an epic fantasy',
+    description: 'To the player that explained... just like... sooooo many details.'
+  },
+  {
+    id: 'dwight',
+    title: 'Dwight Award',
+    subtitle: 'Most likely to run an office or tattle',
+    description: 'To the player that helped the group stay on track and on task. Mostly.'
+  },
+  {
+    id: 'fry',
+    title: 'Stephen Fry Award',
+    subtitle: 'Most likely to narrate documentaries',
+    description: 'To the player that captured the story and brought everyone into it.'
+  },
+  {
+    id: 'winchester',
+    title: 'Winchester Award',
+    subtitle: 'Most likely to survive the movie version',
+    description: 'To the player whose clutch plays, teamwork, and badassery kept the rest of you alive, or at least entertained.'
+  },
+  {
+    id: 'goth',
+    title: 'Goth Chick Award',
+    subtitle: 'Most likely to be consumed by the Obscura',
+    description: 'To the player whose decisions, vibes, and inner darkness suggest they\'d be Soul Sworn by sunset. We love you. We fear you.'
+  },
+  {
+    id: 'chaos',
+    title: 'Lord of Chaos Award',
+    subtitle: 'Most likely to thrive in total narrative collapse',
+    description: 'For the agent of entropy who poured fuel on every twist and laughed as it burned. Mayhem loves you.'
+  }
+];
+
+// Initialize player awards
+let playerAwards = {};
+
+// Show confirmation dialog when "Complete Game" button is clicked
+function initializeEndGameButton() {
+  const completeGameBtn = document.getElementById('completeGameBtn');
+  if (!completeGameBtn) return;
+  
+  completeGameBtn.addEventListener('click', showEndGameConfirmation);
+}
+
+// Show confirmation dialog
+function showEndGameConfirmation() {
+  const dialog = document.getElementById('confirmationDialog');
+  dialog.style.display = 'block';
+  
+  // Add event listeners for confirmation buttons
+  document.getElementById('confirmEndGame').addEventListener('click', startEndGameSequence);
+  document.getElementById('cancelEndGame').addEventListener('click', () => {
+    dialog.style.display = 'none';
+  });
+}
+
+// Start the end game sequence
+function startEndGameSequence() {
+  // Hide confirmation dialog
+  document.getElementById('confirmationDialog').style.display = 'none';
+  
+  // Reset awards
+  playerAwards = {};
+  for (let i = 0; i < playerCount; i++) {
+    playerAwards[i] = [];
+  }
+  
+  // Display end game screen
+  displayEndGameScreen();
+  
+  // Start superlative voting
+  startSuperlativeVoting();
+}
+
+// Display the end game screen with character cards
+function displayEndGameScreen() {
+  // Hide game board and show end game overlay
+  document.getElementById('gameBoard').style.display = 'none';
+  const endGameOverlay = document.getElementById('endGameOverlay');
+  endGameOverlay.style.display = 'flex';
+  
+  // Display character cards
+  displayCharacterCards();
+  
+  // Initialize new game button
+  document.getElementById('newGameBtn').addEventListener('click', startNewGame);
+}
+
+// Display character cards on the end game screen
+function displayCharacterCards() {
+  const charactersContainer = document.getElementById('endGameCharacters');
+  charactersContainer.innerHTML = '';
+  
+  // Create a card for each player
+  for (let i = 0; i < playerCount; i++) {
+    const playerIndex = i;
+    const character = playerCharacters[playerIndex];
+    const playerName = playerNames[playerIndex] || `Player ${playerIndex + 1}`;
+    
+    if (!character) {
+      console.error(`No character found for player ${playerIndex + 1}`);
+      continue;
+    }
+    
+    // Create character card
+    const characterCard = document.createElement('div');
+    characterCard.className = 'end-character-card';
+    characterCard.dataset.playerIndex = playerIndex;
+    
+    // Character image
+    const image = document.createElement('img');
+    image.className = 'end-character-image';
+    image.src = character.imageUrl;
+    image.alt = character.name;
+    image.onerror = function() {
+      // Fallback if image fails to load
+      this.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="280" viewBox="0 0 200 280"><rect width="100%" height="100%" fill="#333"/><text x="50%" y="50%" font-family="Arial" font-size="20" fill="white" text-anchor="middle" dominant-baseline="middle">${character.name}</text></svg>`;
+    };
+    characterCard.appendChild(image);
+    
+    // Character name
+    const nameElement = document.createElement('div');
+    nameElement.className = 'end-character-name';
+    nameElement.textContent = character.name;
+    characterCard.appendChild(nameElement);
+    
+    // Player name
+    const playerNameElement = document.createElement('div');
+    playerNameElement.className = 'end-player-name';
+    playerNameElement.textContent = playerName;
+    characterCard.appendChild(playerNameElement);
+    
+    // Awards container (initially empty)
+    const awardsContainer = document.createElement('div');
+    awardsContainer.className = 'end-awards-container';
+    awardsContainer.id = `awards-${playerIndex}`;
+    characterCard.appendChild(awardsContainer);
+    
+    charactersContainer.appendChild(characterCard);
+  }
+}
+
+// Current superlative index
+let currentSuperlativeIndex = 0;
+
+// Start the superlative voting process
+function startSuperlativeVoting() {
+  currentSuperlativeIndex = 0;
+  displaySuperlativeVoting(currentSuperlativeIndex);
+}
+
+// Display superlative voting for the given index
+function displaySuperlativeVoting(index) {
+  const superlativeContainer = document.getElementById('superlativeContainer');
+  
+  // Check if we've gone through all superlatives
+  if (index >= superlatives.length) {
+    // If all superlatives are done, finalize the game
+    finalizeGame();
+    return;
+  }
+  
+  const superlative = superlatives[index];
+  
+  // Clear previous content
+  superlativeContainer.innerHTML = '';
+  
+  // Add superlative title
+  const titleElement = document.createElement('div');
+  titleElement.className = 'superlative-title';
+  titleElement.textContent = `${superlative.title} (${superlative.subtitle})`;
+  superlativeContainer.appendChild(titleElement);
+  
+  // Add description
+  const descriptionElement = document.createElement('div');
+  descriptionElement.className = 'superlative-description';
+  descriptionElement.textContent = superlative.description;
+  superlativeContainer.appendChild(descriptionElement);
+  
+  // Add voting buttons (one for each player)
+  const votingSection = document.createElement('div');
+  votingSection.className = 'vote-buttons';
+  
+  for (let i = 0; i < playerCount; i++) {
+    const playerIndex = i;
+    const playerName = playerNames[playerIndex] || `Player ${playerIndex + 1}`;
+    const character = playerCharacters[playerIndex];
+    
+    if (!character) continue;
+    
+    const voteButton = document.createElement('button');
+    voteButton.className = 'vote-button';
+    voteButton.textContent = `${character.name} (${playerName})`;
+    voteButton.dataset.playerIndex = playerIndex;
+    
+    voteButton.addEventListener('click', function() {
+      // Remove 'selected' class from all buttons
+      document.querySelectorAll('.vote-button').forEach(btn => {
+        btn.classList.remove('selected');
+      });
+      
+      // Add 'selected' class to this button
+      this.classList.add('selected');
+      
+      // Record the vote after a short delay
+      setTimeout(() => {
+        recordVote(superlative.id, parseInt(this.dataset.playerIndex));
+        nextSuperlative();
+      }, 1000);
+    });
+    
+    votingSection.appendChild(voteButton);
+  }
+  
+  // Add skip button
+  const skipButton = document.createElement('button');
+  skipButton.className = 'vote-button skip-button';
+  skipButton.textContent = 'Skip';
+  skipButton.addEventListener('click', nextSuperlative);
+  votingSection.appendChild(skipButton);
+  
+  superlativeContainer.appendChild(votingSection);
+}
+
+// Record a vote for a player
+function recordVote(superlativeId, playerIndex) {
+  // Add the award to the player's list
+  if (!playerAwards[playerIndex]) {
+    playerAwards[playerIndex] = [];
+  }
+  
+  playerAwards[playerIndex].push(superlativeId);
+  
+  // Display the award immediately
+  displayAward(superlativeId, playerIndex);
+}
+
+// Display an award badge under a player
+function displayAward(superlativeId, playerIndex) {
+  const awardsContainer = document.getElementById(`awards-${playerIndex}`);
+  if (!awardsContainer) return;
+  
+  // Find the superlative data
+  const superlative = superlatives.find(s => s.id === superlativeId);
+  if (!superlative) return;
+  
+  // Create award badge
+  const badge = document.createElement('div');
+  badge.className = 'award-badge';
+  badge.textContent = superlative.title;
+  badge.title = superlative.subtitle;
+  
+  awardsContainer.appendChild(badge);
+}
+
+// Move to the next superlative
+function nextSuperlative() {
+  currentSuperlativeIndex++;
+  displaySuperlativeVoting(currentSuperlativeIndex);
+}
+
+// Finalize the game and identify the Eidolon
+function finalizeGame() {
+  const superlativeContainer = document.getElementById('superlativeContainer');
+  superlativeContainer.innerHTML = '<div class="superlative-title">Voting Complete!</div><div class="superlative-description">All awards have been assigned. The player with the most awards is named the Eidolon!</div>';
+  
+  // Count awards for each player
+  let maxAwards = 0;
+  let eidolonIndex = -1;
+  
+  for (const [playerIdx, awards] of Object.entries(playerAwards)) {
+    if (awards.length > maxAwards) {
+      maxAwards = awards.length;
+      eidolonIndex = parseInt(playerIdx);
+    }
+  }
+  
+  // If we have an Eidolon, mark them
+  if (eidolonIndex >= 0 && maxAwards > 0) {
+    const characterCard = document.querySelector(`.end-character-card[data-player-index="${eidolonIndex}"]`);
+    
+    if (characterCard) {
+      // Position the card relative for the badge
+      characterCard.style.position = 'relative';
+      
+      // Add the Eidolon badge
+      const badge = document.createElement('div');
+      badge.className = 'eidolon-badge';
+      characterCard.appendChild(badge);
+      
+      // Add Eidolon title under awards
+      const eidolonTitle = document.createElement('div');
+      eidolonTitle.textContent = 'THE EIDOLON';
+      eidolonTitle.style.color = 'gold';
+      eidolonTitle.style.fontWeight = 'bold';
+      eidolonTitle.style.fontSize = '20px';
+      eidolonTitle.style.marginTop = '15px';
+      characterCard.querySelector('.end-awards-container').appendChild(eidolonTitle);
+    }
+  }
+}
+
+// Start a new game
+function startNewGame() {
+  // Reset game state
+  resetGameState();
+  
+  // Hide end game overlay and show setup screen
+  document.getElementById('endGameOverlay').style.display = 'none';
+  document.getElementById('setup').style.display = 'flex';
+  document.getElementById('gameBoard').style.display = 'none';
+  
+  // Reset setup screen to initial state
+  resetSetupScreen();
+}
+
+// Reset game state for a new game
+function resetGameState() {
+  // Clear story grid
+  const storyGrid = document.getElementById('storyGrid');
+  storyGrid.innerHTML = '';
+  
+  // Reset player hands
+  for (let i = 0; i < 4; i++) {
+    const hand = document.getElementById(`player${i + 1}Hand`);
+    if (hand) {
+      const handCards = hand.querySelectorAll('.handCard');
+      handCards.forEach(card => {
+        card.innerHTML = '';
+        card.style.backgroundImage = '';
+        card.style.border = '';
+        card.dataset.cardId = '';
+      });
+    }
+  }
+  
+  // Reset decks
+  document.getElementById('mainDeck').innerHTML = '';
+  document.getElementById('mainDiscard').innerHTML = '';
+  document.getElementById('altDeck').innerHTML = '';
+  document.getElementById('altDiscard').innerHTML = '';
+  
+  // Reset awards
+  playerAwards = {};
+  
+  // Reset current superlative index
+  currentSuperlativeIndex = 0;
+  
+  // Clear game state variables
+  mainDeck = [];
+  mainDiscard = [];
+  altDeck = [];
+  altDiscard = [];
+  playerHands = [[], [], [], []];
+  playerCharacters = [];
+  playerTokens = [];
+  playerNames = [];
+  storyCards = [];
+  objectiveCard = null;
+}
+
+// Reset setup screen to initial state
+function resetSetupScreen() {
+  // Reset player count to default
+  const playerCountSelect = document.getElementById('playerCount');
+  if (playerCountSelect) {
+    playerCountSelect.value = '2';
+    playerCount = 2;
+    updatePlayerSetupVisibility();
+  }
+  
+  // Reset objective selection
+  const objectiveSelect = document.getElementById('objectiveSelect');
+  if (objectiveSelect) {
+    objectiveSelect.value = '';
+  }
+  
+  // Reset scenes count
+  const scenesCountInput = document.getElementById('scenesCount');
+  if (scenesCountInput) {
+    scenesCountInput.value = '10';
+  }
+  
+  // Reset deck type selections to defaults
+  const deckSwitches = document.querySelectorAll('.deck-switch-item');
+  deckSwitches.forEach(switchItem => {
+    const cardType = switchItem.dataset.cardType;
+    let defaultPosition = 'main';
+    
+    if (cardType === 'objective') {
+      defaultPosition = 'none';
+    }
+    
+    // Reset visual state
+    const knob = switchItem.querySelector('.deck-switch-knob');
+    if (knob) {
+      knob.className = `deck-switch-knob position-${defaultPosition}`;
+    }
+    
+    // Reset active state
+    const positions = switchItem.querySelectorAll('.deck-switch-position');
+    positions.forEach(pos => {
+      if (pos.dataset.position === defaultPosition) {
+        pos.classList.add('active');
+      } else {
+        pos.classList.remove('active');
+      }
+    });
+  });
+  
+  // Reset player names and character selections
+  for (let i = 1; i <= 4; i++) {
+    const nameInput = document.getElementById(`player${i}Name`);
+    const characterSelect = document.getElementById(`player${i}Character`);
+    
+    if (nameInput) {
+      nameInput.value = '';
+    }
+    
+    if (characterSelect) {
+      characterSelect.value = '';
+    }
+  }
+  
+  // Reset timer duration
+  const timerMinutes = document.querySelectorAll('#timerMinutes');
+  const timerSeconds = document.querySelectorAll('#timerSeconds');
+  
+  timerMinutes.forEach(input => {
+    input.value = '2';
+  });
+  
+  timerSeconds.forEach(input => {
+    input.value = '0';
+  });
+}
+
+// Initialize end game button when document is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize end game button
+  initializeEndGameButton();
+});
