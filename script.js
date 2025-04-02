@@ -3302,6 +3302,9 @@ function startGame() {
         
         // Change start button text to "Resume Game" for future returns to the menu
         document.getElementById('startGameBtn').textContent = 'Resume Game';
+        
+        // Setup and show instructions overlay
+        setupInstructionsOverlay();
     }).catch(error => {
         console.error('Error starting game:', error);
         alert('Failed to start game: ' + error.message);
@@ -5856,3 +5859,101 @@ function markFinalSceneSlot(slotIndex) {
     
     console.log(`Marked slot ${safeIndex} as the final scene (no objective card)`);
 }
+
+// Instructions Overlay Functions
+function loadInstructions() {
+  // ===========================================================
+  // ======== INSTRUCTIONS JSON DATA (EDIT BELOW) ==============
+  // ===========================================================
+  const instructionsData = {
+    "instructions": [
+      "Token Setup: Each player has 3 tokens representing their character attributes - Rational, Emotional, and Physical. You have 7 total points to distribute across all attributes.",
+      "Your character card shows a requisite token distribution for your character. Once the you have place those tokens, you may distribute the remaining tokens as you wish",
+      "To adjust your tokens, click on the token and type a number, or use the arrow keys to increase/decrease values. Each character has a maximum of 7 points total across all attributes."
+    ]
+  };
+  // ===========================================================
+  // ======== END OF INSTRUCTIONS DATA ========================
+  // ===========================================================
+
+  // Process the instructions data
+  try {
+    const instructionsContainer = document.getElementById('instructionsContainer');
+    instructionsContainer.innerHTML = '';
+    
+    if (instructionsData && instructionsData.instructions && instructionsData.instructions.length > 0) {
+      instructionsData.instructions.forEach((instruction, index) => {
+        const instructionItem = document.createElement('div');
+        instructionItem.className = 'instruction-item';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'instruction-checkbox';
+        checkbox.id = `instruction-${index}`;
+        checkbox.addEventListener('change', checkAllInstructions);
+        
+        const instructionText = document.createElement('div');
+        instructionText.className = 'instruction-text';
+        instructionText.textContent = instruction;
+        
+        instructionItem.appendChild(checkbox);
+        instructionItem.appendChild(instructionText);
+        instructionsContainer.appendChild(instructionItem);
+      });
+    } else {
+      // Add fallback text if JSON is empty or malformed
+      const fallbackItem = document.createElement('div');
+      fallbackItem.className = 'instruction-item';
+      fallbackItem.textContent = 'Welcome to SoulSworn! Get ready to play.';
+      instructionsContainer.appendChild(fallbackItem);
+    }
+    
+    console.log('Instructions loaded:', instructionsData);
+  } catch (error) {
+    console.error('Error processing instructions:', error);
+    // Add fallback text if there's an error processing the data
+    const instructionsContainer = document.getElementById('instructionsContainer');
+    instructionsContainer.innerHTML = '<div class="instruction-item"><input type="checkbox" class="instruction-checkbox" id="instruction-fallback"><div class="instruction-text">Welcome to SoulSworn! Get ready to play.</div></div>';
+  }
+}
+
+function checkAllInstructions() {
+  const checkboxes = document.querySelectorAll('.instruction-checkbox');
+  const startPlayBtn = document.getElementById('startPlayBtn');
+  
+  // Check if all checkboxes are checked
+  const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
+  
+  // Enable or disable the Play button
+  startPlayBtn.disabled = !allChecked;
+}
+
+function setupInstructionsOverlay() {
+  // Ensure overlay is visible
+  document.getElementById('instructionsOverlay').style.display = 'flex';
+  
+  // Load instructions
+  loadInstructions();
+  
+  // Close button functionality
+  const closeBtn = document.querySelector('.close-overlay');
+  closeBtn.addEventListener('click', () => {
+    document.getElementById('instructionsOverlay').style.display = 'none';
+  });
+  
+  // Start play button functionality
+  const startPlayBtn = document.getElementById('startPlayBtn');
+  startPlayBtn.addEventListener('click', () => {
+    document.getElementById('instructionsOverlay').style.display = 'none';
+  });
+}
+
+// Add this to existing event listeners for the start game button
+document.getElementById('startGameBtn').addEventListener('click', function() {
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('gameBoard').style.display = 'block';
+  
+  // Initialize game board and show instructions overlay
+  initializeGameBoard();
+  setupInstructionsOverlay();
+});

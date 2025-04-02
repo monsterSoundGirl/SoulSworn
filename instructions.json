@@ -1,0 +1,11 @@
+{
+  "instructions": [
+    "Welcome to SoulSworn! This is a story-based card game where your choices matter.",
+    "Each player will take turns drawing cards and placing them on the story grid.",
+    "Token Setup: Each player has 3 tokens representing their character attributes - Rational (blue), Emotional (red), and Physical (green). Set your starting values based on your character.",
+    "To adjust your tokens, click on the token and type a number, or use the arrow keys to increase/decrease values. Each character has a maximum of 10 points total across all attributes.",
+    "You can use your character's attributes (Rational, Emotional, Physical) to overcome challenges.",
+    "The game continues until you complete your objective or run out of scenes.",
+    "Use the d20 to resolve any conflicts or challenges that arise during gameplay."
+  ]
+} 
