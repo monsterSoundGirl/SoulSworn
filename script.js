@@ -1,122 +1,7 @@
 // Define a simple TurnTimer class if not already available
-if (typeof TurnTimer === 'undefined') {
-    class TurnTimer {
-        constructor(elementId, duration = 120) {
-            this.elementId = elementId;
-            this.duration = duration;
-            this.remaining = duration;
-            this.isRunning = false;
-            this.timerId = null;
-            this.element = document.getElementById(elementId);
-            this.onComplete = null;
-        }
-        
-        start() {
-            if (this.isRunning) return;
-            
-            this.isRunning = true;
-            this.element?.classList.add('running');
-            this.element?.classList.remove('paused', 'completed');
-            
-            const toggleBtn = document.getElementById('toggleBtn');
-            if (toggleBtn) {
-                toggleBtn.textContent = 'Pause';
-                toggleBtn.classList.add('running');
-            }
-            
-            this.timerId = setInterval(() => {
-                this.tick();
-            }, 1000);
-        }
-        
-        pause() {
-            if (!this.isRunning) return;
-            
-            this.isRunning = false;
-            this.element?.classList.add('paused');
-            this.element?.classList.remove('running');
-            
-            const toggleBtn = document.getElementById('toggleBtn');
-            if (toggleBtn) {
-                toggleBtn.textContent = 'Resume';
-                toggleBtn.classList.remove('running');
-            }
-            
-            if (this.timerId) {
-                clearInterval(this.timerId);
-                this.timerId = null;
-            }
-        }
-        
-        reset() {
-            this.pause();
-            this.remaining = this.duration;
-            this.updateDisplay();
-            
-            this.element?.classList.remove('completed', 'running', 'paused');
-            
-            const toggleBtn = document.getElementById('toggleBtn');
-            if (toggleBtn) {
-                toggleBtn.textContent = 'Start';
-                toggleBtn.classList.remove('running', 'times-up');
-            }
-        }
-        
-        tick() {
-            if (this.remaining <= 0) {
-                this.complete();
-                return;
-            }
-            
-            this.remaining--;
-            this.updateDisplay();
-            
-            // Warning when 10 seconds or less remain
-            if (this.remaining <= 10) {
-                this.element?.classList.add('warning');
-            }
-        }
-        
-        complete() {
-            this.pause();
-            this.remaining = 0;
-            this.updateDisplay();
-            
-            this.element?.classList.add('completed');
-            this.element?.classList.remove('running', 'paused');
-            
-            const toggleBtn = document.getElementById('toggleBtn');
-            if (toggleBtn) {
-                toggleBtn.textContent = 'Time\'s Up!';
-                toggleBtn.classList.add('times-up');
-            }
-            
-            if (typeof this.onComplete === 'function') {
-                this.onComplete();
-            }
-        }
-        
-        setDuration(seconds) {
-            this.duration = seconds;
-            this.reset();
-        }
-        
-        updateDisplay() {
-            const timerDisplay = document.querySelector(`#${this.elementId} .timer-display`);
-            if (timerDisplay) {
-                const minutes = Math.floor(this.remaining / 60);
-                const seconds = this.remaining % 60;
-                timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            }
-        }
-    }
-    
-    // Make it globally available
-    window.TurnTimer = TurnTimer;
-}
+// The TurnTimer class is now defined in timer.js
 // Create a reference to the timer class
-let timerClass = TurnTimer;
-let gameTimer = null;
+// let gameTimer = null;
 
 // Main deck and discard pile data
 let mainDeck = [];
@@ -3029,59 +2914,8 @@ function createTestDeck() {
 }
 
 // Initialize the turn timer with proper controls
-function initializeTimer() {
-    const turnTimer = document.getElementById('turnTimer');
-    const toggleBtn = document.getElementById('toggleBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const timerMinutesInput = turnTimer.querySelector('#timerMinutes');
-    const timerSecondsInput = turnTimer.querySelector('#timerSeconds');
-    const setDurationBtn = document.getElementById('setDurationBtn');
-    
-    if (!turnTimer || !toggleBtn || !resetBtn || !setDurationBtn) {
-        console.error('Timer elements not found');
-        return;
-    }
-    
-    // Get duration from inputs or use default (2 minutes)
-    const minutes = parseInt(timerMinutesInput.value) || 2;
-    const seconds = parseInt(timerSecondsInput.value) || 0;
-    const totalSeconds = minutes * 60 + seconds;
-    
-    // Create a new timer instance
-    gameTimer = new TurnTimer('turnTimer', totalSeconds);
-    
-    // Initialize display
-    gameTimer.updateDisplay();
-    
-    // Set up toggle button
-    toggleBtn.addEventListener('click', function() {
-        if (gameTimer.isRunning) {
-            gameTimer.pause();
-        } else {
-            gameTimer.start();
-        }
-    });
-    
-    // Set up reset button
-    resetBtn.addEventListener('click', function() {
-        gameTimer.reset();
-    });
-    
-    // Set up duration button
-    setDurationBtn.addEventListener('click', function() {
-        const newMinutes = parseInt(timerMinutesInput.value) || 0;
-        const newSeconds = parseInt(timerSecondsInput.value) || 0;
-        const newDuration = newMinutes * 60 + newSeconds;
-        
-        if (newDuration > 0) {
-            gameTimer.setDuration(newDuration);
-        } else {
-            alert('Please set a valid duration greater than 0 seconds.');
-        }
-    });
-    
-    console.log('Timer initialized with duration:', totalSeconds, 'seconds');
-}
+// Function removed - timer functionality has been removed
+
 // Add a call to initialize the timer when the game starts
 function startGame() {
     // Get selected player count
@@ -3271,7 +3105,7 @@ function startGame() {
         });
     
         // Initialize turn timer with global reference
-        initializeTimer();
+        // Timer functionality has been removed
     
         // Initialize the deck with our function
         const success = await initializeDecks();
@@ -7193,7 +7027,7 @@ function initializeGameBoard() {
   });
 
   // Initialize turn timer
-  initializeTimer();
+  // Timer functionality has been removed
   
   // Initialize deck event listeners
   initializeDeckEventListeners();
