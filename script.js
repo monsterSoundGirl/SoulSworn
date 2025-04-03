@@ -3953,13 +3953,13 @@ function showAllCards() {
     
     // Define card collections
     const cardCollections = [
-        { id: 'objectives', name: 'Objectives', cards: OBJECTIVE_CARDS },
-        { id: 'characters', name: 'Characters', cards: CHARACTER_CARDS },
+        { id: 'locations', name: 'Locations', cards: DECK_CARDS.location },
+        { id: 'npcs', name: 'NPCs', cards: DECK_CARDS.NPC },
+        { id: 'items', name: 'Items', cards: DECK_CARDS.item },
         { id: 'monsters', name: 'Monsters', cards: DECK_CARDS.monster },
         { id: 'spells', name: 'Spells', cards: DECK_CARDS.spell },
-        { id: 'items', name: 'Items', cards: DECK_CARDS.item },
-        { id: 'locations', name: 'Locations', cards: DECK_CARDS.location },
-        { id: 'npcs', name: 'NPCs', cards: DECK_CARDS.NPC }
+        { id: 'characters', name: 'Characters', cards: CHARACTER_CARDS },
+        { id: 'objectives', name: 'Objectives', cards: OBJECTIVE_CARDS }
     ];
     
     // Create tabs with active state for the first tab
