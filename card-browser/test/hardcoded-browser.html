@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Browser with Hardcoded Data</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="../card-browser.css">
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ecf0f1;
+            font-family: Arial, sans-serif;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .controls {
+            margin-bottom: 20px;
+        }
+        
+        button {
+            padding: 0.8rem 1.5rem;
+            font-size: 1.1rem;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        #selectedCard {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #2a2a2a;
+            border-radius: 5px;
+        }
+        
+        .selected-card-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .selected-card-details {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            width: 100%;
+        }
+        
+        .selected-card-image {
+            width: 220px;
+            height: 330px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        
+        .selected-card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .selected-card-info {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Card Browser with Hardcoded Data</h1>
+        
+        <div class="controls">
+            <button id="openBrowser">Open Card Browser</button>
+        </div>
+        
+        <div id="selectedCard">No card selected</div>
+    </div>
+    
+    <script type="module">
+        import { openCardBrowser } from './hardcoded-card-browser.js';
+        
+        // Display selected card details
+        function displaySelectedCard(card) {
+            const selectedCardDisplay = document.getElementById('selectedCard');
+            
+            if (!card) {
+                selectedCardDisplay.innerHTML = '<p>No card selected</p>';
+                return;
+            }
+            
+            if (card.action === 'drawFromHand') {
+                selectedCardDisplay.innerHTML = '<p>Action: Draw from Hand</p>';
+                return;
+            }
+            
+            // Create a nice card display
+            selectedCardDisplay.innerHTML = `
+                <div class="selected-card-container">
+                    <h3>Selected Card</h3>
+                    <div class="selected-card-details">
+                        <div class="selected-card-image">
+                            <img src="../../${card.imageUrl}" alt="${card.name}">
+                        </div>
+                        <div class="selected-card-info">
+                            <p><strong>Name:</strong> ${card.name}</p>
+                            <p><strong>Type:</strong> ${card.type}</p>
+                            <p><strong>ID:</strong> ${card.id}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Handle opening the browser
+        document.getElementById('openBrowser').addEventListener('click', async () => {
+            try {
+                // Open the card browser
+                const selectedCard = await openCardBrowser();
+                
+                // Display the selected card
+                displaySelectedCard(selectedCard);
+                
+            } catch (error) {
+                console.error('Error opening card browser:', error);
+            }
+        });
+    </script>
+</body>
+</html> 

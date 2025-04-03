@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Data JSON Validator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #ecf0f1;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1, h2, h3 {
+            color: #fff;
+        }
+        
+        .json-preview {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 5px;
+            overflow: auto;
+            max-height: 500px;
+            font-family: monospace;
+            white-space: pre;
+        }
+        
+        .error {
+            color: #e74c3c;
+            background-color: rgba(231, 76, 60, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .success {
+            color: #2ecc71;
+            background-color: rgba(46, 204, 113, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .warning {
+            color: #f39c12;
+            background-color: rgba(243, 156, 18, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .card-counts {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .card-type {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .card-type h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #3a3a3a;
+            padding-bottom: 5px;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .controls {
+            margin: 20px 0;
+        }
+        
+        .img-test {
+            margin-top: 20px;
+        }
+        
+        .img-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .img-card {
+            background-color: #2a2a2a;
+            padding: 10px;
+            border-radius: 5px;
+            width: 200px;
+        }
+        
+        .img-card img {
+            width: 100%;
+            height: auto;
+            border-radius: 3px;
+        }
+        
+        .img-card p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Card Data JSON Validator</h1>
+        
+        <div class="controls">
+            <button id="loadJson">Load Card Data</button>
+            <button id="checkImages">Check Sample Images</button>
+        </div>
+        
+        <div id="results">
+            <p>Click "Load Card Data" to analyze your card data JSON structure.</p>
+        </div>
+        
+        <div id="imageTest" class="img-test" style="display: none;">
+            <h2>Image Test Results</h2>
+            <div class="img-container" id="imgContainer"></div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const resultsDiv = document.getElementById('results');
+            const loadJsonBtn = document.getElementById('loadJson');
+            const checkImagesBtn = document.getElementById('checkImages');
+            const imageTestDiv = document.getElementById('imageTest');
+            const imgContainer = document.getElementById('imgContainer');
+            
+            let cardData = null;
+            
+            loadJsonBtn.addEventListener('click', async () => {
+                resultsDiv.innerHTML = '<p>Loading card data...</p>';
+                
+                try {
+                    const response = await fetch('../../assets/card-data.json');
+                    cardData = await response.json();
+                    analyzeCardData(cardData);
+                } catch (error) {
+                    resultsDiv.innerHTML = `<div class="error">Error loading card data: ${error.message}</div>`;
+                }
+            });
+            
+            checkImagesBtn.addEventListener('click', async () => {
+                if (!cardData) {
+                    resultsDiv.innerHTML += '<div class="warning">Please load card data first</div>';
+                    return;
+                }
+                
+                imageTestDiv.style.display = 'block';
+                imgContainer.innerHTML = '<p>Loading sample images...</p>';
+                
+                testCardImages(cardData);
+            });
+            
+            function analyzeCardData(data) {
+                let html = '<h2>Card Data Analysis</h2>';
+                
+                // Check basic structure
+                if (!data.deck) {
+                    html += '<div class="error">Missing "deck" property in card data</div>';
+                    resultsDiv.innerHTML = html;
+                    return;
+                }
+                
+                // Check card types
+                const expectedTypes = ['location', 'NPC', 'item', 'spell', 'monster'];
+                const foundTypes = Object.keys(data.deck);
+                
+                const missingTypes = expectedTypes.filter(type => !foundTypes.includes(type));
+                const extraTypes = foundTypes.filter(type => !expectedTypes.includes(type));
+                
+                if (missingTypes.length > 0) {
+                    html += `<div class="warning">Missing card types: ${missingTypes.join(', ')}</div>`;
+                }
+                
+                if (extraTypes.length > 0) {
+                    html += `<div class="warning">Extra card types found: ${extraTypes.join(', ')}</div>`;
+                }
+                
+                // Count cards per type
+                html += '<div class="card-counts">';
+                expectedTypes.forEach(type => {
+                    const cards = data.deck[type] || [];
+                    const cssClass = cards.length === 0 ? 'error' : 'success';
+                    
+                    html += `
+                        <div class="card-type">
+                            <h3>${capitalize(type)}s</h3>
+                            <div class="${cssClass}">
+                                Found ${cards.length} cards
+                            </div>
+                    `;
+                    
+                    if (cards.length > 0) {
+                        html += '<ul>';
+                        cards.slice(0, 3).forEach(card => {
+                            html += `<li>${card.name}</li>`;
+                        });
+                        
+                        if (cards.length > 3) {
+                            html += `<li>... and ${cards.length - 3} more</li>`;
+                        }
+                        
+                        html += '</ul>';
+                    }
+                    
+                    html += '</div>';
+                });
+                html += '</div>';
+                
+                // Show sample of parsed JSON
+                html += '<h2>JSON Structure Preview</h2>';
+                html += '<div class="json-preview">' + 
+                    JSON.stringify({
+                        deck: {
+                            location: data.deck.location ? data.deck.location.slice(0, 2) : [],
+                            NPC: data.deck.NPC ? data.deck.NPC.slice(0, 2) : [],
+                            item: data.deck.item ? data.deck.item.slice(0, 2) : [],
+                            spell: data.deck.spell ? data.deck.spell.slice(0, 2) : [],
+                            monster: data.deck.monster ? data.deck.monster.slice(0, 2) : []
+                        }
+                    }, null, 2) + 
+                    '</div>';
+                
+                resultsDiv.innerHTML = html;
+            }
+            
+            function testCardImages(data) {
+                imgContainer.innerHTML = '';
+                const expectedTypes = ['location', 'NPC', 'item', 'spell', 'monster'];
+                
+                expectedTypes.forEach(type => {
+                    const cards = data.deck[type] || [];
+                    if (cards.length > 0) {
+                        // Test first card of each type
+                        const card = cards[0];
+                        const imgCard = document.createElement('div');
+                        imgCard.className = 'img-card';
+                        
+                        const title = document.createElement('p');
+                        title.textContent = `${capitalize(type)}: ${card.name}`;
+                        title.style.fontWeight = 'bold';
+                        
+                        const img = document.createElement('img');
+                        img.src = `../../${card.imageUrl}`;
+                        img.alt = card.name;
+                        
+                        const path = document.createElement('p');
+                        path.textContent = card.imageUrl;
+                        path.style.fontSize = '12px';
+                        path.style.wordBreak = 'break-all';
+                        
+                        const status = document.createElement('p');
+                        status.textContent = 'Loading...';
+                        
+                        img.onload = () => {
+                            status.textContent = 'Image loaded successfully';
+                            status.style.color = '#2ecc71';
+                        };
+                        
+                        img.onerror = () => {
+                            status.textContent = 'Failed to load image';
+                            status.style.color = '#e74c3c';
+                        };
+                        
+                        imgCard.appendChild(title);
+                        imgCard.appendChild(img);
+                        imgCard.appendChild(path);
+                        imgCard.appendChild(status);
+                        
+                        imgContainer.appendChild(imgCard);
+                    }
+                });
+            }
+            
+            function capitalize(string) {
+                return string.charAt(0).toUpperCase() + string.slice(1);
+            }
+        });
+    </script>
+</body>
+</html> 

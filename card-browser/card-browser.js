@@ -14,6 +14,8 @@ export function openCardBrowser(options) {
     // Extract options
     const { cardData, excludedTypes = [], onSelect = () => {} } = options;
     
+    console.log('Card Browser: Opening with card data', cardData);
+    
     // Initial state
     let selectedCard = null;
     let currentCardType = 'location'; // Start with locations
@@ -73,40 +75,92 @@ export function openCardBrowser(options) {
       currentTypeLabel.textContent = capitalize(cardTypes[currentTypeIndex]) + 's';
       
       // Get cards of current type
-      const cards = cardData.deck[cardTypes[currentTypeIndex]] || [];
+      const currentType = cardTypes[currentTypeIndex];
+      console.log(`Card Browser: Loading cards of type "${currentType}"`);
+      
+      // Debugging card data structure
+      console.log(`Card Browser: Card data structure:`, cardData);
+      console.log(`Card Browser: Deck:`, cardData.deck);
+      console.log(`Card Browser: Deck ${currentType}:`, cardData.deck[currentType]);
+      
+      // Get cards safely by adding extra checks
+      const cards = cardData && cardData.deck && cardData.deck[currentType] ? cardData.deck[currentType] : [];
+      console.log(`Card Browser: Found ${cards.length} cards of type "${currentType}"`, cards);
+      
+      // Debugging - add a placeholder if no cards found
+      if (cards.length === 0) {
+        const placeholder = document.createElement('div');
+        placeholder.style.gridColumn = '1 / -1';
+        placeholder.style.textAlign = 'center';
+        placeholder.style.padding = '2rem';
+        placeholder.style.color = '#e74c3c';
+        placeholder.innerHTML = `
+          <h3>No ${currentType} cards found</h3>
+          <p>Check your card-data.json structure for this card type.</p>
+        `;
+        contentContainer.appendChild(placeholder);
+        return;
+      }
       
       // Create card elements
-      cards.forEach(card => {
-        // Create card container with proper aspect ratio for cards
-        const cardContainer = document.createElement('div');
-        cardContainer.className = 'card-item';
-        cardContainer.setAttribute('title', card.name); // Add tooltip with card name
-        cardContainer.dataset.cardId = card.id; // Store card ID for easy selection
-        
-        // Create and add the card image
-        const cardImage = document.createElement('img');
-        cardImage.src = `../../${card.imageUrl}`;
-        cardImage.alt = card.name;
-        cardImage.className = 'card-image';
-        cardContainer.appendChild(cardImage);
-        
-        // Handle selection
-        cardContainer.addEventListener('click', () => {
-          // Remove selection from all cards
-          document.querySelectorAll('.card-item').forEach(el => {
-            el.classList.remove('selected');
-            el.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
-            el.style.margin = '0';
+      cards.forEach((card, index) => {
+        try {
+          // Log card info for debugging
+          console.log(`Card Browser: Creating card ${index + 1}/${cards.length}: ${card.name}`);
+          
+          // Create card container with proper aspect ratio for cards
+          const cardContainer = document.createElement('div');
+          cardContainer.className = 'card-item';
+          cardContainer.setAttribute('title', card.name); // Add tooltip with card name
+          cardContainer.dataset.cardId = card.id; // Store card ID for easy selection
+          
+          // Create and add the card image
+          const cardImage = document.createElement('img');
+          cardImage.src = `../../${card.imageUrl}`;
+          cardImage.alt = card.name;
+          cardImage.className = 'card-image';
+          
+          // Add error handling for image loading
+          cardImage.onerror = () => {
+            console.error(`Card Browser: Failed to load image for ${card.name} (${card.imageUrl})`);
+            // Add fallback content
+            cardImage.style.display = 'none';
+            const errorMsg = document.createElement('div');
+            errorMsg.style.width = '100%';
+            errorMsg.style.height = '100%';
+            errorMsg.style.display = 'flex';
+            errorMsg.style.alignItems = 'center';
+            errorMsg.style.justifyContent = 'center';
+            errorMsg.style.background = '#2a2a2a';
+            errorMsg.style.color = '#e74c3c';
+            errorMsg.style.padding = '1rem';
+            errorMsg.style.textAlign = 'center';
+            errorMsg.textContent = `Could not load image: ${card.name}`;
+            cardContainer.appendChild(errorMsg);
+          };
+          
+          cardContainer.appendChild(cardImage);
+          
+          // Handle selection
+          cardContainer.addEventListener('click', () => {
+            // Remove selection from all cards
+            document.querySelectorAll('.card-item').forEach(el => {
+              el.classList.remove('selected');
+              el.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+              el.style.margin = '0';
+            });
+            
+            // Select this card
+            cardContainer.classList.add('selected');
+            cardContainer.style.boxShadow = '0 0 0 3px #e74c3c, 0 8px 16px rgba(0,0,0,0.5)';
+            selectedCard = card;
+            selectCardBtn.disabled = false;
           });
           
-          // Select this card
-          cardContainer.classList.add('selected');
-          cardContainer.style.boxShadow = '0 0 0 3px #e74c3c, 0 8px 16px rgba(0,0,0,0.5)';
-          selectedCard = card;
-          selectCardBtn.disabled = false;
-        });
-        
-        contentContainer.appendChild(cardContainer);
+          contentContainer.appendChild(cardContainer);
+        } catch (error) {
+          console.error(`Card Browser: Error creating card ${index}:`, error);
+        }
       });
       
       // Center align the grid items if they don't fill the entire row
@@ -139,6 +193,7 @@ export function openCardBrowser(options) {
     // Navigation: Previous card type
     navPrevBtn.addEventListener('click', () => {
       currentTypeIndex = (currentTypeIndex - 1 + cardTypes.length) % cardTypes.length;
+      console.log(`Card Browser: Navigating to previous type: ${cardTypes[currentTypeIndex]}`);
       updateContent();
       selectCardBtn.disabled = true;
       selectedCard = null;
@@ -147,6 +202,7 @@ export function openCardBrowser(options) {
     // Navigation: Next card type
     navNextBtn.addEventListener('click', () => {
       currentTypeIndex = (currentTypeIndex + 1) % cardTypes.length;
+      console.log(`Card Browser: Navigating to next type: ${cardTypes[currentTypeIndex]}`);
       updateContent();
       selectCardBtn.disabled = true;
       selectedCard = null;
