@@ -4017,14 +4017,14 @@ function showAllCards() {
     const cardsContainer = document.createElement('div');
     cardsContainer.id = 'cards-grid-container';
     cardsContainer.style.display = 'grid';
-    cardsContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
+    cardsContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(250px, 1fr))';
     cardsContainer.style.gap = '20px';
     cardsContainer.style.width = '90%';
     cardsContainer.style.maxWidth = '1200px';
     cardsContainer.style.padding = '20px';
     cardsContainer.style.boxSizing = 'border-box';
     cardsContainer.style.overflowY = 'auto';
-    cardsContainer.style.maxHeight = '60vh';
+    cardsContainer.style.maxHeight = '80vh';
     cardsContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
     cardsContainer.style.borderRadius = '10px';
     
@@ -4231,7 +4231,7 @@ function showAllObjectives() {
     // Create a container for the cards grid
     const cardsContainer = document.createElement('div');
     cardsContainer.style.display = 'grid';
-    cardsContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
+    cardsContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(250px, 1fr))';
     cardsContainer.style.gap = '20px';
     cardsContainer.style.width = '90%';
     cardsContainer.style.maxWidth = '1200px';
@@ -4497,7 +4497,7 @@ function showCardCollection(cards, collectionTitle) {
     // Create a container for the cards grid
     const cardsContainer = document.createElement('div');
     cardsContainer.style.display = 'grid';
-    cardsContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
+    cardsContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(250px, 1fr))';
     cardsContainer.style.gap = '20px';
     cardsContainer.style.width = '90%';
     cardsContainer.style.maxWidth = '1200px';
