@@ -245,7 +245,7 @@ window.addEventListener('DOMContentLoaded', () => {
     });
     
     // Objectives button
-    document.getElementById('objectivesButton').addEventListener('click', showAllObjectives);
+    document.getElementById('objectivesButton').addEventListener('click', showAllCards);
     
     // Random Objective button
     document.getElementById('randomObjectiveButton').addEventListener('click', selectRandomObjective);
@@ -3907,6 +3907,291 @@ function placeObjectiveCard(objectiveCard, slotIndex) {
     targetSlot.appendChild(cardElement);
     
     console.log(`Placed objective card "${objectiveCard.name}" in slot ${safeIndex}`);
+}
+
+// Show all cards in a popup overlay for selection
+function showAllCards() {
+    // Check if we already have an overlay open
+    if (document.getElementById('cards-overlay')) {
+        return;
+    }
+    
+    // Create overlay container
+    const overlay = document.createElement('div');
+    overlay.id = 'cards-overlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
+    overlay.style.zIndex = '1000';
+    overlay.style.display = 'flex';
+    overlay.style.flexDirection = 'column';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    overlay.style.padding = '20px';
+    overlay.style.boxSizing = 'border-box';
+    overlay.style.overflow = 'auto';
+    
+    // Add a title
+    const title = document.createElement('h2');
+    title.textContent = 'Browse All Cards';
+    title.style.color = 'white';
+    title.style.marginBottom = '20px';
+    title.style.fontWeight = 'bold';
+    title.style.textShadow = '0 2px 4px rgba(0,0,0,0.5)';
+    overlay.appendChild(title);
+    
+    // Create tabs container
+    const tabsContainer = document.createElement('div');
+    tabsContainer.style.display = 'flex';
+    tabsContainer.style.marginBottom = '20px';
+    tabsContainer.style.backgroundColor = '#333';
+    tabsContainer.style.borderRadius = '5px';
+    tabsContainer.style.overflow = 'hidden';
+    
+    // Define card collections
+    const cardCollections = [
+        { id: 'objectives', name: 'Objectives', cards: OBJECTIVE_CARDS },
+        { id: 'characters', name: 'Characters', cards: CHARACTER_CARDS },
+        { id: 'monsters', name: 'Monsters', cards: DECK_CARDS.monster },
+        { id: 'spells', name: 'Spells', cards: DECK_CARDS.spell },
+        { id: 'items', name: 'Items', cards: DECK_CARDS.item },
+        { id: 'locations', name: 'Locations', cards: DECK_CARDS.location },
+        { id: 'npcs', name: 'NPCs', cards: DECK_CARDS.NPC }
+    ];
+    
+    // Create tabs with active state for the first tab
+    cardCollections.forEach((collection, index) => {
+        const tab = document.createElement('div');
+        tab.id = `tab-${collection.id}`;
+        tab.textContent = collection.name;
+        tab.style.padding = '10px 20px';
+        tab.style.cursor = 'pointer';
+        tab.style.color = 'white';
+        tab.style.borderBottom = index === 0 ? '3px solid #e5a619' : 'none';
+        tab.style.backgroundColor = index === 0 ? '#444' : 'transparent';
+        
+        tab.addEventListener('mouseenter', function() {
+            if (!this.classList.contains('active')) {
+                this.style.backgroundColor = '#444';
+            }
+        });
+        
+        tab.addEventListener('mouseleave', function() {
+            if (!this.classList.contains('active')) {
+                this.style.backgroundColor = 'transparent';
+            }
+        });
+        
+        tab.addEventListener('click', function() {
+            // Set all tabs to inactive
+            const tabs = tabsContainer.querySelectorAll('div');
+            tabs.forEach(t => {
+                t.classList.remove('active');
+                t.style.borderBottom = 'none';
+                t.style.backgroundColor = 'transparent';
+            });
+            
+            // Set this tab to active
+            this.classList.add('active');
+            this.style.borderBottom = '3px solid #e5a619';
+            this.style.backgroundColor = '#444';
+            
+            // Update the cards container
+            updateCardsContainer(collection.cards);
+        });
+        
+        // Add first tab as active
+        if (index === 0) {
+            tab.classList.add('active');
+        }
+        
+        tabsContainer.appendChild(tab);
+    });
+    
+    overlay.appendChild(tabsContainer);
+    
+    // Create a container for the cards grid
+    const cardsContainer = document.createElement('div');
+    cardsContainer.id = 'cards-grid-container';
+    cardsContainer.style.display = 'grid';
+    cardsContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
+    cardsContainer.style.gap = '20px';
+    cardsContainer.style.width = '90%';
+    cardsContainer.style.maxWidth = '1200px';
+    cardsContainer.style.padding = '20px';
+    cardsContainer.style.boxSizing = 'border-box';
+    cardsContainer.style.overflowY = 'auto';
+    cardsContainer.style.maxHeight = '60vh';
+    cardsContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    cardsContainer.style.borderRadius = '10px';
+    
+    // Function to update cards in the container
+    function updateCardsContainer(cards) {
+        // Clear current cards
+        cardsContainer.innerHTML = '';
+        
+        // Add cards to the grid
+        cards.forEach(card => {
+            // Create card container
+            const cardContainer = document.createElement('div');
+            cardContainer.style.display = 'flex';
+            cardContainer.style.flexDirection = 'column';
+            cardContainer.style.alignItems = 'center';
+            cardContainer.style.cursor = 'pointer';
+            cardContainer.style.transition = 'transform 0.2s';
+            cardContainer.style.backgroundColor = '#2a2a2a';
+            cardContainer.style.padding = '10px';
+            cardContainer.style.borderRadius = '10px';
+            cardContainer.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+            
+            // Add hover effect
+            cardContainer.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.05)';
+            });
+            
+            cardContainer.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+            });
+            
+            // Add click handler to place the card in the next empty slot
+            cardContainer.addEventListener('click', function() {
+                // Close the overlay
+                overlay.remove();
+                
+                // Place the card in the next empty slot in the story grid
+                placeCardInNextEmptySlot(card);
+            });
+            
+            // Create and add the card image
+            const cardImage = document.createElement('img');
+            cardImage.src = card.imageUrl;
+            cardImage.alt = card.name;
+            cardImage.style.width = '100%';
+            cardImage.style.height = 'auto';
+            cardImage.style.borderRadius = '5px';
+            cardImage.style.marginBottom = '10px';
+            cardImage.style.objectFit = 'contain';
+            cardContainer.appendChild(cardImage);
+            
+            // Create and add the card name
+            const cardName = document.createElement('div');
+            cardName.textContent = card.name;
+            cardName.style.color = 'white';
+            cardName.style.fontSize = '14px';
+            cardName.style.fontWeight = 'bold';
+            cardName.style.textAlign = 'center';
+            cardName.style.marginTop = '5px';
+            cardContainer.appendChild(cardName);
+            
+            // Add the card container to the grid
+            cardsContainer.appendChild(cardContainer);
+        });
+    }
+    
+    // Initially populate with the first collection (Objectives)
+    updateCardsContainer(cardCollections[0].cards);
+    
+    // Add the cards container to the overlay
+    overlay.appendChild(cardsContainer);
+    
+    // Add a close button
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'Close';
+    closeButton.style.marginTop = '20px';
+    closeButton.style.padding = '10px 20px';
+    closeButton.style.backgroundColor = '#3a3a3a';
+    closeButton.style.color = 'white';
+    closeButton.style.border = 'none';
+    closeButton.style.borderRadius = '5px';
+    closeButton.style.cursor = 'pointer';
+    closeButton.style.fontWeight = 'bold';
+    closeButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+    
+    closeButton.addEventListener('mouseenter', function() {
+        this.style.backgroundColor = '#4a4a4a';
+    });
+    
+    closeButton.addEventListener('mouseleave', function() {
+        this.style.backgroundColor = '#3a3a3a';
+    });
+    
+    closeButton.addEventListener('click', function() {
+        overlay.remove();
+    });
+    
+    overlay.appendChild(closeButton);
+    
+    // Close overlay when clicking outside the cards (directly on the overlay)
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            overlay.remove();
+        }
+    });
+    
+    // Add the overlay to the document
+    document.body.appendChild(overlay);
+    
+    // Add a small delay before adding escape key handler to prevent immediate closing
+    setTimeout(() => {
+        // Close overlay when pressing escape
+        function handleEscKey(e) {
+            if (e.key === 'Escape') {
+                overlay.remove();
+                document.removeEventListener('keydown', handleEscKey);
+            }
+        }
+        
+        document.addEventListener('keydown', handleEscKey);
+    }, 100);
+}
+
+// Function to place a card in the next empty slot in the story grid
+function placeCardInNextEmptySlot(card) {
+    // Get all grid slots
+    const gridSlots = document.querySelectorAll('#storyGrid .gridSlot');
+    if (!gridSlots.length) {
+        console.error('No grid slots found');
+        return;
+    }
+    
+    // Get the final scene index (either the Objective card or the end of story grid)
+    const finalSceneIndex = gameState.finalSceneIndex || gridSlots.length - 1;
+    
+    // Find the first empty slot between the first slot (index 0) and the final scene
+    let emptySlotIndex = -1;
+    for (let i = 0; i < finalSceneIndex; i++) {
+        // If the slot is empty (has no children or only has empty children)
+        if (!gridSlots[i].querySelector('.card')) {
+            emptySlotIndex = i;
+            break;
+        }
+    }
+    
+    // If no empty slot was found, use the last slot before the final scene
+    if (emptySlotIndex === -1) {
+        emptySlotIndex = finalSceneIndex - 1;
+    }
+    
+    // Clear any existing content in the slot
+    const targetSlot = gridSlots[emptySlotIndex];
+    while (targetSlot.firstChild) {
+        targetSlot.removeChild(targetSlot.firstChild);
+    }
+    
+    // Create the card element (face up)
+    const cardElement = createCardElement({...card, faceUp: true});
+    
+    // Add the card to the slot
+    targetSlot.appendChild(cardElement);
+    
+    // Show notification
+    showNotification(`Placed "${card.name}" in the story grid`, 'success');
+    
+    // Also show the card in the inspector
+    updateInspector(card);
 }
 
 // Show all objective cards in a popup overlay
