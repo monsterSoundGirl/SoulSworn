@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Browser Path Fix</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="../card-browser.css">
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ecf0f1;
+            font-family: Arial, sans-serif;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .error {
+            color: #e74c3c;
+            background-color: rgba(231, 76, 60, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .success {
+            color: #2ecc71;
+            background-color: rgba(46, 204, 113, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .card-results {
+            margin-top: 20px;
+        }
+        
+        .card-type-results {
+            background-color: #2a2a2a;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .controls {
+            margin-bottom: 20px;
+        }
+        
+        button {
+            padding: 0.8rem 1.5rem;
+            font-size: 1.1rem;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        h2 {
+            color: white;
+            margin-top: 30px;
+        }
+        
+        #selectedCard {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #2a2a2a;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Card Browser with Path Fix</h1>
+        
+        <div class="controls">
+            <button id="openBrowser">Open Card Browser</button>
+            <button id="toggleLogButton">Show Debug Log</button>
+        </div>
+        
+        <div id="debugLog" style="display: none;">
+            <h2>Debug Log</h2>
+            <div id="log" class="debug-log" style="background-color: #2a2a2a; padding: 15px; border-radius: 5px; max-height: 300px; overflow: auto; font-family: monospace;"></div>
+        </div>
+        
+        <div id="selectedCard">No card selected</div>
+    </div>
+    
+    <script type="module">
+        import { openCardBrowser } from '../card-browser.js';
+        
+        // Setup debug logging
+        const log = document.getElementById('log');
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        
+        console.log = function(...args) {
+            if (log) {
+                const logItem = document.createElement('div');
+                logItem.textContent = `${new Date().toISOString().slice(11, 19)} [LOG] ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')}`;
+                log.appendChild(logItem);
+                log.scrollTop = log.scrollHeight;
+            }
+            originalConsoleLog.apply(console, args);
+        };
+        
+        console.error = function(...args) {
+            if (log) {
+                const logItem = document.createElement('div');
+                logItem.style.color = '#e74c3c';
+                logItem.textContent = `${new Date().toISOString().slice(11, 19)} [ERROR] ${args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')}`;
+                log.appendChild(logItem);
+                log.scrollTop = log.scrollHeight;
+            }
+            originalConsoleError.apply(console, args);
+        };
+        
+        // Toggle debug log
+        document.getElementById('toggleLogButton').addEventListener('click', () => {
+            const debugLog = document.getElementById('debugLog');
+            debugLog.style.display = debugLog.style.display === 'none' ? 'block' : 'none';
+        });
+        
+        // Path fixing function
+        function fixCardPath(card) {
+            if (!card || !card.imageUrl) return card;
+            
+            // Check if path already correct
+            if (card.imageUrl.includes(`/cards/deck/${card.type}/${card.type}s_`)) {
+                return card;
+            }
+            
+            // Extract card name for path construction - this will depend on your actual file naming pattern
+            let namePart = '';
+            
+            // Extract from the original URL if possible
+            const urlParts = card.imageUrl.split('/');
+            const fileName = urlParts[urlParts.length - 1];
+            
+            if (fileName && fileName.endsWith('.jpg')) {
+                // Try to use the file name from the original URL
+                namePart = fileName;
+            } else {
+                // If that fails, construct from the card name
+                namePart = card.name.toLowerCase().replace(/\s+/g, '');
+                namePart = `${card.type}s_${namePart}.jpg`;
+            }
+            
+            // Construct correct path
+            const correctedPath = `assets/JPG/cards/deck/${card.type}/${card.type}s_${namePart}`;
+            
+            console.log(`Fixing path for ${card.name}: ${card.imageUrl} → ${correctedPath}`);
+            card.imageUrl = correctedPath;
+            
+            return card;
+        }
+        
+        // Display selected card details
+        function displaySelectedCard(card) {
+            const selectedCardDisplay = document.getElementById('selectedCard');
+            
+            if (!card) {
+                selectedCardDisplay.innerHTML = '<p>No card selected</p>';
+                return;
+            }
+            
+            if (card.action === 'drawFromHand') {
+                selectedCardDisplay.innerHTML = '<p>Action: Draw from Hand</p>';
+                return;
+            }
+            
+            // Create a nice card display
+            selectedCardDisplay.innerHTML = `
+                <div class="selected-card-container">
+                    <h3>Selected Card</h3>
+                    <div class="selected-card-details">
+                        <div class="selected-card-image">
+                            <img src="../../${card.imageUrl}" alt="${card.name}" style="max-width: 200px;">
+                        </div>
+                        <div class="selected-card-info">
+                            <p><strong>Name:</strong> ${card.name}</p>
+                            <p><strong>Type:</strong> ${card.type}</p>
+                            <p><strong>ID:</strong> ${card.id}</p>
+                            <p><strong>Image Path:</strong> ${card.imageUrl}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Handle opening the browser
+        document.getElementById('openBrowser').addEventListener('click', async () => {
+            try {
+                // Load card data
+                const response = await fetch('../../assets/card-data.json');
+                const cardDataOriginal = await response.json();
+                
+                // Deep clone card data to avoid modifying the original
+                const cardData = JSON.parse(JSON.stringify(cardDataOriginal));
+                
+                // Fix image paths for all card types
+                console.log('Fixing image paths for all cards...');
+                
+                const cardTypes = ['location', 'NPC', 'item', 'spell', 'monster'];
+                cardTypes.forEach(type => {
+                    const cards = cardData.deck[type] || [];
+                    
+                    console.log(`Processing ${cards.length} ${type} cards`);
+                    
+                    cards.forEach(card => {
+                        // Update the card path
+                        fixCardPath(card);
+                    });
+                });
+                
+                // Open the card browser with fixed paths
+                const selectedCard = await openCardBrowser({
+                    cardData,
+                    excludedTypes: ['objective'],
+                    onSelect: (card) => {
+                        console.log('Card selected:', card);
+                    }
+                });
+                
+                console.log('Browser result:', selectedCard);
+                displaySelectedCard(selectedCard);
+                
+            } catch (error) {
+                console.error('Error opening card browser:', error);
+            }
+        });
+    </script>
+</body>
+</html> 

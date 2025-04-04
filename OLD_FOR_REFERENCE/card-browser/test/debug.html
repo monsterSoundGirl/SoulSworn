@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Browser Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #ecf0f1;
+            padding: 20px;
+        }
+        
+        h1, h2, h3 {
+            color: #fff;
+        }
+        
+        pre {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 5px;
+            overflow: auto;
+            max-height: 300px;
+        }
+        
+        .error {
+            color: #e74c3c;
+            background-color: rgba(231, 76, 60, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .debug-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        #image-test {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .card-counter {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        ul {
+            list-style-type: square;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1>Card Browser Debug</h1>
+        
+        <button id="openBrowser">Open Card Browser</button>
+        
+        <div class="card-counter">
+            <h2>Card Data Diagnostic</h2>
+            <div id="debug-output"></div>
+        </div>
+    </div>
+    
+    <script src="../debug-data.js"></script>
+    <script type="module">
+        import { openCardBrowser } from '../card-browser.js';
+        
+        // Log browser console messages to the debug output
+        const consoleLog = console.log;
+        const consoleError = console.error;
+        
+        console.log = function(...args) {
+            const output = document.getElementById('debug-output');
+            if (output) {
+                const logItem = document.createElement('div');
+                logItem.textContent = `LOG: ${args.map(a => String(a)).join(' ')}`;
+                output.appendChild(logItem);
+            }
+            consoleLog.apply(console, args);
+        };
+        
+        console.error = function(...args) {
+            const output = document.getElementById('debug-output');
+            if (output) {
+                const errorItem = document.createElement('div');
+                errorItem.className = 'error';
+                errorItem.textContent = `ERROR: ${args.map(a => String(a)).join(' ')}`;
+                output.appendChild(errorItem);
+            }
+            consoleError.apply(console, args);
+        };
+        
+        // Add event listener for opening the browser
+        document.getElementById('openBrowser').addEventListener('click', async () => {
+            try {
+                // Load card data
+                const response = await fetch('../../assets/card-data.json');
+                const cardData = await response.json();
+                
+                // Log card type counts for debugging
+                const deck = cardData.deck || {};
+                const types = ['location', 'NPC', 'item', 'spell', 'monster'];
+                types.forEach(type => {
+                    const cards = deck[type] || [];
+                    console.log(`${type}: ${cards.length} cards found`);
+                });
+                
+                // Open the card browser
+                const selectedCard = await openCardBrowser({
+                    cardData,
+                    excludedTypes: ['objective'],
+                    onSelect: (card) => {
+                        console.log('Card selected:', card);
+                    }
+                });
+                
+                console.log('Browser result:', selectedCard);
+            } catch (error) {
+                console.error('Error opening card browser:', error);
+            }
+        });
+    </script>
+</body>
+</html> 

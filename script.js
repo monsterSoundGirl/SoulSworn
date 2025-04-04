@@ -1,122 +1,7 @@
 // Define a simple TurnTimer class if not already available
-if (typeof TurnTimer === 'undefined') {
-    class TurnTimer {
-        constructor(elementId, duration = 120) {
-            this.elementId = elementId;
-            this.duration = duration;
-            this.remaining = duration;
-            this.isRunning = false;
-            this.timerId = null;
-            this.element = document.getElementById(elementId);
-            this.onComplete = null;
-        }
-        
-        start() {
-            if (this.isRunning) return;
-            
-            this.isRunning = true;
-            this.element?.classList.add('running');
-            this.element?.classList.remove('paused', 'completed');
-            
-            const toggleBtn = document.getElementById('toggleBtn');
-            if (toggleBtn) {
-                toggleBtn.textContent = 'Pause';
-                toggleBtn.classList.add('running');
-            }
-            
-            this.timerId = setInterval(() => {
-                this.tick();
-            }, 1000);
-        }
-        
-        pause() {
-            if (!this.isRunning) return;
-            
-            this.isRunning = false;
-            this.element?.classList.add('paused');
-            this.element?.classList.remove('running');
-            
-            const toggleBtn = document.getElementById('toggleBtn');
-            if (toggleBtn) {
-                toggleBtn.textContent = 'Resume';
-                toggleBtn.classList.remove('running');
-            }
-            
-            if (this.timerId) {
-                clearInterval(this.timerId);
-                this.timerId = null;
-            }
-        }
-        
-        reset() {
-            this.pause();
-            this.remaining = this.duration;
-            this.updateDisplay();
-            
-            this.element?.classList.remove('completed', 'running', 'paused');
-            
-            const toggleBtn = document.getElementById('toggleBtn');
-            if (toggleBtn) {
-                toggleBtn.textContent = 'Start';
-                toggleBtn.classList.remove('running', 'times-up');
-            }
-        }
-        
-        tick() {
-            if (this.remaining <= 0) {
-                this.complete();
-                return;
-            }
-            
-            this.remaining--;
-            this.updateDisplay();
-            
-            // Warning when 10 seconds or less remain
-            if (this.remaining <= 10) {
-                this.element?.classList.add('warning');
-            }
-        }
-        
-        complete() {
-            this.pause();
-            this.remaining = 0;
-            this.updateDisplay();
-            
-            this.element?.classList.add('completed');
-            this.element?.classList.remove('running', 'paused');
-            
-            const toggleBtn = document.getElementById('toggleBtn');
-            if (toggleBtn) {
-                toggleBtn.textContent = 'Time\'s Up!';
-                toggleBtn.classList.add('times-up');
-            }
-            
-            if (typeof this.onComplete === 'function') {
-                this.onComplete();
-            }
-        }
-        
-        setDuration(seconds) {
-            this.duration = seconds;
-            this.reset();
-        }
-        
-        updateDisplay() {
-            const timerDisplay = document.querySelector(`#${this.elementId} .timer-display`);
-            if (timerDisplay) {
-                const minutes = Math.floor(this.remaining / 60);
-                const seconds = this.remaining % 60;
-                timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            }
-        }
-    }
-    
-    // Make it globally available
-    window.TurnTimer = TurnTimer;
-}
+// The TurnTimer class is now defined in timer.js
 // Create a reference to the timer class
-let timerClass = TurnTimer;
-let gameTimer = null;
+// let gameTimer = null;
 
 // Main deck and discard pile data
 let mainDeck = [];
@@ -236,6 +121,16 @@ window.addEventListener('DOMContentLoaded', () => {
         toggleNotesTray(false);
     });
     
+    // Rules tray button
+    document.getElementById('rulesButton').addEventListener('click', () => {
+        toggleRulesTray();
+    });
+    
+    // Close rules button
+    document.getElementById('closeRules').addEventListener('click', () => {
+        toggleRulesTray(false);
+    });
+    
     // Initialize notes editor
     initializeNotesEditor();
     
@@ -245,7 +140,7 @@ window.addEventListener('DOMContentLoaded', () => {
     });
     
     // Objectives button
-    document.getElementById('objectivesButton').addEventListener('click', showAllObjectives);
+    document.getElementById('objectivesButton').addEventListener('click', showAllCards);
     
     // Random Objective button
     document.getElementById('randomObjectiveButton').addEventListener('click', selectRandomObjective);
@@ -3029,59 +2924,8 @@ function createTestDeck() {
 }
 
 // Initialize the turn timer with proper controls
-function initializeTimer() {
-    const turnTimer = document.getElementById('turnTimer');
-    const toggleBtn = document.getElementById('toggleBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const timerMinutesInput = turnTimer.querySelector('#timerMinutes');
-    const timerSecondsInput = turnTimer.querySelector('#timerSeconds');
-    const setDurationBtn = document.getElementById('setDurationBtn');
-    
-    if (!turnTimer || !toggleBtn || !resetBtn || !setDurationBtn) {
-        console.error('Timer elements not found');
-        return;
-    }
-    
-    // Get duration from inputs or use default (2 minutes)
-    const minutes = parseInt(timerMinutesInput.value) || 2;
-    const seconds = parseInt(timerSecondsInput.value) || 0;
-    const totalSeconds = minutes * 60 + seconds;
-    
-    // Create a new timer instance
-    gameTimer = new TurnTimer('turnTimer', totalSeconds);
-    
-    // Initialize display
-    gameTimer.updateDisplay();
-    
-    // Set up toggle button
-    toggleBtn.addEventListener('click', function() {
-        if (gameTimer.isRunning) {
-            gameTimer.pause();
-        } else {
-            gameTimer.start();
-        }
-    });
-    
-    // Set up reset button
-    resetBtn.addEventListener('click', function() {
-        gameTimer.reset();
-    });
-    
-    // Set up duration button
-    setDurationBtn.addEventListener('click', function() {
-        const newMinutes = parseInt(timerMinutesInput.value) || 0;
-        const newSeconds = parseInt(timerSecondsInput.value) || 0;
-        const newDuration = newMinutes * 60 + newSeconds;
-        
-        if (newDuration > 0) {
-            gameTimer.setDuration(newDuration);
-        } else {
-            alert('Please set a valid duration greater than 0 seconds.');
-        }
-    });
-    
-    console.log('Timer initialized with duration:', totalSeconds, 'seconds');
-}
+// Function removed - timer functionality has been removed
+
 // Add a call to initialize the timer when the game starts
 function startGame() {
     // Get selected player count
@@ -3271,7 +3115,7 @@ function startGame() {
         });
     
         // Initialize turn timer with global reference
-        initializeTimer();
+        // Timer functionality has been removed
     
         // Initialize the deck with our function
         const success = await initializeDecks();
@@ -3909,6 +3753,291 @@ function placeObjectiveCard(objectiveCard, slotIndex) {
     console.log(`Placed objective card "${objectiveCard.name}" in slot ${safeIndex}`);
 }
 
+// Show all cards in a popup overlay for selection
+function showAllCards() {
+    // Check if we already have an overlay open
+    if (document.getElementById('cards-overlay')) {
+        return;
+    }
+    
+    // Create overlay container
+    const overlay = document.createElement('div');
+    overlay.id = 'cards-overlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
+    overlay.style.zIndex = '1000';
+    overlay.style.display = 'flex';
+    overlay.style.flexDirection = 'column';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    overlay.style.padding = '20px';
+    overlay.style.boxSizing = 'border-box';
+    overlay.style.overflow = 'auto';
+    
+    // Add a title
+    const title = document.createElement('h2');
+    title.textContent = 'Browse All Cards';
+    title.style.color = 'white';
+    title.style.marginBottom = '20px';
+    title.style.fontWeight = 'bold';
+    title.style.textShadow = '0 2px 4px rgba(0,0,0,0.5)';
+    overlay.appendChild(title);
+    
+    // Create tabs container
+    const tabsContainer = document.createElement('div');
+    tabsContainer.style.display = 'flex';
+    tabsContainer.style.marginBottom = '20px';
+    tabsContainer.style.backgroundColor = '#333';
+    tabsContainer.style.borderRadius = '5px';
+    tabsContainer.style.overflow = 'hidden';
+    
+    // Define card collections
+    const cardCollections = [
+        { id: 'locations', name: 'Locations', cards: DECK_CARDS.location },
+        { id: 'npcs', name: 'NPCs', cards: DECK_CARDS.NPC },
+        { id: 'items', name: 'Items', cards: DECK_CARDS.item },
+        { id: 'monsters', name: 'Monsters', cards: DECK_CARDS.monster },
+        { id: 'spells', name: 'Spells', cards: DECK_CARDS.spell },
+        { id: 'characters', name: 'Characters', cards: CHARACTER_CARDS },
+        { id: 'objectives', name: 'Objectives', cards: OBJECTIVE_CARDS }
+    ];
+    
+    // Create tabs with active state for the first tab
+    cardCollections.forEach((collection, index) => {
+        const tab = document.createElement('div');
+        tab.id = `tab-${collection.id}`;
+        tab.textContent = collection.name;
+        tab.style.padding = '10px 20px';
+        tab.style.cursor = 'pointer';
+        tab.style.color = 'white';
+        tab.style.borderBottom = index === 0 ? '3px solid #e5a619' : 'none';
+        tab.style.backgroundColor = index === 0 ? '#444' : 'transparent';
+        
+        tab.addEventListener('mouseenter', function() {
+            if (!this.classList.contains('active')) {
+                this.style.backgroundColor = '#444';
+            }
+        });
+        
+        tab.addEventListener('mouseleave', function() {
+            if (!this.classList.contains('active')) {
+                this.style.backgroundColor = 'transparent';
+            }
+        });
+        
+        tab.addEventListener('click', function() {
+            // Set all tabs to inactive
+            const tabs = tabsContainer.querySelectorAll('div');
+            tabs.forEach(t => {
+                t.classList.remove('active');
+                t.style.borderBottom = 'none';
+                t.style.backgroundColor = 'transparent';
+            });
+            
+            // Set this tab to active
+            this.classList.add('active');
+            this.style.borderBottom = '3px solid #e5a619';
+            this.style.backgroundColor = '#444';
+            
+            // Update the cards container
+            updateCardsContainer(collection.cards);
+        });
+        
+        // Add first tab as active
+        if (index === 0) {
+            tab.classList.add('active');
+        }
+        
+        tabsContainer.appendChild(tab);
+    });
+    
+    overlay.appendChild(tabsContainer);
+    
+    // Create a container for the cards grid
+    const cardsContainer = document.createElement('div');
+    cardsContainer.id = 'cards-grid-container';
+    cardsContainer.style.display = 'grid';
+    cardsContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(250px, 1fr))';
+    cardsContainer.style.gap = '20px';
+    cardsContainer.style.width = '90%';
+    cardsContainer.style.maxWidth = '1200px';
+    cardsContainer.style.padding = '20px';
+    cardsContainer.style.boxSizing = 'border-box';
+    cardsContainer.style.overflowY = 'auto';
+    cardsContainer.style.maxHeight = '80vh';
+    cardsContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    cardsContainer.style.borderRadius = '10px';
+    
+    // Function to update cards in the container
+    function updateCardsContainer(cards) {
+        // Clear current cards
+        cardsContainer.innerHTML = '';
+        
+        // Add cards to the grid
+        cards.forEach(card => {
+            // Create card container
+            const cardContainer = document.createElement('div');
+            cardContainer.style.display = 'flex';
+            cardContainer.style.flexDirection = 'column';
+            cardContainer.style.alignItems = 'center';
+            cardContainer.style.cursor = 'pointer';
+            cardContainer.style.transition = 'transform 0.2s';
+            cardContainer.style.backgroundColor = '#2a2a2a';
+            cardContainer.style.padding = '10px';
+            cardContainer.style.borderRadius = '10px';
+            cardContainer.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+            
+            // Add hover effect
+            cardContainer.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.05)';
+            });
+            
+            cardContainer.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+            });
+            
+            // Add click handler to place the card in the next empty slot
+            cardContainer.addEventListener('click', function() {
+                // Close the overlay
+                overlay.remove();
+                
+                // Place the card in the next empty slot in the story grid
+                placeCardInNextEmptySlot(card);
+            });
+            
+            // Create and add the card image
+            const cardImage = document.createElement('img');
+            cardImage.src = card.imageUrl;
+            cardImage.alt = card.name;
+            cardImage.style.width = '100%';
+            cardImage.style.height = 'auto';
+            cardImage.style.borderRadius = '5px';
+            cardImage.style.marginBottom = '10px';
+            cardImage.style.objectFit = 'contain';
+            cardContainer.appendChild(cardImage);
+            
+            // Create and add the card name
+            const cardName = document.createElement('div');
+            cardName.textContent = card.name;
+            cardName.style.color = 'white';
+            cardName.style.fontSize = '14px';
+            cardName.style.fontWeight = 'bold';
+            cardName.style.textAlign = 'center';
+            cardName.style.marginTop = '5px';
+            cardContainer.appendChild(cardName);
+            
+            // Add the card container to the grid
+            cardsContainer.appendChild(cardContainer);
+        });
+    }
+    
+    // Initially populate with the first collection (Objectives)
+    updateCardsContainer(cardCollections[0].cards);
+    
+    // Add the cards container to the overlay
+    overlay.appendChild(cardsContainer);
+    
+    // Add a close button
+    const closeButton = document.createElement('button');
+    closeButton.textContent = 'Close';
+    closeButton.style.marginTop = '20px';
+    closeButton.style.padding = '10px 20px';
+    closeButton.style.backgroundColor = '#3a3a3a';
+    closeButton.style.color = 'white';
+    closeButton.style.border = 'none';
+    closeButton.style.borderRadius = '5px';
+    closeButton.style.cursor = 'pointer';
+    closeButton.style.fontWeight = 'bold';
+    closeButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+    
+    closeButton.addEventListener('mouseenter', function() {
+        this.style.backgroundColor = '#4a4a4a';
+    });
+    
+    closeButton.addEventListener('mouseleave', function() {
+        this.style.backgroundColor = '#3a3a3a';
+    });
+    
+    closeButton.addEventListener('click', function() {
+        overlay.remove();
+    });
+    
+    overlay.appendChild(closeButton);
+    
+    // Close overlay when clicking outside the cards (directly on the overlay)
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            overlay.remove();
+        }
+    });
+    
+    // Add the overlay to the document
+    document.body.appendChild(overlay);
+    
+    // Add a small delay before adding escape key handler to prevent immediate closing
+    setTimeout(() => {
+        // Close overlay when pressing escape
+        function handleEscKey(e) {
+            if (e.key === 'Escape') {
+                overlay.remove();
+                document.removeEventListener('keydown', handleEscKey);
+            }
+        }
+        
+        document.addEventListener('keydown', handleEscKey);
+    }, 100);
+}
+
+// Function to place a card in the next empty slot in the story grid
+function placeCardInNextEmptySlot(card) {
+    // Get all grid slots
+    const gridSlots = document.querySelectorAll('#storyGrid .gridSlot');
+    if (!gridSlots.length) {
+        console.error('No grid slots found');
+        return;
+    }
+    
+    // Get the final scene index (either the Objective card or the end of story grid)
+    const finalSceneIndex = gameState.finalSceneIndex || gridSlots.length - 1;
+    
+    // Find the first empty slot between the first slot (index 0) and the final scene
+    let emptySlotIndex = -1;
+    for (let i = 0; i < finalSceneIndex; i++) {
+        // If the slot is empty (has no children or only has empty children)
+        if (!gridSlots[i].querySelector('.card')) {
+            emptySlotIndex = i;
+            break;
+        }
+    }
+    
+    // If no empty slot was found, use the last slot before the final scene
+    if (emptySlotIndex === -1) {
+        emptySlotIndex = finalSceneIndex - 1;
+    }
+    
+    // Clear any existing content in the slot
+    const targetSlot = gridSlots[emptySlotIndex];
+    while (targetSlot.firstChild) {
+        targetSlot.removeChild(targetSlot.firstChild);
+    }
+    
+    // Create the card element (face up)
+    const cardElement = createCardElement({...card, faceUp: true});
+    
+    // Add the card to the slot
+    targetSlot.appendChild(cardElement);
+    
+    // Show notification
+    showNotification(`Placed "${card.name}" in the story grid`, 'success');
+    
+    // Also show the card in the inspector
+    updateInspector(card);
+}
+
 // Show all objective cards in a popup overlay
 function showAllObjectives() {
     // Check if we already have an overlay open
@@ -3946,7 +4075,7 @@ function showAllObjectives() {
     // Create a container for the cards grid
     const cardsContainer = document.createElement('div');
     cardsContainer.style.display = 'grid';
-    cardsContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
+    cardsContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(250px, 1fr))';
     cardsContainer.style.gap = '20px';
     cardsContainer.style.width = '90%';
     cardsContainer.style.maxWidth = '1200px';
@@ -4212,7 +4341,7 @@ function showCardCollection(cards, collectionTitle) {
     // Create a container for the cards grid
     const cardsContainer = document.createElement('div');
     cardsContainer.style.display = 'grid';
-    cardsContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
+    cardsContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(250px, 1fr))';
     cardsContainer.style.gap = '20px';
     cardsContainer.style.width = '90%';
     cardsContainer.style.maxWidth = '1200px';
@@ -6596,7 +6725,6 @@ function finalizeGame() {
   // If no tie or no awards, finalize the display
   finalizeDisplay(playersWithMaxAwards[0], maxAwards);
 }
-
 // Display the tie-breaker voting
 function displayTieBreakerVoting(tiedPlayerIndices) {
   const superlativeContainer = document.getElementById('superlativeContainer');
@@ -6908,7 +7036,7 @@ function initializeGameBoard() {
   });
 
   // Initialize turn timer
-  initializeTimer();
+  // Timer functionality has been removed
   
   // Initialize deck event listeners
   initializeDeckEventListeners();
@@ -7120,6 +7248,22 @@ function saveNotesContent() {
     }
 }
 
+// Toggle the rules tray
+function toggleRulesTray(show) {
+    const rulesTray = document.getElementById('rulesTray');
+    
+    if (show === undefined) {
+        // Toggle current state
+        rulesTray.classList.toggle('open');
+    } else if (show) {
+        // Explicitly show
+        rulesTray.classList.add('open');
+    } else {
+        // Explicitly hide
+        rulesTray.classList.remove('open');
+    }
+}
+
 // Add save notes when game is saved
 function saveGame(saveName, saveType) {
     // Save the notes content first
@@ -7127,6 +7271,7 @@ function saveGame(saveName, saveType) {
     
     // Existing code follows...
 }
+
 
 
 

@@ -549,21 +549,20 @@ body {
 
 #turnTimer {
   position: absolute;
-  left: 1504px;
+  width: 200px;
+  right: auto;
+  left: 1509px;
   top: 904px;
-  width: 184px;
-  height: 160px;
+  padding: 10px;
   background-color: #3a3a3a;
   border-radius: 5px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  gap: 8px;
 }
 
-.timer-display {
-  font-size: 48px;
+#timerDisplay {
+  font-size: 38px;
   font-weight: bold;
   color: #ffffff;
   transition: color 0.3s ease;
@@ -575,48 +574,138 @@ body {
   width: 160px;
 }
 
-.timer-controls button {
+#timerToggleBtn {
   flex: 1;
   padding: 8px;
+  background-color: #2a6;
   color: white;
   border: none;
   border-radius: 3px;
   cursor: pointer;
-  transition: all 0.3s;
-  font-size: 14px;
+  transition: background-color 0.3s;
 }
 
-#toggleBtn {
-  background-color: #2a6;
-}
-
-#toggleBtn:hover {
+#timerToggleBtn:hover {
   background-color: #3b7;
 }
 
-#toggleBtn.running {
+#timerToggleBtn.running {
   background-color: #f80;
 }
 
-#resetBtn {
-  background-color: #d44;
+#timerToggleBtn.running:hover {
+  background-color: #f90;
 }
 
-#resetBtn:hover {
-  background-color: #e55;
-}
-
-#turnTimer.running .timer-display { color: #fff; }
-#turnTimer.paused .timer-display { color: #f80; }
-#turnTimer.completed .timer-display { color: #e55; }
-
-#toggleBtn.times-up {
+#timerToggleBtn.times-up {
   background-color: #8a2be2; /* Purple */
 }
 
-#toggleBtn.times-up:hover {
+#timerToggleBtn.times-up:hover {
   background-color: #9a3bf2;
 }
+
+#timerResetBtn {
+  flex: 1;
+  padding: 8px;
+  background-color: #d44;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+#timerResetBtn:hover {
+  background-color: #e55;
+}
+
+.timer-input, .timer-set-container {
+  display: none;
+}
+
+.spinner-controls {
+  position: absolute;
+  right: -16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.spinner-button {
+  width: 14px;
+  height: 14px;
+  background-color: #444;
+  border: 1px solid #555;
+  border-radius: 2px;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 10px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.spinner-button:hover {
+  background-color: #555;
+  border-color: #666;
+}
+
+.spinner-button:active {
+  background-color: #4a90e2;
+}
+
+.timer-input input {
+  width: 40px;
+  text-align: center;
+  padding: 4px;
+  border-radius: 3px;
+  border: 1px solid #555;
+  background-color: #444;
+  color: white;
+  cursor: text;
+  pointer-events: auto;
+  -moz-appearance: textfield; /* Remove spinner in Firefox */
+}
+
+/* Remove spinners for webkit browsers */
+.timer-input input::-webkit-outer-spin-button,
+.timer-input input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input-label {
+  color: #999;
+  font-size: 11px;
+  margin: 0 2px;
+}
+
+.timer-input input:hover {
+  background-color: #555;
+  border-color: #777;
+}
+
+.timer-input input:focus {
+  background-color: #555;
+  border-color: #4a90e2;
+  outline: none;
+}
+
+.timer-input span {
+  margin: 0 4px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+/* Timer state classes */
+#turnTimer.running #timerDisplay { color: #fff; }
+#turnTimer.paused #timerDisplay { color: #f80; }
+#turnTimer.completed #timerDisplay { color: #e55; }
 
 /* Modal */
 .modal {
@@ -905,24 +994,6 @@ body {
   cursor: pointer;
   font-size: 14px;
   white-space: nowrap;
-}
-
-.timer-input {
-  display: flex;
-  align-items: center;
-  margin-top: 5px;
-}
-
-.timer-input input {
-  width: 60px;
-  text-align: center;
-}
-
-.timer-input span {
-  margin: 0 10px;
-  color: #fff;
-  font-size: 18px;
-  font-weight: bold;
 }
 
 .card-preview {
@@ -1967,6 +2038,28 @@ body {
   transform: scale(1.05);
 }
 
+/* Rules Tray Button */
+#rulesButton {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  left: 1px;
+  top: 150px;
+  border-radius: 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: transparent;
+  border: none;
+  z-index: 10;
+}
+
+#rulesButton:hover {
+  transform: scale(1.05);
+}
+
 /* Notes Tray */
 #notesTray {
   position: absolute;
@@ -1989,7 +2082,38 @@ body {
   width: 60%; /* Adjust to match game board width */
 }
 
+/* Rules Tray */
+#rulesTray {
+  position: absolute;
+  top: 160px;
+  left: -100%; /* Start offscreen */
+  width: 0; /* Start with zero width */
+  height: calc(100% - 220px);
+  background-color: #d89338; /* Per request */
+  border-right: 2px solid #444;
+  transition: left 0.3s ease, width 0.3s ease;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 5px 0 15px rgba(0, 0, 0, 0.3);
+}
+
+#rulesTray.open {
+  left: 0;
+  width: 60%; /* Adjust to match game board width */
+}
+
 .notes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background-color: #222;
+  border-bottom: 1px solid #444;
+}
+
+.rules-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -2004,7 +2128,22 @@ body {
   font-size: 18px;
 }
 
+.rules-header h3 {
+  margin: 0;
+  color: #d89339;
+  font-size: 18px;
+}
+
 #closeNotes {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#closeRules {
   background: none;
   border: none;
   color: #fff;
@@ -2018,10 +2157,22 @@ body {
   transform: scale(1.1);
 }
 
+#closeRules:hover {
+  color: #d89339;
+  transform: scale(1.1);
+}
+
 .notes-content {
   flex-grow: 1;
   padding: 20px;
   overflow-y: auto;
+}
+
+.rules-content {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 #notesEditor {
@@ -2122,4 +2273,39 @@ body {
   height: 24px;
   background-color: #555;
   margin: 0 5px;
+}
+
+.timer-set-container {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 5px;
+}
+
+#timerSetBtn {
+  padding: 6px 15px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s, transform 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+#timerSetBtn:hover {
+  background-color: #5aa0f2;
+  transform: translateY(-1px);
+}
+
+#timerSetBtn:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.timer-input {
+  display: flex;
+  align-items: center;
+  margin-top: 5px;
 }
