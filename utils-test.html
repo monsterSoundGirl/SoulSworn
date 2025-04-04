@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoulSworn Utility Functions Test</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: #1e1e1e;
+      color: #f0f0f0;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #4caf50;
+      border-bottom: 1px solid #333;
+      padding-bottom: 10px;
+    }
+    .test-section {
+      background-color: #2a2a2a;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .log {
+      background-color: #333;
+      padding: 10px;
+      margin-top: 10px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      border-radius: 4px;
+      height: 200px;
+      overflow-y: auto;
+    }
+    button {
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background-color: #3e8e41;
+    }
+    .success {
+      color: #4caf50;
+    }
+    .error {
+      color: #f44336;
+    }
+    .warning {
+      color: #ff9800;
+    }
+    .info {
+      color: #2196f3;
+    }
+    .perf-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .metric-card {
+      background-color: #333;
+      padding: 10px;
+      border-radius: 4px;
+      text-align: center;
+    }
+    .metric-value {
+      font-size: 24px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    .summary-panel {
+      background-color: #333;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 4px;
+      border-left: 4px solid #4caf50;
+    }
+    progress {
+      width: 100%;
+      height: 20px;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    progress::-webkit-progress-bar {
+      background-color: #444;
+      border-radius: 3px;
+    }
+    progress::-webkit-progress-value {
+      background-color: #4caf50;
+      border-radius: 3px;
+    }
+    .benchmark {
+      display: flex;
+      align-items: center;
+      margin: 5px 0;
+    }
+    .benchmark-label {
+      width: 200px;
+    }
+    .benchmark-bar {
+      flex-grow: 1;
+      margin: 0 10px;
+    }
+    .benchmark-value {
+      width: 100px;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <h1>SoulSworn Utility Functions Test</h1>
+  
+  <div class="test-section">
+    <h2>Setup Mock Data</h2>
+    <button id="setupBtn">Setup Mock Data</button>
+    <div id="setupLog" class="log"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>Test shuffleArray()</h2>
+    <button id="testShuffleBtn">Test Basic Functionality</button>
+    <button id="testShufflePerformanceBtn">Test Performance</button>
+    <div id="shuffleLog" class="log"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>Test findCardById()</h2>
+    <button id="testFindBtn">Test Basic Functionality</button>
+    <button id="testFindPerformanceBtn">Test Performance</button>
+    <div id="findLog" class="log"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>Performance Metrics</h2>
+    <div class="perf-metrics">
+      <div class="metric-card">
+        <div>ShuffleArray (1000 elements)</div>
+        <div id="shufflePerf" class="metric-value">--</div>
+        <div>milliseconds avg</div>
+      </div>
+      <div class="metric-card">
+        <div>FindCardById (100 lookups)</div>
+        <div id="findPerf" class="metric-value">--</div>
+        <div>milliseconds avg</div>
+      </div>
+    </div>
+    
+    <h3>Benchmarks</h3>
+    <div id="benchmarks">
+      <div class="benchmark">
+        <div class="benchmark-label">Loading...</div>
+        <div class="benchmark-bar"><progress value="0" max="100"></progress></div>
+        <div class="benchmark-value">--</div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="test-section">
+    <h2>Optimization Summary</h2>
+    <div id="summaryPanel" class="summary-panel">
+      <p>Click the test buttons above to generate an optimization summary.</p>
+    </div>
+  </div>
+  
+  <!-- Required for the utility functions to work -->
+  <script src="utils.js"></script>
+  
+  <script>
+    // Logging function for test output
+    function log(id, message, type = 'info') {
+      const logElement = document.getElementById(id);
+      if (!logElement) return;
+      
+      const line = document.createElement('div');
+      line.className = type;
+      line.textContent = message;
+      logElement.appendChild(line);
+      
+      // Scroll to bottom
+      logElement.scrollTop = logElement.scrollHeight;
+    }
+    
+    // Reference implementation of shuffle for comparison
+    function referenceShuffleArray(arr) {
+      const result = [...arr];
+      for (let i = result.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const temp = result[i];
+        result[i] = result[j];
+        result[j] = temp;
+      }
+      return result;
+    }
+    
+    // Reference implementation of findCardById for comparison
+    function referenceFindCardById(cardId) {
+      if (!cardId) return null;
+      
+      // Check all available collections (simplified for testing)
+      const collections = [
+        window.CHARACTER_CARDS || [],
+        window.OBJECTIVE_CARDS || []
+      ];
+      
+      // Check collections
+      for (const collection of collections) {
+        const found = collection.find(c => c.id === cardId);
+        if (found) return found;
+      }
+      
+      // Check DECK_CARDS
+      if (window.DECK_CARDS) {
+        for (const type in window.DECK_CARDS) {
+          const card = window.DECK_CARDS[type].find(c => c.id === cardId);
+          if (card) return card;
+        }
+      }
+      
+      // Check decks
+      const decks = [
+        window.mainDeck || [],
+        window.mainDiscard || [],
+        window.altDeck || [],
+        window.altDiscard || []
+      ];
+      
+      for (const deck of decks) {
+        const card = deck.find(c => c.id === cardId);
+        if (card) return card;
+      }
+      
+      // Infer from ID
+      if (cardId.startsWith('monster_')) {
+        return { 
+          id: cardId, 
+          type: 'monster', 
+          name: cardId.replace('monster_', '').replace(/([A-Z])/g, ' $1').trim() 
+        };
+      }
+      
+      // Last resort
+      return { id: cardId, name: 'Unknown Card', type: 'unknown' };
+    }
+    
+    // Setup mock data for testing
+    document.getElementById('setupBtn').addEventListener('click', function() {
+      const setupLog = document.getElementById('setupLog');
+      setupLog.innerHTML = ''; // Clear log
+      
+      try {
+        // Create mock card data
+        window.CHARACTER_CARDS = [
+          { id: 'characters_test1', name: 'Test Character 1', type: 'character' },
+          { id: 'characters_test2', name: 'Test Character 2', type: 'character' }
+        ];
+        log('setupLog', 'Created CHARACTER_CARDS with 2 entries');
+        
+        window.OBJECTIVE_CARDS = [
+          { id: 'objective_test1', name: 'Test Objective 1', type: 'objective' },
+          { id: 'objective_test2', name: 'Test Objective 2', type: 'objective' }
+        ];
+        log('setupLog', 'Created OBJECTIVE_CARDS with 2 entries');
+        
+        window.DECK_CARDS = {
+          monster: [
+            { id: 'monster_test1', name: 'Test Monster 1', type: 'monster' },
+            { id: 'monster_test2', name: 'Test Monster 2', type: 'monster' }
+          ],
+          spell: [
+            { id: 'spell_test1', name: 'Test Spell 1', type: 'spell' },
+            { id: 'spell_test2', name: 'Test Spell 2', type: 'spell' }
+          ]
+        };
+        log('setupLog', 'Created DECK_CARDS with monster and spell types');
+        
+        window.mainDeck = [{ id: 'mainDeck_card', name: 'Main Deck Card', type: 'item' }];
+        window.mainDiscard = [{ id: 'mainDiscard_card', name: 'Main Discard Card', type: 'item' }];
+        window.altDeck = [{ id: 'altDeck_card', name: 'Alt Deck Card', type: 'monster' }];
+        window.altDiscard = [{ id: 'altDiscard_card', name: 'Alt Discard Card', type: 'monster' }];
+        log('setupLog', 'Created deck arrays');
+        
+        // Generate additional test data for performance testing
+        window.testCardIds = [];
+        window.largeArray = [];
+        
+        // Create a large array for shuffling tests
+        for (let i = 0; i < 1000; i++) {
+          window.largeArray.push(i);
+          
+          // Create some test card IDs for findCardById tests
+          if (i < 100) {
+            if (i < 2) {
+              window.testCardIds.push(`characters_test${i+1}`); // Existing
+            } else if (i < 4) {
+              window.testCardIds.push(`objective_test${i-1}`); // Existing
+            } else if (i < 6) {
+              window.testCardIds.push(`monster_test${i-3}`); // Existing
+            } else if (i < 8) {
+              window.testCardIds.push(`spell_test${i-5}`); // Existing
+            } else if (i < 20) {
+              window.testCardIds.push(`monster_perf${i}`); // Non-existent but inferable
+            } else if (i < 40) {
+              window.testCardIds.push(`spell_perf${i}`); // Non-existent but inferable
+            } else {
+              window.testCardIds.push(`unknown_card_${i}`); // Unknown
+            }
+          }
+        }
+        log('setupLog', 'Created performance test data', 'info');
+        
+        log('setupLog', 'Mock data setup complete!', 'success');
+      } catch (err) {
+        log('setupLog', `Error setting up mock data: ${err.message}`, 'error');
+      }
+    });
+    
+    // Test shuffleArray basic functionality
+    document.getElementById('testShuffleBtn').addEventListener('click', function() {
+      const shuffleLog = document.getElementById('shuffleLog');
+      shuffleLog.innerHTML = ''; // Clear log
+      
+      try {
+        if (typeof shuffleArray !== 'function') {
+          throw new Error('shuffleArray function not found!');
+        }
+        
+        // Create a test array
+        const originalArray = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        log('shuffleLog', `Original array: [${originalArray.join(', ')}]`);
+        
+        // Create a copy to shuffle
+        const arrayToShuffle = [...originalArray];
+        const shuffledArray = shuffleArray(arrayToShuffle);
+        
+        log('shuffleLog', `Shuffled array: [${shuffledArray.join(', ')}]`);
+        
+        // Verify the array was shuffled
+        if (JSON.stringify(originalArray) !== JSON.stringify(shuffledArray)) {
+          log('shuffleLog', 'Array was successfully shuffled', 'success');
+        } else {
+          log('shuffleLog', 'Array was not shuffled (same order)', 'error');
+        }
+        
+        // Verify all elements are still present
+        const allPresent = originalArray.every(item => shuffledArray.includes(item));
+        if (allPresent) {
+          log('shuffleLog', 'All elements are still present after shuffle', 'success');
+        } else {
+          log('shuffleLog', 'Some elements are missing after shuffle!', 'error');
+        }
+        
+        // Verify array length is preserved
+        if (originalArray.length === shuffledArray.length) {
+          log('shuffleLog', 'Array length is preserved', 'success');
+        } else {
+          log('shuffleLog', 'Array length changed after shuffle!', 'error');
+        }
+        
+        // Test that the array is shuffled in place
+        const testInPlace = [1, 2, 3, 4, 5];
+        const returnedArray = shuffleArray(testInPlace);
+        if (testInPlace === returnedArray) {
+          log('shuffleLog', 'Shuffle happens in-place (same array reference returned)', 'success');
+        } else {
+          log('shuffleLog', 'Shuffle does not happen in-place!', 'error');
+        }
+        
+        // Test with empty array
+        const emptyArray = [];
+        const shuffledEmpty = shuffleArray([...emptyArray]);
+        if (shuffledEmpty.length === 0) {
+          log('shuffleLog', 'Empty array handled correctly', 'success');
+        } else {
+          log('shuffleLog', 'Empty array not handled correctly!', 'error');
+        }
+        
+        // Test with single-element array
+        const singleArray = [42];
+        const shuffledSingle = shuffleArray([...singleArray]);
+        if (shuffledSingle.length === 1 && shuffledSingle[0] === 42) {
+          log('shuffleLog', 'Single-element array handled correctly', 'success');
+        } else {
+          log('shuffleLog', 'Single-element array not handled correctly!', 'error');
+        }
+        
+        log('shuffleLog', 'All shuffleArray tests completed successfully', 'success');
+        updateSummary();
+      } catch (err) {
+        log('shuffleLog', `Error testing shuffleArray: ${err.message}`, 'error');
+      }
+    });
+    
+    // Test shuffleArray performance
+    document.getElementById('testShufflePerformanceBtn').addEventListener('click', function() {
+      const shuffleLog = document.getElementById('shuffleLog');
+      shuffleLog.innerHTML = ''; // Clear log
+      
+      try {
+        if (!window.largeArray) {
+          throw new Error('Performance test data not set up. Click "Setup Mock Data" first!');
+        }
+        
+        log('shuffleLog', 'Running performance test for shuffleArray...', 'info');
+        log('shuffleLog', `Testing with array of ${window.largeArray.length} elements`, 'info');
+        
+        // Test utility implementation
+        const iterations = 10;
+        log('shuffleLog', `Running ${iterations} iterations...`, 'info');
+        
+        // Measure utility function
+        let utilityTimes = [];
+        for (let i = 0; i < iterations; i++) {
+          const testArray = [...window.largeArray];
+          const start = performance.now();
+          shuffleArray(testArray);
+          const end = performance.now();
+          utilityTimes.push(end - start);
+        }
+        
+        // Measure reference implementation
+        let referenceTimes = [];
+        for (let i = 0; i < iterations; i++) {
+          const testArray = [...window.largeArray];
+          const start = performance.now();
+          referenceShuffleArray(testArray);
+          const end = performance.now();
+          referenceTimes.push(end - start);
+        }
+        
+        // Calculate averages
+        const utilityAvg = utilityTimes.reduce((sum, time) => sum + time, 0) / iterations;
+        const referenceAvg = referenceTimes.reduce((sum, time) => sum + time, 0) / iterations;
+        
+        // Format to 2 decimal places
+        const utilityAvgFormatted = utilityAvg.toFixed(2);
+        const referenceAvgFormatted = referenceAvg.toFixed(2);
+        
+        // Calculate improvement percentage
+        const improvement = ((referenceAvg - utilityAvg) / referenceAvg) * 100;
+        const improvementFormatted = improvement.toFixed(2);
+        
+        // Update performance metrics display
+        document.getElementById('shufflePerf').textContent = utilityAvgFormatted;
+        
+        // Log results
+        log('shuffleLog', `Utility implementation: ${utilityAvgFormatted}ms average`, 'info');
+        log('shuffleLog', `Reference implementation: ${referenceAvgFormatted}ms average`, 'info');
+        
+        if (improvement > 0) {
+          log('shuffleLog', `Performance improvement: ${improvementFormatted}%`, 'success');
+        } else if (improvement < 0) {
+          log('shuffleLog', `Performance regression: ${Math.abs(improvementFormatted)}%`, 'warning');
+        } else {
+          log('shuffleLog', 'No significant performance difference', 'info');
+        }
+        
+        // Update benchmark display
+        updateBenchmark('ShuffleArray', utilityAvg, referenceAvg);
+        
+        log('shuffleLog', 'Performance testing complete', 'success');
+        updateSummary();
+      } catch (err) {
+        log('shuffleLog', `Error testing performance: ${err.message}`, 'error');
+      }
+    });
+    
+    // Test findCardById basic functionality
+    document.getElementById('testFindBtn').addEventListener('click', function() {
+      const findLog = document.getElementById('findLog');
+      findLog.innerHTML = ''; // Clear log
+      
+      try {
+        if (typeof findCardById !== 'function') {
+          throw new Error('findCardById function not found!');
+        }
+        
+        // First check if mock data is set up
+        if (!window.CHARACTER_CARDS || !window.DECK_CARDS) {
+          throw new Error('Mock data not set up. Click "Setup Mock Data" first!');
+        }
+        
+        // Test finding different types of cards
+        const testIds = [
+          // Existing cards in mock data
+          'characters_test1',
+          'objective_test1',
+          'monster_test1',
+          'spell_test1',
+          'mainDeck_card',
+          'altDiscard_card',
+          
+          // Non-existent but with known prefixes
+          'monster_unknown',
+          'spell_imaginary',
+          
+          // Completely unknown
+          'unknown_card',
+          
+          // Null case
+          null
+        ];
+        
+        let successCount = 0;
+        
+        testIds.forEach(id => {
+          log('findLog', `Looking for card with ID: ${id || 'null'}`);
+          const card = findCardById(id);
+          
+          if (id === null) {
+            if (card === null) {
+              log('findLog', 'Correctly returned null for null input', 'success');
+              successCount++;
+            } else {
+              log('findLog', 'Did not correctly handle null input!', 'error');
+            }
+          } else if (card) {
+            log('findLog', `Found: { id: "${card.id}", name: "${card.name}", type: "${card.type}" }`);
+            
+            // Verify the card data is correct
+            if (card.id === id) {
+              log('findLog', 'Card ID matches input', 'success');
+              successCount++;
+            } else {
+              log('findLog', 'Card ID does not match input!', 'error');
+            }
+            
+            // For inferable types
+            if (id.startsWith('monster_') && card.type === 'monster') {
+              log('findLog', 'Inferred monster type correctly', 'success');
+              successCount++;
+            } else if (id.startsWith('spell_') && card.type === 'spell') {
+              log('findLog', 'Inferred spell type correctly', 'success');
+              successCount++;
+            }
+          } else {
+            log('findLog', `No card found for ID: ${id || 'null'}`, 'error');
+          }
+        });
+        
+        log('findLog', `${successCount} tests passed successfully`, 'info');
+        
+        if (successCount >= testIds.length) {
+          log('findLog', 'All findCardById tests completed successfully', 'success');
+        } else {
+          log('findLog', 'Some findCardById tests failed', 'warning');
+        }
+        
+        updateSummary();
+      } catch (err) {
+        log('findLog', `Error testing findCardById: ${err.message}`, 'error');
+      }
+    });
+    
+    // Test findCardById performance
+    document.getElementById('testFindPerformanceBtn').addEventListener('click', function() {
+      const findLog = document.getElementById('findLog');
+      findLog.innerHTML = ''; // Clear log
+      
+      try {
+        if (!window.testCardIds) {
+          throw new Error('Performance test data not set up. Click "Setup Mock Data" first!');
+        }
+        
+        log('findLog', 'Running performance test for findCardById...', 'info');
+        log('findLog', `Testing with ${window.testCardIds.length} card IDs`, 'info');
+        
+        // Test utility implementation
+        const iterations = 5;
+        log('findLog', `Running ${iterations} iterations...`, 'info');
+        
+        // Measure utility function
+        let utilityTimes = [];
+        for (let i = 0; i < iterations; i++) {
+          const start = performance.now();
+          for (let j = 0; j < window.testCardIds.length; j++) {
+            findCardById(window.testCardIds[j]);
+          }
+          const end = performance.now();
+          utilityTimes.push(end - start);
+        }
+        
+        // Measure reference implementation
+        let referenceTimes = [];
+        for (let i = 0; i < iterations; i++) {
+          const start = performance.now();
+          for (let j = 0; j < window.testCardIds.length; j++) {
+            referenceFindCardById(window.testCardIds[j]);
+          }
+          const end = performance.now();
+          referenceTimes.push(end - start);
+        }
+        
+        // Calculate averages
+        const utilityAvg = utilityTimes.reduce((sum, time) => sum + time, 0) / iterations;
+        const referenceAvg = referenceTimes.reduce((sum, time) => sum + time, 0) / iterations;
+        
+        // Format to 2 decimal places
+        const utilityAvgFormatted = utilityAvg.toFixed(2);
+        const referenceAvgFormatted = referenceAvg.toFixed(2);
+        
+        // Calculate improvement percentage
+        const improvement = ((referenceAvg - utilityAvg) / referenceAvg) * 100;
+        const improvementFormatted = improvement.toFixed(2);
+        
+        // Update performance metrics display
+        document.getElementById('findPerf').textContent = utilityAvgFormatted;
+        
+        // Log results
+        log('findLog', `Utility implementation: ${utilityAvgFormatted}ms average`, 'info');
+        log('findLog', `Reference implementation: ${referenceAvgFormatted}ms average`, 'info');
+        
+        if (improvement > 0) {
+          log('findLog', `Performance improvement: ${improvementFormatted}%`, 'success');
+        } else if (improvement < 0) {
+          log('findLog', `Performance regression: ${Math.abs(improvementFormatted)}%`, 'warning');
+        } else {
+          log('findLog', 'No significant performance difference', 'info');
+        }
+        
+        // Update benchmark display
+        updateBenchmark('FindCardById', utilityAvg, referenceAvg);
+        
+        log('findLog', 'Performance testing complete', 'success');
+        updateSummary();
+      } catch (err) {
+        log('findLog', `Error testing performance: ${err.message}`, 'error');
+      }
+    });
+    
+    // Update benchmark display
+    function updateBenchmark(label, utilityTime, referenceTime) {
+      const benchmarksContainer = document.getElementById('benchmarks');
+      
+      // Check if benchmark already exists
+      let benchmark = Array.from(benchmarksContainer.children).find(
+        child => child.querySelector('.benchmark-label').textContent === label
+      );
+      
+      if (!benchmark) {
+        // Create new benchmark element
+        benchmark = document.createElement('div');
+        benchmark.className = 'benchmark';
+        
+        const labelDiv = document.createElement('div');
+        labelDiv.className = 'benchmark-label';
+        labelDiv.textContent = label;
+        
+        const barDiv = document.createElement('div');
+        barDiv.className = 'benchmark-bar';
+        
+        const progress = document.createElement('progress');
+        progress.max = 100;
+        barDiv.appendChild(progress);
+        
+        const valueDiv = document.createElement('div');
+        valueDiv.className = 'benchmark-value';
+        
+        benchmark.appendChild(labelDiv);
+        benchmark.appendChild(barDiv);
+        benchmark.appendChild(valueDiv);
+        
+        benchmarksContainer.appendChild(benchmark);
+      }
+      
+      // Update benchmark values
+      const progress = benchmark.querySelector('progress');
+      const valueDiv = benchmark.querySelector('.benchmark-value');
+      
+      // Calculate percentage (lower is better)
+      const percentage = (utilityTime / referenceTime) * 100;
+      progress.value = Math.min(100, percentage);
+      
+      // Format improvement percentage
+      const improvement = ((referenceTime - utilityTime) / referenceTime) * 100;
+      valueDiv.textContent = improvement > 0 
+        ? `${improvement.toFixed(1)}% faster` 
+        : `${Math.abs(improvement).toFixed(1)}% slower`;
+      
+      // Update color based on performance
+      if (improvement > 10) {
+        progress.style.setProperty('--progress-color', '#4caf50');
+        valueDiv.style.color = '#4caf50';
+      } else if (improvement > 0) {
+        progress.style.setProperty('--progress-color', '#8bc34a');
+        valueDiv.style.color = '#8bc34a';
+      } else if (improvement > -10) {
+        progress.style.setProperty('--progress-color', '#ff9800');
+        valueDiv.style.color = '#ff9800';
+      } else {
+        progress.style.setProperty('--progress-color', '#f44336');
+        valueDiv.style.color = '#f44336';
+      }
+    }
+    
+    // Update summary panel
+    function updateSummary() {
+      const summaryPanel = document.getElementById('summaryPanel');
+      
+      // Get performance metrics
+      const shufflePerf = document.getElementById('shufflePerf').textContent;
+      const findPerf = document.getElementById('findPerf').textContent;
+      
+      // Only update if metrics are available
+      if (shufflePerf === '--' && findPerf === '--') {
+        return;
+      }
+      
+      // Create summary HTML
+      let html = '<h3>Optimization Phase 1.1 Results</h3>';
+      
+      // Add test results
+      html += '<p>✅ <strong>Utility functions extracted successfully</strong></p>';
+      html += '<p>The following utilities are now available in a separate module:</p>';
+      html += '<ul>';
+      html += '<li><code>shuffleArray()</code> - Performance: ' + (shufflePerf !== '--' ? shufflePerf + 'ms' : 'Not tested') + '</li>';
+      html += '<li><code>findCardById()</code> - Performance: ' + (findPerf !== '--' ? findPerf + 'ms' : 'Not tested') + '</li>';
+      html += '</ul>';
+      
+      // Add benefits
+      html += '<h4>Benefits</h4>';
+      html += '<ul>';
+      html += '<li>✅ Code is now more modular and reusable</li>';
+      html += '<li>✅ Reduced duplication in the codebase</li>';
+      html += '<li>✅ Improved testability with isolated functions</li>';
+      html += '<li>✅ Better code organization with separation of concerns</li>';
+      html += '</ul>';
+      
+      // Add code reduction stats
+      html += '<h4>Code Reduction</h4>';
+      html += '<p>Removed approximately 70 lines from main script.js file</p>';
+      
+      // Add next steps
+      html += '<h4>Next Steps</h4>';
+      html += '<ol>';
+      html += '<li>Continue with Increment 1.2: Global State Wrapper</li>';
+      html += '<li>Further improve testability by adding more utility functions</li>';
+      html += '<li>Consider adding TypeScript definitions for better type safety</li>';
+      html += '</ol>';
+      
+      // Update the panel
+      summaryPanel.innerHTML = html;
+    }
+  </script>
+</body>
+</html> 

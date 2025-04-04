@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logging System Test - SoulSworn</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    h1, h2, h3 {
+      color: #333;
+    }
+    .test-section {
+      background-color: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .test-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    button {
+      padding: 8px 12px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    input, select {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .output {
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      max-height: 300px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .log-entry {
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #eee;
+    }
+    .log-entry .timestamp {
+      color: #888;
+      font-size: 11px;
+    }
+    .log-entry .level {
+      font-weight: bold;
+      margin-right: 5px;
+    }
+    .log-entry .level.DEBUG { color: #6c757d; }
+    .log-entry .level.INFO { color: #17a2b8; }
+    .log-entry .level.WARN { color: #ffc107; }
+    .log-entry .level.ERROR { color: #dc3545; }
+    .log-entry .source {
+      font-size: 11px;
+      color: #888;
+      margin-left: 10px;
+    }
+    .log-entry .message {
+      margin-top: 3px;
+    }
+    .log-entry .data {
+      margin-top: 5px;
+      font-style: italic;
+    }
+    .function-call {
+      padding-left: 10px;
+      border-left: 3px solid #ddd;
+    }
+    .function-entry {
+      border-left-color: #17a2b8;
+    }
+    .function-return {
+      border-left-color: #28a745;
+    }
+    .function-error {
+      border-left-color: #dc3545;
+    }
+    .function-name {
+      font-weight: bold;
+      color: #0056b3;
+    }
+    .call-type {
+      font-style: italic;
+      color: #6c757d;
+    }
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #ddd;
+      margin-bottom: 15px;
+    }
+    .tab {
+      padding: 8px 15px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      border-bottom: none;
+      margin-bottom: -1px;
+    }
+    .tab.active {
+      background-color: white;
+      border-color: #ddd;
+      border-radius: 4px 4px 0 0;
+    }
+    .tab:hover:not(.active) {
+      background-color: #f1f1f1;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .performance-entry {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      padding: 5px;
+    }
+    .performance-entry.slow {
+      background-color: #fff3cd;
+    }
+    .performance-entry.critical {
+      background-color: #f8d7da;
+      border: 1px solid #f5c6cb;
+    }
+    .config-option {
+      display: flex;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+    .config-option label {
+      width: 220px;
+      font-weight: bold;
+    }
+    .dashboard-tabs {
+      display: flex;
+      border-bottom: 1px solid #ddd;
+      margin: 15px 0;
+    }
+    .dashboard-content {
+      display: none;
+      padding: 15px;
+    }
+    .dashboard-content.active {
+      display: block;
+    }
+    .profile-cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    .profile-card {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      width: calc(50% - 15px);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .profile-card h4 {
+      margin-top: 0;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+    }
+    .profile-stats {
+      margin-bottom: 10px;
+    }
+    .profile-operations {
+      font-size: 12px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    .operation-row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #f5f5f5;
+      padding: 3px 0;
+    }
+    .operation-row.slow {
+      background-color: #fff3cd;
+    }
+    .operation-row.critical {
+      background-color: #f8d7da;
+    }
+    .memory-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    .memory-metric {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      width: calc(33% - 15px);
+      text-align: center;
+    }
+    .memory-metric .value {
+      font-size: 24px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    .memory-metric .label {
+      color: #666;
+      font-size: 14px;
+    }
+    .critical-ops {
+      border: 1px solid #f5c6cb;
+      border-radius: 4px;
+      background-color: #f8d7da;
+      padding: 10px;
+    }
+    .critical-op {
+      padding: 5px;
+      margin-bottom: 5px;
+      border-bottom: 1px solid #f5c6cb;
+    }
+    .critical-op .time {
+      font-weight: bold;
+      color: #721c24;
+    }
+    .analysis-section {
+      margin-bottom: 20px;
+    }
+    .summary-box {
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 10px;
+    }
+    .search-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .filter-group {
+      display: flex;
+      align-items: center;
+    }
+    .filter-group label {
+      margin-right: 5px;
+    }
+    .chart-controls {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .chart-controls select {
+      margin-right: 10px;
+    }
+    .chart-controls button {
+      padding: 8px 12px;
+    }
+    .chart-container {
+      margin-bottom: 10px;
+    }
+    .chart-container canvas {
+      max-width: 100%;
+      height: auto;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    .summary-section {
+      margin-bottom: 15px;
+    }
+    .summary-section h4 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 5px;
+    }
+    .message-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .message-list li {
+      padding: 3px 0;
+      border-bottom: 1px solid #f5f5f5;
+    }
+    .message-list .count {
+      background-color: #f1f1f1;
+      border-radius: 3px;
+      padding: 2px 5px;
+      margin-right: 5px;
+      font-size: 12px;
+    }
+    .usage-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+    }
+    .usage-table th, .usage-table td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    .usage-table th {
+      background-color: #f5f5f5;
+    }
+  </style>
+</head>
+<body>
+  <h1>Logging System Test Page</h1>
+  <p>This page tests the logging functionality for SoulSworn.</p>
+
+  <div class="test-section">
+    <h2>Basic Logging</h2>
+    <div class="test-controls">
+      <input id="logMessage" placeholder="Log message">
+      <select id="logLevel">
+        <option value="DEBUG">DEBUG</option>
+        <option value="INFO" selected>INFO</option>
+        <option value="WARN">WARN</option>
+        <option value="ERROR">ERROR</option>
+      </select>
+      <button id="logBtn">Log Message</button>
+      <button id="multiLogBtn">Generate Multiple Logs</button>
+      <button id="clearLogsBtn">Clear Logs</button>
+    </div>
+    <div class="tabs">
+      <div class="tab active" data-tab="all-logs">All Logs</div>
+      <div class="tab" data-tab="error-logs">Errors</div>
+      <div class="tab" data-tab="performance-logs">Performance</div>
+      <div class="tab" data-tab="function-calls">Function Calls</div>
+      <div class="tab" data-tab="log-analysis">Log Analysis</div>
+    </div>
+    <div class="tab-content active" id="all-logs">
+      <div id="logsOutput" class="output"></div>
+    </div>
+    <div class="tab-content" id="error-logs">
+      <div id="errorLogsOutput" class="output"></div>
+    </div>
+    <div class="tab-content" id="performance-logs">
+      <div id="performanceLogsOutput" class="output"></div>
+    </div>
+    <div class="tab-content" id="function-calls">
+      <div class="test-controls">
+        <input id="functionFilter" placeholder="Filter by function name">
+        <button id="applyFilterBtn">Apply Filter</button>
+        <button id="clearFilterBtn">Clear Filter</button>
+      </div>
+      <div id="functionCallsOutput" class="output"></div>
+    </div>
+    <div class="tab-content" id="log-analysis">
+      <div class="analysis-section">
+        <h3>Log Summary</h3>
+        <div id="logSummary" class="summary-box"></div>
+      </div>
+      <div class="analysis-section">
+        <h3>Advanced Search</h3>
+        <div class="search-controls">
+          <input id="searchTerm" placeholder="Search term">
+          <div class="filter-group">
+            <label>Log Levels:</label>
+            <label><input type="checkbox" class="log-level-filter" value="DEBUG" checked> DEBUG</label>
+            <label><input type="checkbox" class="log-level-filter" value="INFO" checked> INFO</label>
+            <label><input type="checkbox" class="log-level-filter" value="WARN" checked> WARN</label>
+            <label><input type="checkbox" class="log-level-filter" value="ERROR" checked> ERROR</label>
+          </div>
+          <div class="filter-group">
+            <label>Time Range:</label>
+            <input id="startTime" type="datetime-local">
+            <span>to</span>
+            <input id="endTime" type="datetime-local">
+          </div>
+          <button id="searchLogsBtn">Search</button>
+          <button id="clearSearchBtn">Clear</button>
+        </div>
+        <div id="searchResults" class="output"></div>
+      </div>
+      <div class="analysis-section">
+        <h3>Log Visualization</h3>
+        <div class="chart-controls">
+          <select id="chartField">
+            <option value="level">Log Level</option>
+            <option value="timestamp.date">Date</option>
+            <option value="timestamp.hour">Hour</option>
+            <option value="data.function">Function</option>
+          </select>
+          <button id="generateChartBtn">Generate Chart</button>
+        </div>
+        <div id="chartContainer">
+          <canvas id="logChart" width="800" height="300"></canvas>
+        </div>
+      </div>
+      <div class="analysis-section">
+        <h3>Usage Patterns</h3>
+        <button id="analyzeUsageBtn">Analyze Usage Patterns</button>
+        <div id="usagePatterns" class="output"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>Performance Monitoring</h2>
+    <div class="test-controls">
+      <button id="fastFnBtn">Run Fast Function</button>
+      <button id="slowFnBtn">Run Slow Function</button>
+      <button id="asyncFnBtn">Run Async Function</button>
+      <button id="errorFnBtn">Run Function with Error</button>
+      <button id="profileTestBtn">Test All Profiles</button>
+      <button id="resetStatsBtn">Reset Stats</button>
+    </div>
+    <div id="performanceOutput" class="output"></div>
+    
+    <h3>Performance Dashboard</h3>
+    <div class="dashboard-tabs">
+      <div class="tab active" data-tab="profile-summary">Profile Summary</div>
+      <div class="tab" data-tab="memory-usage">Memory Usage</div>
+      <div class="tab" data-tab="critical-operations">Critical Operations</div>
+    </div>
+    
+    <div class="dashboard-content active" id="profile-summary">
+      <div class="profile-cards">
+        <!-- Profile cards will be added here dynamically -->
+      </div>
+    </div>
+    
+    <div class="dashboard-content" id="memory-usage">
+      <div id="memoryStats" class="memory-stats">
+        <!-- Memory stats will be shown here if available -->
+      </div>
+    </div>
+    
+    <div class="dashboard-content" id="critical-operations">
+      <div id="criticalOps" class="critical-ops">
+        <!-- Critical operations will be listed here -->
+      </div>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>Function Monitoring</h2>
+    <div class="test-controls">
+      <button id="monitorBtn">Monitor Demo Object</button>
+      <button id="callMethodsBtn">Call Monitored Methods</button>
+      <button id="callWithParamsBtn">Call with Parameters</button>
+    </div>
+    <div id="monitorOutput" class="output"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Logger Configuration</h2>
+    <div class="config-option">
+      <label for="minLogLevel">Minimum Log Level:</label>
+      <select id="minLogLevel">
+        <option value="DEBUG">DEBUG</option>
+        <option value="INFO">INFO</option>
+        <option value="WARN">WARN</option>
+        <option value="ERROR">ERROR</option>
+      </select>
+    </div>
+    <div class="config-option">
+      <label for="maxLogs">Maximum Logs:</label>
+      <input type="number" id="maxLogs" value="1000" min="10" max="10000">
+    </div>
+    <div class="config-option">
+      <label for="performanceThreshold">Performance Threshold (ms):</label>
+      <input type="number" id="performanceThreshold" value="100" min="10" max="5000">
+    </div>
+    <div class="config-option">
+      <label>Options:</label>
+      <div>
+        <label><input type="checkbox" id="logToConsole" checked> Log to Console</label>
+        <label><input type="checkbox" id="useTimestamps" checked> Use Timestamps</label>
+        <label><input type="checkbox" id="captureStack" checked> Capture Stack Traces</label>
+      </div>
+    </div>
+    <div class="test-controls">
+      <button id="applyConfigBtn">Apply Configuration</button>
+      <button id="resetConfigBtn">Reset to Defaults</button>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>Log Export</h2>
+    <div class="test-controls">
+      <button id="exportBtn">Export Logs</button>
+      <button id="downloadBtn">Download Logs</button>
+    </div>
+    <div id="exportOutput" class="output"></div>
+  </div>
+
+  <!-- Load dependencies -->
+  <script src="logger.js"></script>
+  
+  <!-- Chart.js for log visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  
+  <script>
+    // Helper function to format log entries nicely
+    function formatLogEntry(entry) {
+      const container = document.createElement('div');
+      container.className = 'log-entry';
+      
+      const header = document.createElement('div');
+      
+      if (entry.timestamp) {
+        const timestamp = document.createElement('span');
+        timestamp.className = 'timestamp';
+        timestamp.textContent = new Date(entry.timestamp).toLocaleTimeString();
+        header.appendChild(timestamp);
+      }
+      
+      const level = document.createElement('span');
+      level.className = `level ${entry.level}`;
+      level.textContent = ` [${entry.level}]`;
+      header.appendChild(level);
+      
+      if (entry.source) {
+        const source = document.createElement('span');
+        source.className = 'source';
+        source.textContent = entry.source;
+        header.appendChild(source);
+      }
+      
+      container.appendChild(header);
+      
+      const message = document.createElement('div');
+      message.className = 'message';
+      message.textContent = entry.message;
+      container.appendChild(message);
+      
+      if (entry.data) {
+        const data = document.createElement('div');
+        data.className = 'data';
+        data.textContent = typeof entry.data === 'object' 
+          ? JSON.stringify(entry.data, null, 2)
+          : entry.data;
+        container.appendChild(data);
+      }
+      
+      return container;
+    }
+    
+    // Format performance entry
+    function formatPerformanceEntry(entry) {
+      const container = document.createElement('div');
+      container.className = `performance-entry ${entry.severity === 'critical' ? 'critical' : entry.severity === 'slow' ? 'slow' : ''}`;
+      
+      const label = document.createElement('span');
+      label.className = 'perf-label';
+      
+      if (entry.profile) {
+        label.textContent = `[${entry.profile}] ${entry.label}`;
+      } else {
+        label.textContent = entry.label;
+      }
+      container.appendChild(label);
+      
+      const time = document.createElement('span');
+      time.className = 'perf-time';
+      time.textContent = `${entry.elapsed.toFixed(2)}ms`;
+      container.appendChild(time);
+      
+      return container;
+    }
+    
+    // Update displays
+    function updateLogs() {
+      // Update all logs
+      const logsOutput = document.getElementById('logsOutput');
+      logsOutput.innerHTML = '';
+      
+      const logs = Logger.getLogs();
+      if (logs.length === 0) {
+        logsOutput.textContent = 'No logs yet.';
+      } else {
+        // Add newest entries first
+        for (let i = logs.length - 1; i >= 0; i--) {
+          logsOutput.appendChild(formatLogEntry(logs[i]));
+        }
+      }
+      
+      // Update error logs
+      const errorLogsOutput = document.getElementById('errorLogsOutput');
+      errorLogsOutput.innerHTML = '';
+      
+      const errorLogs = Logger.getErrorLogs();
+      if (errorLogs.length === 0) {
+        errorLogsOutput.textContent = 'No error logs.';
+      } else {
+        for (let i = errorLogs.length - 1; i >= 0; i--) {
+          errorLogsOutput.appendChild(formatLogEntry(errorLogs[i]));
+        }
+      }
+      
+      // Update performance logs
+      const performanceLogsOutput = document.getElementById('performanceLogsOutput');
+      performanceLogsOutput.innerHTML = '';
+      
+      const perfLogs = Logger.getPerformanceLogs();
+      if (perfLogs.length === 0) {
+        performanceLogsOutput.textContent = 'No performance logs.';
+      } else {
+        for (let i = perfLogs.length - 1; i >= 0; i--) {
+          performanceLogsOutput.appendChild(formatPerformanceEntry(perfLogs[i]));
+        }
+      }
+      
+      // Update function call logs
+      updateFunctionCallLogs();
+      
+      // Update performance dashboard
+      updatePerformanceDashboard();
+      
+      // Update log analysis section
+      updateLogSummary();
+    }
+    
+    // Format function call entry
+    function formatFunctionCallEntry(entry) {
+      if (!entry.data || !entry.data.function) {
+        return null; // Skip entries that aren't function calls
+      }
+      
+      const container = document.createElement('div');
+      container.className = 'log-entry function-call';
+      
+      // Add a visual indicator of call type (entry/return/error)
+      if (entry.data.type === 'entry') {
+        container.classList.add('function-entry');
+      } else if (entry.data.type === 'return') {
+        container.classList.add('function-return');
+      } else if (entry.data.type === 'error') {
+        container.classList.add('function-error');
+      }
+      
+      const header = document.createElement('div');
+      
+      if (entry.timestamp) {
+        const timestamp = document.createElement('span');
+        timestamp.className = 'timestamp';
+        timestamp.textContent = new Date(entry.timestamp).toLocaleTimeString();
+        header.appendChild(timestamp);
+      }
+      
+      const functionName = document.createElement('span');
+      functionName.className = 'function-name';
+      functionName.textContent = ` ${entry.data.function}`;
+      header.appendChild(functionName);
+      
+      const callType = document.createElement('span');
+      callType.className = 'call-type';
+      callType.textContent = ` [${entry.data.type}]`;
+      header.appendChild(callType);
+      
+      container.appendChild(header);
+      
+      const message = document.createElement('div');
+      message.className = 'message';
+      message.textContent = entry.message;
+      container.appendChild(message);
+      
+      return container;
+    }
+    
+    // Update function call logs with filtering
+    function updateFunctionCallLogs() {
+      const functionCallsOutput = document.getElementById('functionCallsOutput');
+      functionCallsOutput.innerHTML = '';
+      
+      // Get all logs
+      const logs = Logger.getLogs();
+      
+      // Filter by function calls
+      const functionCalls = logs.filter(entry => 
+        entry.data && 
+        (entry.data.type === 'entry' || entry.data.type === 'return' || entry.data.type === 'error')
+      );
+      
+      // Apply name filter if any
+      const filterValue = document.getElementById('functionFilter').value.trim().toLowerCase();
+      const filteredCalls = filterValue ? 
+        functionCalls.filter(entry => 
+          entry.data.function.toLowerCase().includes(filterValue)
+        ) : 
+        functionCalls;
+      
+      if (filteredCalls.length === 0) {
+        functionCallsOutput.textContent = filterValue ? 
+          `No function calls matching "${filterValue}"` : 
+          'No function calls logged yet.';
+      } else {
+        // Add newest entries first
+        for (let i = filteredCalls.length - 1; i >= 0; i--) {
+          const formattedEntry = formatFunctionCallEntry(filteredCalls[i]);
+          if (formattedEntry) {
+            functionCallsOutput.appendChild(formattedEntry);
+          }
+        }
+      }
+    }
+    
+    // Initialize test page
+    window.addEventListener('DOMContentLoaded', () => {
+      // Tab switching logic
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          // Deactivate all tabs
+          document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+          
+          // Activate selected tab
+          tab.classList.add('active');
+          const tabContent = document.getElementById(tab.dataset.tab);
+          if (tabContent) tabContent.classList.add('active');
+        });
+      });
+      
+      // Basic logging controls
+      document.getElementById('logBtn').addEventListener('click', () => {
+        const message = document.getElementById('logMessage').value || 'Test log message';
+        const level = document.getElementById('logLevel').value;
+        
+        Logger[level.toLowerCase()](message, { source: 'Manual Entry' });
+        updateLogs();
+      });
+      
+      document.getElementById('multiLogBtn').addEventListener('click', () => {
+        const levels = ['DEBUG', 'INFO', 'WARN', 'ERROR'];
+        
+        for (let i = 0; i < 5; i++) {
+          const level = levels[Math.floor(Math.random() * levels.length)];
+          Logger[level.toLowerCase()](`Test log ${i + 1}`, { random: Math.random() });
+        }
+        
+        updateLogs();
+      });
+      
+      document.getElementById('clearLogsBtn').addEventListener('click', () => {
+        Logger.clearLogs();
+        updateLogs();
+      });
+      
+      // Performance testing functions
+      document.getElementById('fastFnBtn').addEventListener('click', () => {
+        Logger.startTimer('fast-function');
+        
+        // Do something quick
+        let sum = 0;
+        for (let i = 0; i < 1000; i++) {
+          sum += i;
+        }
+        
+        const elapsed = Logger.endTimer('fast-function');
+        document.getElementById('performanceOutput').textContent = `Fast function completed in ${elapsed.toFixed(2)}ms. Result: ${sum}`;
+        updateLogs();
+      });
+      
+      document.getElementById('slowFnBtn').addEventListener('click', () => {
+        Logger.startTimer('slow-function');
+        
+        // Do something slow
+        let sum = 0;
+        for (let i = 0; i < 2000000; i++) {
+          sum += Math.sqrt(i);
+        }
+        
+        const elapsed = Logger.endTimer('slow-function');
+        document.getElementById('performanceOutput').textContent = `Slow function completed in ${elapsed.toFixed(2)}ms. Result: ${sum.toFixed(2)}`;
+        updateLogs();
+      });
+      
+      document.getElementById('asyncFnBtn').addEventListener('click', () => {
+        const timerLabel = 'async-function';
+        Logger.startTimer(timerLabel);
+        
+        // Simulate async operation
+        document.getElementById('performanceOutput').textContent = 'Running async function...';
+        
+        setTimeout(() => {
+          const elapsed = Logger.endTimer(timerLabel);
+          document.getElementById('performanceOutput').textContent = `Async function completed in ${elapsed.toFixed(2)}ms.`;
+          updateLogs();
+        }, 1500);
+      });
+      
+      document.getElementById('errorFnBtn').addEventListener('click', () => {
+        try {
+          Logger.startTimer('error-function');
+          
+          // Cause an error
+          const obj = null;
+          obj.nonExistentMethod();
+          
+          Logger.endTimer('error-function');
+        } catch (e) {
+          Logger.error('Error in test function', e);
+          document.getElementById('performanceOutput').textContent = `Error function failed: ${e.message}`;
+          updateLogs();
+        }
+      });
+      
+      // Profile testing
+      document.getElementById('profileTestBtn').addEventListener('click', () => {
+        document.getElementById('performanceOutput').textContent = 'Running profile tests...';
+        
+        // Test UI profile
+        Logger.startTimer('ui-render-test', 'UI');
+        // Simulate UI rendering
+        let uiResult = '';
+        for (let i = 0; i < 500; i++) {
+          uiResult += `<div>element-${i}</div>`;
+        }
+        Logger.endTimer('ui-render-test', true, { elements: 500 });
+        
+        // Test Network profile (simulated)
+        Logger.startTimer('api-call-test', 'Network');
+        setTimeout(() => {
+          Logger.endTimer('api-call-test', true, { endpoint: '/api/data' });
+          
+          // Test Game Logic profile
+          Logger.startTimer('game-logic-test', 'Game');
+          // Simulate complex game logic
+          const gameboardSize = 40;
+          const iterations = 1000;
+          let total = 0;
+          for (let i = 0; i < iterations; i++) {
+            total += Math.sin(i) * Math.cos(i) * gameboardSize;
+          }
+          Logger.endTimer('game-logic-test', true, { iterations });
+          
+          // Test Deck profile
+          Logger.startTimer('deck-shuffle-test', 'Deck');
+          // Simulate deck shuffling
+          const deckSize = 60;
+          let deck = Array.from({ length: deckSize }, (_, i) => ({ id: i, value: Math.random() }));
+          for (let i = 0; i < 10; i++) {
+            deck.sort(() => Math.random() - 0.5);
+          }
+          Logger.endTimer('deck-shuffle-test', true, { deckSize });
+          
+          document.getElementById('performanceOutput').textContent = 'Profile tests completed.';
+          
+          // Update the dashboard
+          updatePerformanceDashboard();
+          updateLogs();
+        }, 600); // Simulate network delay
+      });
+      
+      // Reset performance stats
+      document.getElementById('resetStatsBtn').addEventListener('click', () => {
+        Logger.resetPerformanceStats();
+        updatePerformanceDashboard();
+        document.getElementById('performanceOutput').textContent = 'Performance statistics reset.';
+      });
+      
+      // Dashboard tab switching
+      document.querySelectorAll('.dashboard-tabs .tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.dashboard-tabs .tab').forEach(t => t.classList.remove('active'));
+          document.querySelectorAll('.dashboard-content').forEach(c => c.classList.remove('active'));
+          
+          tab.classList.add('active');
+          document.getElementById(tab.dataset.tab).classList.add('active');
+        });
+      });
+      
+      // Update the performance dashboard
+      function updatePerformanceDashboard() {
+        // Update profile summary
+        const profiles = Logger.getPerformanceProfiles();
+        const profileCardsContainer = document.querySelector('.profile-cards');
+        profileCardsContainer.innerHTML = '';
+        
+        Object.keys(profiles).forEach(profileName => {
+          const profile = profiles[profileName];
+          const card = document.createElement('div');
+          card.className = 'profile-card';
+          
+          // Card header
+          const header = document.createElement('h4');
+          header.textContent = `${profileName}: ${profile.description}`;
+          card.appendChild(header);
+          
+          // Profile stats
+          const stats = document.createElement('div');
+          stats.className = 'profile-stats';
+          stats.innerHTML = `
+            <div>Call Count: <strong>${profile.stats.callCount}</strong></div>
+            <div>Total Time: <strong>${profile.stats.totalTime.toFixed(2)}ms</strong></div>
+            <div>Average Time: <strong>${profile.stats.avgTime.toFixed(2)}ms</strong></div>
+            <div>Max Time: <strong>${profile.stats.maxTime.toFixed(2)}ms</strong></div>
+          `;
+          card.appendChild(stats);
+          
+          // Operations
+          const operations = document.createElement('div');
+          operations.className = 'profile-operations';
+          
+          // Operation header
+          const opHeader = document.createElement('div');
+          opHeader.className = 'operation-row header';
+          opHeader.innerHTML = `
+            <strong>Operation</strong>
+            <strong>Avg Time (ms)</strong>
+          `;
+          operations.appendChild(opHeader);
+          
+          // Sort operations by average time (slowest first)
+          const sortedOps = Object.entries(profile.operations).sort((a, b) => {
+            return b[1].avgTime - a[1].avgTime;
+          });
+          
+          sortedOps.forEach(([opName, opData]) => {
+            const opRow = document.createElement('div');
+            const severity = opData.avgTime > profile.thresholds.critical ? 'critical' : 
+              opData.avgTime > profile.thresholds.slow ? 'slow' : '';
+            opRow.className = `operation-row ${severity}`;
+            
+            opRow.innerHTML = `
+              <span>${opName}</span>
+              <span>${opData.avgTime.toFixed(2)}</span>
+            `;
+            operations.appendChild(opRow);
+          });
+          
+          card.appendChild(operations);
+          profileCardsContainer.appendChild(card);
+        });
+        
+        // Update memory usage if available
+        const memoryStats = document.getElementById('memoryStats');
+        const memoryData = Logger.getMemoryUsage();
+        
+        if (memoryData) {
+          memoryStats.innerHTML = `
+            <div class="memory-metric">
+              <div class="label">Used JS Heap</div>
+              <div class="value">${memoryData.usedJSHeapSize} MB</div>
+              <div class="desc">Memory currently in use</div>
+            </div>
+            <div class="memory-metric">
+              <div class="label">Total JS Heap</div>
+              <div class="value">${memoryData.totalJSHeapSize} MB</div>
+              <div class="desc">Total allocated memory</div>
+            </div>
+            <div class="memory-metric">
+              <div class="label">JS Heap Limit</div>
+              <div class="value">${memoryData.jsHeapSizeLimit} MB</div>
+              <div class="desc">Maximum memory available</div>
+            </div>
+          `;
+        } else {
+          memoryStats.innerHTML = '<div class="note">Memory usage information is not available in this browser.</div>';
+        }
+        
+        // Update critical operations
+        const criticalOps = document.getElementById('criticalOps');
+        const criticalLogs = Logger.getCriticalPerformanceLogs();
+        
+        if (criticalLogs.length > 0) {
+          criticalOps.innerHTML = '<h4>Critical Performance Issues</h4>';
+          
+          criticalLogs.forEach(log => {
+            const opElement = document.createElement('div');
+            opElement.className = 'critical-op';
+            opElement.innerHTML = `
+              <div>${log.label} <span class="time">(${log.elapsed.toFixed(2)}ms)</span></div>
+              <div class="timestamp">${new Date(log.timestamp).toLocaleTimeString()}</div>
+            `;
+            criticalOps.appendChild(opElement);
+          });
+        } else {
+          criticalOps.innerHTML = '<div class="note">No critical performance issues detected.</div>';
+        }
+      }
+      
+      // Function monitoring tests
+      let demoObject = null;
+      
+      document.getElementById('monitorBtn').addEventListener('click', () => {
+        // Create a demo object
+        demoObject = {
+          name: 'DemoObject',
+          
+          fastMethod() {
+            let result = 0;
+            for (let i = 0; i < 1000; i++) {
+              result += i;
+            }
+            return result;
+          },
+          
+          slowMethod() {
+            let result = 0;
+            for (let i = 0; i < 1000000; i++) {
+              result += Math.sqrt(i);
+            }
+            return result;
+          },
+          
+          errorMethod() {
+            throw new Error('Deliberate error in errorMethod');
+          }
+        };
+        
+        // Monitor all methods
+        Logger.monitorMethods(demoObject, [], 'DemoObject');
+        document.getElementById('monitorOutput').textContent = 'Demo object methods are now monitored.';
+      });
+      
+      document.getElementById('callMethodsBtn').addEventListener('click', () => {
+        if (!demoObject) {
+          document.getElementById('monitorOutput').textContent = 'Please monitor the demo object first.';
+          return;
+        }
+        
+        document.getElementById('monitorOutput').textContent = '';
+        
+        try {
+          const fastResult = demoObject.fastMethod();
+          document.getElementById('monitorOutput').textContent += `Fast method result: ${fastResult}\n\n`;
+          
+          const slowResult = demoObject.slowMethod();
+          document.getElementById('monitorOutput').textContent += `Slow method result: ${slowResult.toFixed(2)}\n\n`;
+          
+          // This will cause an error
+          try {
+            demoObject.errorMethod();
+          } catch (e) {
+            document.getElementById('monitorOutput').textContent += `Error method threw: ${e.message}\n\n`;
+          }
+          
+          updateLogs();
+        } catch (e) {
+          console.error('Error calling monitored methods:', e);
+        }
+      });
+      
+      // Call with parameters test
+      document.getElementById('callWithParamsBtn').addEventListener('click', () => {
+        if (!demoObject) {
+          document.getElementById('monitorOutput').textContent = 'Please monitor the demo object first.';
+          return;
+        }
+        
+        // Add a test method with parameters to demo object
+        demoObject.testWithParams = function(name, count, options) {
+          let result = `Hello, ${name}! `;
+          for (let i = 0; i < count; i++) {
+            result += 'Count: ' + i + ' ';
+          }
+          
+          if (options && options.uppercase) {
+            result = result.toUpperCase();
+          }
+          
+          return result;
+        };
+        
+        // Monitor this new method
+        Logger.monitorFunction(
+          demoObject.testWithParams,
+          'DemoObject.testWithParams'
+        );
+        
+        document.getElementById('monitorOutput').textContent = 'Testing parameter logging:\n\n';
+        
+        // Call with different parameter combinations
+        try {
+          const result1 = demoObject.testWithParams('World', 3, { uppercase: true });
+          document.getElementById('monitorOutput').textContent += `Result 1: ${result1}\n\n`;
+          
+          const result2 = demoObject.testWithParams('User', 2);
+          document.getElementById('monitorOutput').textContent += `Result 2: ${result2}\n\n`;
+          
+          const result3 = demoObject.testWithParams('Testing');
+          document.getElementById('monitorOutput').textContent += `Result 3: ${result3}\n\n`;
+          
+          updateLogs();
+        } catch (e) {
+          console.error('Error testing parameters:', e);
+        }
+      });
+      
+      // Configuration controls
+      document.getElementById('applyConfigBtn').addEventListener('click', () => {
+        const config = {
+          minLevel: Logger.LOG_LEVELS[document.getElementById('minLogLevel').value],
+          maxLogs: parseInt(document.getElementById('maxLogs').value),
+          performanceThreshold: parseInt(document.getElementById('performanceThreshold').value),
+          logToConsole: document.getElementById('logToConsole').checked,
+          useTimestamps: document.getElementById('useTimestamps').checked,
+          captureStack: document.getElementById('captureStack').checked
+        };
+        
+        Logger.configure(config);
+        Logger.info('Logger configuration updated', config);
+        updateLogs();
+      });
+      
+      document.getElementById('resetConfigBtn').addEventListener('click', () => {
+        // Reset to default values
+        document.getElementById('minLogLevel').value = 'DEBUG';
+        document.getElementById('maxLogs').value = '1000';
+        document.getElementById('performanceThreshold').value = '100';
+        document.getElementById('logToConsole').checked = true;
+        document.getElementById('useTimestamps').checked = true;
+        document.getElementById('captureStack').checked = true;
+        
+        Logger.configure({
+          minLevel: Logger.LOG_LEVELS.DEBUG,
+          maxLogs: 1000,
+          performanceThreshold: 100,
+          logToConsole: true,
+          useTimestamps: true,
+          captureStack: true
+        });
+        
+        Logger.info('Logger configuration reset to defaults');
+        updateLogs();
+      });
+      
+      // Export controls
+      document.getElementById('exportBtn').addEventListener('click', () => {
+        const exportData = Logger.exportLogs();
+        document.getElementById('exportOutput').textContent = JSON.stringify(exportData, null, 2);
+      });
+      
+      document.getElementById('downloadBtn').addEventListener('click', () => {
+        Logger.downloadLogs();
+      });
+      
+      // Function call filter controls
+      document.getElementById('applyFilterBtn').addEventListener('click', () => {
+        updateFunctionCallLogs();
+      });
+      
+      document.getElementById('clearFilterBtn').addEventListener('click', () => {
+        document.getElementById('functionFilter').value = '';
+        updateFunctionCallLogs();
+      });
+      
+      // Add keyboard event to filter input
+      document.getElementById('functionFilter').addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') {
+          updateFunctionCallLogs();
+        }
+      });
+      
+      // Initial log
+      Logger.info('Logger test page loaded', { timestamp: new Date() });
+      updateLogs();
+      
+      // Initialize performance dashboard
+      updatePerformanceDashboard();
+      
+      // Initialize log analysis features
+      
+      // Search logs button
+      document.getElementById('searchLogsBtn').addEventListener('click', searchLogsHandler);
+      
+      // Clear search button
+      document.getElementById('clearSearchBtn').addEventListener('click', clearSearch);
+      
+      // Generate chart button
+      document.getElementById('generateChartBtn').addEventListener('click', generateChart);
+      
+      // Analyze usage patterns button
+      document.getElementById('analyzeUsageBtn').addEventListener('click', analyzeUsage);
+    });
+
+    // Log analysis functions
+    function updateLogSummary() {
+      const summaryElement = document.getElementById('logSummary');
+      const summary = Logger.getLogSummary();
+      
+      if (summary.total === 0) {
+        summaryElement.innerHTML = '<p>No logs available to analyze.</p>';
+        return;
+      }
+      
+      // Format timestamp for display
+      const formatDate = (timestamp) => {
+        if (!timestamp) return 'N/A';
+        return new Date(timestamp).toLocaleString();
+      };
+      
+      // Format time span
+      const formatTimeSpan = (ms) => {
+        if (!ms) return 'N/A';
+        
+        const seconds = Math.floor(ms / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        
+        if (hours > 0) {
+          return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+        } else if (minutes > 0) {
+          return `${minutes}m ${seconds % 60}s`;
+        } else {
+          return `${seconds}s`;
+        }
+      };
+      
+      // Generate HTML for summary display
+      let html = `
+        <div class="summary-grid">
+          <div class="summary-section">
+            <h4>Log Counts</h4>
+            <p>Total Logs: <strong>${summary.total}</strong></p>
+            <ul>
+              <li>DEBUG: ${summary.byLevel.DEBUG}</li>
+              <li>INFO: ${summary.byLevel.INFO}</li>
+              <li>WARN: ${summary.byLevel.WARN}</li>
+              <li>ERROR: ${summary.byLevel.ERROR}</li>
+            </ul>
+          </div>
+          <div class="summary-section">
+            <h4>Performance</h4>
+            <p>Total Performance Logs: <strong>${summary.performance.total}</strong></p>
+            <ul>
+              <li>Slow Operations: ${summary.performance.slow}</li>
+              <li>Critical Operations: ${summary.performance.critical}</li>
+            </ul>
+          </div>
+          <div class="summary-section">
+            <h4>Time Range</h4>
+            <p>First Log: ${formatDate(summary.timeRange.start)}</p>
+            <p>Last Log: ${formatDate(summary.timeRange.end)}</p>
+            <p>Span: ${formatTimeSpan(summary.timeRange.span)}</p>
+          </div>
+        </div>
+      `;
+      
+      // Add most frequent messages if available
+      if (summary.mostFrequentMessages && summary.mostFrequentMessages.length > 0) {
+        html += `
+          <div class="summary-section">
+            <h4>Most Frequent Messages</h4>
+            <ul class="message-list">
+        `;
+        
+        summary.mostFrequentMessages.forEach(item => {
+          html += `<li><span class="count">${item.count}×</span> ${item.message}</li>`;
+        });
+        
+        html += `
+            </ul>
+          </div>
+        `;
+      }
+      
+      summaryElement.innerHTML = html;
+    }
+    
+    // Handle log searching
+    function searchLogsHandler() {
+      const searchTerm = document.getElementById('searchTerm').value;
+      const startTimeStr = document.getElementById('startTime').value;
+      const endTimeStr = document.getElementById('endTime').value;
+      
+      // Get selected log levels
+      const levelCheckboxes = document.querySelectorAll('.log-level-filter:checked');
+      const selectedLevels = Array.from(levelCheckboxes).map(cb => cb.value);
+      
+      // Parse date strings
+      const startTime = startTimeStr ? new Date(startTimeStr) : null;
+      const endTime = endTimeStr ? new Date(endTimeStr) : null;
+      
+      // Perform search
+      const results = Logger.searchLogs({
+        term: searchTerm,
+        levels: selectedLevels,
+        startTime,
+        endTime
+      });
+      
+      // Display results
+      const resultsElement = document.getElementById('searchResults');
+      
+      if (results.length === 0) {
+        resultsElement.innerHTML = '<p>No logs matching your search criteria.</p>';
+        return;
+      }
+      
+      resultsElement.innerHTML = `<p>Found ${results.length} matching logs:</p>`;
+      
+      // Add results in reverse chronological order
+      for (let i = results.length - 1; i >= 0; i--) {
+        resultsElement.appendChild(formatLogEntry(results[i]));
+      }
+    }
+    
+    // Clear search filters
+    function clearSearch() {
+      document.getElementById('searchTerm').value = '';
+      document.getElementById('startTime').value = '';
+      document.getElementById('endTime').value = '';
+      
+      // Check all level checkboxes
+      document.querySelectorAll('.log-level-filter').forEach(cb => {
+        cb.checked = true;
+      });
+      
+      // Clear results
+      document.getElementById('searchResults').innerHTML = '';
+    }
+    
+    // Chart instance
+    let logChart = null;
+    
+    // Generate chart based on selected field
+    function generateChart() {
+      const chartField = document.getElementById('chartField').value;
+      const chartData = Logger.generateChartData(chartField);
+      
+      const ctx = document.getElementById('logChart').getContext('2d');
+      
+      // Destroy previous chart if it exists
+      if (logChart) {
+        logChart.destroy();
+      }
+      
+      // Determine chart type based on data
+      const chartType = chartData.labels.length > 10 ? 'line' : 'bar';
+      
+      // Set chart colors
+      let backgroundColor;
+      if (chartField === 'level') {
+        // Custom colors for log levels
+        const colorMap = {
+          'DEBUG': 'rgba(108, 117, 125, 0.7)',
+          'INFO': 'rgba(23, 162, 184, 0.7)',
+          'WARN': 'rgba(255, 193, 7, 0.7)',
+          'ERROR': 'rgba(220, 53, 69, 0.7)'
+        };
+        backgroundColor = chartData.labels.map(label => colorMap[label] || 'rgba(0, 123, 255, 0.7)');
+      } else {
+        backgroundColor = 'rgba(0, 123, 255, 0.7)';
+      }
+      
+      // Create the chart
+      logChart = new Chart(ctx, {
+        type: chartType,
+        data: {
+          labels: chartData.labels,
+          datasets: [{
+            label: chartData.datasets[0].label,
+            data: chartData.datasets[0].data,
+            backgroundColor,
+            borderColor: 'rgba(0, 123, 255, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Count'
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: chartField
+              }
+            }
+          }
+        }
+      });
+    }
+    
+    // Analyze usage patterns
+    function analyzeUsage() {
+      const usagePatternsElement = document.getElementById('usagePatterns');
+      
+      try {
+        const patterns = Logger.analyzeUsagePatterns();
+        
+        if (!patterns.functionStats || Object.keys(patterns.functionStats).length === 0) {
+          usagePatternsElement.innerHTML = '<p>Not enough function call data to analyze patterns.</p>';
+          return;
+        }
+        
+        // Sort functions by call count
+        const sortedFunctions = Object.entries(patterns.functionStats)
+          .map(([name, stats]) => ({ name, ...stats }))
+          .sort((a, b) => b.count - a.count);
+        
+        let html = `
+          <h4>Most Called Functions</h4>
+          <table class="usage-table">
+            <thead>
+              <tr>
+                <th>Function</th>
+                <th>Call Count</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+        
+        sortedFunctions.slice(0, 10).forEach(func => {
+          html += `
+            <tr>
+              <td>${func.name}</td>
+              <td>${func.count}</td>
+            </tr>
+          `;
+        });
+        
+        html += `
+            </tbody>
+          </table>
+        `;
+        
+        // Add common sequences if available
+        if (patterns.commonSequences && patterns.commonSequences.length > 0) {
+          html += `
+            <h4>Common Call Sequences</h4>
+            <table class="usage-table">
+              <thead>
+                <tr>
+                  <th>Sequence</th>
+                  <th>Occurrences</th>
+                </tr>
+              </thead>
+              <tbody>
+          `;
+          
+          patterns.commonSequences.forEach(seq => {
+            html += `
+              <tr>
+                <td>${seq.sequence}</td>
+                <td>${seq.count}</td>
+              </tr>
+            `;
+          });
+          
+          html += `
+              </tbody>
+            </table>
+          `;
+        }
+        
+        usagePatternsElement.innerHTML = html;
+        
+      } catch (e) {
+        usagePatternsElement.innerHTML = `<p>Error analyzing usage patterns: ${e.message}</p>`;
+        console.error(e);
+      }
+    }
+  </script>
+</body>
+</html> 

@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>State Management Test - SoulSworn</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    h1, h2, h3 {
+      color: #333;
+    }
+    .test-section {
+      background-color: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .test-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    button {
+      padding: 8px 12px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    input, select {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .output {
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      max-height: 300px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      font-family: monospace;
+    }
+    .success {
+      color: green;
+    }
+    .error {
+      color: red;
+    }
+    .history-entry {
+      border-bottom: 1px solid #eee;
+      padding: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>State Management Test Page</h1>
+  <p>This page tests the state management functionality for SoulSworn.</p>
+
+  <div class="test-section">
+    <h2>Basic State Operations</h2>
+    <div class="test-controls">
+      <input id="stateKey" placeholder="State path (e.g. gameState.scenesCount)">
+      <input id="stateValue" placeholder="New value">
+      <button id="setStateBtn">Set State</button>
+      <button id="getStateBtn">Get State</button>
+    </div>
+    <div id="basicOutput" class="output"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Deck Operations</h2>
+    <div class="test-controls">
+      <button id="initMainDeck">Initialize Main Deck</button>
+      <button id="drawMainCard">Draw Card</button>
+      <button id="discardMainCard">Discard Card</button>
+      <button id="shuffleMain">Shuffle Deck</button>
+      <button id="shuffleDiscard">Shuffle Discard into Deck</button>
+    </div>
+    <div id="deckOutput" class="output"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Player Operations</h2>
+    <div class="test-controls">
+      <select id="playerIndex">
+        <option value="0">Player 1</option>
+        <option value="1">Player 2</option>
+        <option value="2">Player 3</option>
+        <option value="3">Player 4</option>
+      </select>
+      <input id="playerName" placeholder="Player Name">
+      <button id="setPlayerName">Set Name</button>
+      <button id="addCardToHand">Add Card to Hand</button>
+      <input id="cardSlot" type="number" min="0" max="4" value="0" style="width: 60px;">
+      <button id="removeCardFromHand">Remove Card</button>
+    </div>
+    <div id="playerOutput" class="output"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>State Change History</h2>
+    <div class="test-controls">
+      <button id="showHistory">Show History</button>
+      <button id="clearHistory">Clear History</button>
+    </div>
+    <div id="historyOutput" class="output"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Event Subscription</h2>
+    <div class="test-controls">
+      <button id="subscribeBtn">Subscribe to Changes</button>
+      <button id="unsubscribeBtn" disabled>Unsubscribe</button>
+    </div>
+    <div id="eventsOutput" class="output"></div>
+  </div>
+
+  <!-- Load dependencies -->
+  <script src="utils.js"></script>
+  <script src="state.js"></script>
+  
+  <script>
+    // Helper function to log to output areas
+    function log(containerId, message, isError = false) {
+      const container = document.getElementById(containerId);
+      const entry = document.createElement('div');
+      entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+      entry.className = isError ? 'error' : 'success';
+      container.prepend(entry);
+    }
+
+    // Initialize sample data for testing
+    function createSampleData() {
+      // Create sample cards
+      const mainDeckCards = [];
+      for (let i = 1; i <= 10; i++) {
+        mainDeckCards.push({
+          id: `card_${i}`,
+          name: `Sample Card ${i}`,
+          type: i % 2 === 0 ? 'monster' : 'item'
+        });
+      }
+      return mainDeckCards;
+    }
+
+    // State initialization test
+    window.addEventListener('DOMContentLoaded', () => {
+      console.log('Testing state management functionality...');
+      
+      // Basic state operations
+      document.getElementById('setStateBtn').addEventListener('click', () => {
+        const key = document.getElementById('stateKey').value;
+        const value = document.getElementById('stateValue').value;
+        let parsed;
+        
+        try {
+          // Try to parse as JSON if it looks like an object or array
+          if (value.startsWith('[') || value.startsWith('{')) {
+            parsed = JSON.parse(value);
+          } else if (value === 'true' || value === 'false') {
+            parsed = value === 'true';
+          } else if (!isNaN(value)) {
+            parsed = Number(value);
+          } else {
+            parsed = value;
+          }
+          
+          const result = GameState.set(key, parsed);
+          log('basicOutput', `Set ${key} = ${JSON.stringify(parsed)}: ${result ? 'Success' : 'Failed'}`);
+        } catch (e) {
+          log('basicOutput', `Error setting state: ${e.message}`, true);
+        }
+      });
+      
+      document.getElementById('getStateBtn').addEventListener('click', () => {
+        const key = document.getElementById('stateKey').value;
+        try {
+          const value = GameState.get(key);
+          log('basicOutput', `${key} = ${JSON.stringify(value, null, 2)}`);
+        } catch (e) {
+          log('basicOutput', `Error getting state: ${e.message}`, true);
+        }
+      });
+      
+      // Deck operations
+      document.getElementById('initMainDeck').addEventListener('click', () => {
+        const cards = createSampleData();
+        GameState.set('mainDeck', cards);
+        log('deckOutput', `Initialized main deck with ${cards.length} cards`);
+      });
+      
+      document.getElementById('drawMainCard').addEventListener('click', () => {
+        const card = GameState.Decks.drawFromMainDeck();
+        if (card) {
+          log('deckOutput', `Drew card: ${JSON.stringify(card)}`);
+        } else {
+          log('deckOutput', 'No more cards in deck', true);
+        }
+      });
+      
+      document.getElementById('discardMainCard').addEventListener('click', () => {
+        const discard = GameState.get('mainDiscard');
+        const deckSize = GameState.get('mainDeck').length;
+        
+        if (deckSize > 0) {
+          const card = GameState.Decks.drawFromMainDeck();
+          GameState.Decks.addToMainDiscard(card);
+          log('deckOutput', `Discarded card: ${JSON.stringify(card)}`);
+        } else {
+          log('deckOutput', 'No cards to discard', true);
+        }
+      });
+      
+      document.getElementById('shuffleMain').addEventListener('click', () => {
+        GameState.Decks.shuffleMainDeck();
+        log('deckOutput', 'Shuffled main deck');
+      });
+      
+      document.getElementById('shuffleDiscard').addEventListener('click', () => {
+        GameState.Decks.shuffleDiscardIntoMainDeck();
+        log('deckOutput', 'Shuffled discard pile into main deck');
+      });
+      
+      // Player operations
+      document.getElementById('setPlayerName').addEventListener('click', () => {
+        const index = parseInt(document.getElementById('playerIndex').value);
+        const name = document.getElementById('playerName').value;
+        
+        GameState.Players.setPlayerName(index, name);
+        log('playerOutput', `Set Player ${index + 1} name to "${name}"`);
+      });
+      
+      document.getElementById('addCardToHand').addEventListener('click', () => {
+        const index = parseInt(document.getElementById('playerIndex').value);
+        const card = {
+          id: `player${index}_card_${Date.now()}`,
+          name: `Random Card ${Math.floor(Math.random() * 100)}`,
+          type: ['monster', 'item', 'spell'][Math.floor(Math.random() * 3)]
+        };
+        
+        const added = GameState.Players.addCardToHand(index, card);
+        if (added) {
+          log('playerOutput', `Added card to Player ${index + 1}'s hand: ${JSON.stringify(card)}`);
+        } else {
+          log('playerOutput', `Failed to add card - hand full`, true);
+        }
+      });
+      
+      document.getElementById('removeCardFromHand').addEventListener('click', () => {
+        const playerIndex = parseInt(document.getElementById('playerIndex').value);
+        const cardIndex = parseInt(document.getElementById('cardSlot').value);
+        
+        const removed = GameState.Players.removeCardFromHand(playerIndex, cardIndex);
+        if (removed) {
+          log('playerOutput', `Removed card from Player ${playerIndex + 1}'s hand slot ${cardIndex}: ${JSON.stringify(removed)}`);
+        } else {
+          log('playerOutput', `No card at Player ${playerIndex + 1}'s hand slot ${cardIndex}`, true);
+        }
+      });
+      
+      // State history
+      document.getElementById('showHistory').addEventListener('click', () => {
+        const history = GameState.getStateHistory();
+        const historyOutput = document.getElementById('historyOutput');
+        historyOutput.innerHTML = '';
+        
+        if (history.length === 0) {
+          log('historyOutput', 'No state changes recorded yet');
+          return;
+        }
+        
+        history.forEach((entry, i) => {
+          const div = document.createElement('div');
+          div.className = 'history-entry';
+          div.innerHTML = `
+            <strong>${i + 1}. ${entry.path}</strong> at ${new Date(entry.timestamp).toLocaleTimeString()}<br>
+            <span>Old: ${JSON.stringify(entry.oldValue)}</span><br>
+            <span>New: ${JSON.stringify(entry.newValue)}</span>
+          `;
+          historyOutput.appendChild(div);
+        });
+      });
+      
+      document.getElementById('clearHistory').addEventListener('click', () => {
+        GameState.clearStateHistory();
+        log('historyOutput', 'State history cleared');
+      });
+      
+      // Event subscription
+      let unsubscribe = null;
+      document.getElementById('subscribeBtn').addEventListener('click', () => {
+        if (!unsubscribe) {
+          unsubscribe = GameState.subscribe((path, oldValue, newValue) => {
+            log('eventsOutput', `STATE CHANGE: ${path}\nOld: ${JSON.stringify(oldValue)}\nNew: ${JSON.stringify(newValue)}`);
+          });
+          document.getElementById('subscribeBtn').disabled = true;
+          document.getElementById('unsubscribeBtn').disabled = false;
+          log('eventsOutput', 'Subscribed to state changes');
+        }
+      });
+      
+      document.getElementById('unsubscribeBtn').addEventListener('click', () => {
+        if (unsubscribe) {
+          unsubscribe();
+          unsubscribe = null;
+          document.getElementById('subscribeBtn').disabled = false;
+          document.getElementById('unsubscribeBtn').disabled = true;
+          log('eventsOutput', 'Unsubscribed from state changes');
+        }
+      });
+      
+      // Initialize the state
+      GameState.reset();
+      log('basicOutput', 'State initialized with default values');
+    });
+  </script>
+</body>
+</html> 
