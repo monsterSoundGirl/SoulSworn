@@ -21,7 +21,7 @@ body {
   height: 1088px;
   background-color: #2a2a2a;
   position: fixed;
-  background-image: url('/SoulSworn/assets/JPG/other/gameboard_background.jpg');
+  background-image: url('assets/JPG/other/gameboard_background.jpg');
   background-size: 1724px 1100px;
   background-position: center;
   background-repeat: no-repeat;
@@ -141,7 +141,7 @@ body {
   width: 80px;
   height: 144px;
   background-color: #d89339;
-  background-image: url('/SoulSworn/assets/JPG/other/cardslot_background.jpg');
+  background-image: url('assets/JPG/other/cardslot_background.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -170,7 +170,7 @@ body {
   border-radius: 5px;
   overflow: hidden;
   background-color: #d89339;
-  background-image: url('/SoulSworn/assets/JPG/other/cardslot_background.jpg');
+  background-image: url('assets/JPG/other/cardslot_background.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -297,7 +297,7 @@ body {
   width: 80px;
   height: 144px;
   background-color: #d89339;
-  background-image: url('/SoulSworn/assets/JPG/other/cardslot_background.jpg');
+  background-image: url('assets/JPG/other/cardslot_background.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -317,7 +317,7 @@ body {
   width: 80px;
   height: 144px;
   background-color: #d89339;
-  background-image: url('/SoulSworn/assets/JPG/other/cardslot_background.jpg');
+  background-image: url('assets/JPG/other/cardslot_background.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -357,7 +357,7 @@ body {
   width: 80px;
   height: 144px;
   background-color: #d89339;
-  background-image: url('/SoulSworn/assets/JPG/other/cardslot_background.jpg');
+  background-image: url('assets/JPG/other/cardslot_background.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -485,7 +485,7 @@ body {
   user-select: none;
   top: 448px;
   left: 1504px;
-  background-image: url('/SoulSworn/assets/JPG/other/d20_back.jpg');
+  background-image: url('assets/JPG/other/d20_back.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -754,7 +754,7 @@ body {
 
 .charCard, .handCard, .gridSlot, .mutableSlot, #mainDeck, #mainDiscard, #altDeck, #altDiscard {
     background-color: #d89339;
-    background-image: url('/SoulSworn/assets/JPG/other/cardslot_background.jpg');
+    background-image: url('assets/JPG/other/cardslot_background.jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -829,7 +829,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: url('/SoulSworn/assets/JPG/other/banner.jpg');
+  background-image: url('assets/JPG/other/banner.jpg');
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;

@@ -40,7 +40,7 @@
         "id": "monster_gargoyle",
         "name": "Gargoyle",
         "type": "monster",
-        "imageUrl": "assets/JPG/cards/deck/monster/monsters_gargolye.jpg",
+        "imageUrl": "assets/JPG/cards/deck/monster/monsters_gargoyle.jpg",
         "faceUp": false
       },
       {
@@ -82,7 +82,7 @@
         "id": "monster_urbanChimera2",
         "name": "Urban Chimera",
         "type": "monster",
-        "imageUrl": "assets/JPG/cards/deck/monster/monsters_urbanChimera copy 2.jpg",
+        "imageUrl": "assets/JPG/cards/deck/monster/monsters_urbanChimera2.jpg",
         "faceUp": false
       }
     ],

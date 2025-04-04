@@ -3,6 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Base tag for GitHub Pages compatibility -->
+  <script>
+    // Set the base URL for proper asset loading
+    (function() {
+      const isGitHubPages = window.location.hostname.includes('github.io');
+      if (isGitHubPages) {
+        const baseElement = document.createElement('base');
+        const repoName = window.location.pathname.split('/')[1]; // Extract repository name
+        baseElement.href = `/${repoName}/`;
+        document.head.insertBefore(baseElement, document.head.firstChild);
+        console.log('Base tag set to:', baseElement.href);
+      }
+    })();
+  </script>
+  <!-- Fallback base tag for browsers that don't execute script immediately -->
+  <base href="./">
   <title>A Card-Based Rapid Role Playing Game</title>
   <link rel="stylesheet" href="style.css" />
   <style>
@@ -263,7 +279,7 @@
     
     <!-- Menu -->
     <div id="menuIcon" class="icon">
-      <img src="/SoulSworn/assets/PNG/menuIcon.png" alt="Menu" style="width:100%; height:100%; object-fit:contain;">
+      <img src="assets/PNG/menuIcon.png" alt="Menu" style="width:100%; height:100%; object-fit:contain;">
     </div>
 
     <!-- Player 1 Hand -->
@@ -394,12 +410,12 @@
     
     <!-- Notes Tray Button -->
     <div id="notesButton" class="icon">
-      <img src="/SoulSworn/assets/PNG/notesTab.png" alt="Notes" style="width:100%; height:100%; object-fit:contain;">
+      <img src="assets/PNG/notesTab.png" alt="Notes" style="width:100%; height:100%; object-fit:contain;">
     </div>
     
     <!-- Rules Tray Button -->
     <div id="rulesButton" class="icon">
-      <img src="/SoulSworn/assets/PNG/phasesTab.png" alt="Rules" style="width:100%; height:100%; object-fit:contain;">
+      <img src="assets/PNG/phasesTab.png" alt="Rules" style="width:100%; height:100%; object-fit:contain;">
     </div>
     
     <!-- Notes Tray -->

@@ -1241,14 +1241,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Base URL for assets - handles both local and GitHub Pages environments
-const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-  ? '' 
-  : '/SoulSworn';
+// Base URL for assets - works with the base tag approach
+const BASE_URL = '';  // Empty since base tag handles the paths
 
 // Helper function to get asset path
 function getAssetPath(path) {
-  return `${BASE_URL}/${path}`;
+  return path;  // Just return the path as-is since base tag handles it
 }
 
 // Update card back path
@@ -2181,11 +2179,18 @@ const DECK_CARDS = {
     ]
 };
 
-// Function to test loading an image
+// Function to preload an image
 function preloadImage(url) {
+    // If the URL doesn't already use the BASE_URL, apply getAssetPath
+    if (!url.startsWith('data:') && !url.startsWith(BASE_URL)) {
+        url = getAssetPath(url);
+    }
+    
     return new Promise((resolve, reject) => {
         const img = new Image();
-        img.onload = () => resolve(true);
+        img.onload = () => {
+            resolve(img);
+        };
         img.onerror = () => {
             console.error(`Failed to load image: ${url}`);
             reject(new Error(`Failed to load image: ${url}`));
@@ -2197,8 +2202,8 @@ function preloadImage(url) {
 // Function to load card data from a JSON file
 async function loadCardDataFromJson() {
     try {
-        // Fetch card data from a JSON file
-        const response = await fetch('assets/card-data.json');
+        // Use getAssetPath for consistent path handling
+        const response = await fetch(getAssetPath('assets/card-data.json'));
         if (!response.ok) {
             throw new Error(`Failed to load card data: ${response.status} ${response.statusText}`);
         }
@@ -2206,7 +2211,28 @@ async function loadCardDataFromJson() {
         // Parse the JSON response
         const data = await response.json();
         
-        // Return the card data
+        // Process the data to ensure all image URLs use the correct base path
+        if (data.deck) {
+            Object.values(data.deck).forEach(cards => {
+                cards.forEach(card => {
+                    if (card.imageUrl) {
+                        card.imageUrl = getAssetPath(card.imageUrl);
+                    }
+                });
+            });
+        }
+        
+        if (data.nonDeck) {
+            Object.values(data.nonDeck).forEach(cards => {
+                cards.forEach(card => {
+                    if (card.imageUrl) {
+                        card.imageUrl = getAssetPath(card.imageUrl);
+                    }
+                });
+            });
+        }
+        
+        // Return the card data with fixed paths
         return data;
     } catch (error) {
         console.error('Error loading card data from JSON:', error);
@@ -2242,12 +2268,13 @@ async function loadAllCards() {
     
     try {
         // Verify card back exists first - this is critical
+        const cardBackPath = getAssetPath(CARD_BACK_PATH);
         try {
-            await preloadImage(CARD_BACK_PATH);
-            console.log('Card back verified: ', CARD_BACK_PATH);
+            await preloadImage(cardBackPath);
+            console.log('Card back verified: ', cardBackPath);
         } catch (error) {
             console.error('Card back not found! This is a critical error.', error);
-            throw new Error('Card back not found at ' + CARD_BACK_PATH);
+            throw new Error('Card back not found at ' + cardBackPath);
         }
         
         // Try to load card data from JSON
@@ -2298,8 +2325,8 @@ async function loadAllCards() {
         
         // Update card data object with card back path
         cardData.cardBacks = {
-            small: CARD_BACK_PATH,
-            large: CARD_BACK_PATH
+            small: getAssetPath(CARD_BACK_PATH),
+            large: getAssetPath(CARD_BACK_PATH)
         };
         
     } catch (error) {
@@ -3363,173 +3390,54 @@ function handleDragOver(event) {
 
 // Create card element
 function createCardElement(card, isInspector = false) {
-    const cardDiv = document.createElement('div');
-    cardDiv.className = 'card';
-    cardDiv.dataset.cardId = card.id;
-    
-    // Set proper attributes for click handling
-    cardDiv.setAttribute('draggable', 'true');
-    
-    // Track whether the card is face-up or face-down
-    const isFaceDown = card.faceUp === false;
-    if (isFaceDown) {
-        cardDiv.classList.add('face-down');
-        cardDiv.style.transform = 'rotateY(180deg)';
-    } else {
-        cardDiv.style.transform = 'rotateY(0deg)';
+    // Create the card container
+    const cardElement = document.createElement('div');
+    cardElement.className = 'card';
+    if (!card.faceUp) {
+        cardElement.classList.add('face-down');
     }
     
-    // Add placeholder while loading
-    const placeholderDiv = document.createElement('div');
-    placeholderDiv.className = 'card-placeholder';
-    placeholderDiv.style.width = '100%';
-    placeholderDiv.style.height = '100%';
-    placeholderDiv.style.backgroundColor = '#1a1a1a';
-    placeholderDiv.style.color = 'white';
-    placeholderDiv.style.display = 'flex';
-    placeholderDiv.style.justifyContent = 'center';
-    placeholderDiv.style.alignItems = 'center';
-    placeholderDiv.style.textAlign = 'center';
-    placeholderDiv.style.padding = '5px';
-    placeholderDiv.style.position = 'absolute';
-    placeholderDiv.style.borderRadius = '5px';
-    placeholderDiv.style.zIndex = '3'; // Higher than front/back
-    placeholderDiv.textContent = card.name || 'Loading...';
-    cardDiv.appendChild(placeholderDiv);
+    // Set card ID and type as data attributes
+    cardElement.dataset.cardId = card.id;
+    cardElement.dataset.cardType = card.type;
     
-    // Function to create placeholder SVG for missing cards
-    function createPlaceholderSVG(cardName, cardType) {
-        const colors = {
-            'monster': '#d35f5f',
-            'spell': '#5f5fd3',
-            'item': '#5fd35f',
-            'location': '#d3aa5f',
-            'NPC': '#aa5fd3',
-            'character': '#e5a619',
-            'objective': '#19e5e5'
-        };
-        const color = colors[cardType] || '#5a5a5a';
-        
-        return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="144" viewBox="0 0 80 144"><rect width="100%" height="100%" fill="${color}"/><text x="50%" y="30%" font-family="Arial" font-size="10" fill="white" text-anchor="middle" dominant-baseline="middle">${cardType.toUpperCase()}</text><text x="50%" y="50%" font-family="Arial" font-size="8" fill="white" text-anchor="middle" dominant-baseline="middle">${cardName}</text><text x="50%" y="70%" font-family="Arial" font-size="8" fill="white" text-anchor="middle" dominant-baseline="middle">IMAGE ERROR</text></svg>`;
-    }
+    // Create the card front with the card image
+    const cardFront = document.createElement('img');
+    cardFront.className = 'card-front';
     
-    // Create back image element immediately
-    const backImg = document.createElement('img');
-    backImg.src = cardData.cardBacks.small;
-    backImg.alt = 'Card Back';
-    backImg.className = 'card-back';
-    backImg.style.width = '100%';
-    backImg.style.height = '100%';
-    backImg.style.objectFit = isInspector ? 'contain' : 'cover';
-    backImg.style.borderRadius = '5px';
-    backImg.style.position = 'absolute';
-    backImg.style.top = '0';
-    backImg.style.left = '0';
-    backImg.style.backfaceVisibility = 'hidden';
-    backImg.style.zIndex = isFaceDown ? '2' : '1';
-    cardDiv.appendChild(backImg);
-    
-    // Handle card back image errors
-    backImg.onerror = function() {
-        console.error(`Failed to load card back image`);
-        backImg.src = createPlaceholderSVG('Card Back', 'card_back');
-    };
-    
-    // Create front image element (use direct creation for more reliability)
+    // Handle case where imageUrl is not defined
     if (card.imageUrl) {
-        const frontImg = document.createElement('img');
-        frontImg.className = 'card-front';
-        frontImg.style.width = '100%';
-        frontImg.style.height = '100%';
-        frontImg.style.objectFit = isInspector ? 'contain' : 'cover';
-        frontImg.style.borderRadius = '5px';
-        frontImg.style.position = 'absolute';
-        frontImg.style.top = '0';
-        frontImg.style.left = '0';
-        frontImg.style.backfaceVisibility = 'hidden';
-        frontImg.style.zIndex = isFaceDown ? '1' : '2';
-        
-        // Set attributes after setting up error handler to catch initial load
-        frontImg.alt = card.name;
-        
-        // Add the front image
-        cardDiv.appendChild(frontImg);
-        
-        // Handle image load events
-        frontImg.onload = function() {
-            if (placeholderDiv.parentNode === cardDiv) {
-                placeholderDiv.remove();
-            }
-        };
-        
-        frontImg.onerror = function() {
-            console.error(`Failed to load image: ${card.imageUrl}`);
-            placeholderDiv.textContent = `Failed to load: ${card.name}`;
-            placeholderDiv.style.backgroundColor = '#5a1a1a';
-            
-            // Try with an alternative path or use a placeholder SVG
-            frontImg.src = createPlaceholderSVG(card.name, card.type);
-        };
-        
-        // Now set the source to begin loading
-        frontImg.src = card.imageUrl;
-        
-        // Remove placeholder after a short delay even if image is still loading
-        setTimeout(() => {
-            if (placeholderDiv.parentNode === cardDiv) {
-                placeholderDiv.remove();
-            }
-        }, 2000);
+        cardFront.src = card.imageUrl; // getAssetPath has already been applied in loadCardDataFromJson
     } else {
-        // No image URL provided, use placeholder SVG
-        const frontImg = document.createElement('img');
-        frontImg.className = 'card-front';
-        frontImg.alt = card.name;
-        frontImg.src = createPlaceholderSVG(card.name, card.type);
-        frontImg.style.width = '100%';
-        frontImg.style.height = '100%';
-        frontImg.style.objectFit = isInspector ? 'contain' : 'cover';
-        frontImg.style.borderRadius = '5px';
-        frontImg.style.position = 'absolute';
-        frontImg.style.top = '0';
-        frontImg.style.left = '0';
-        frontImg.style.backfaceVisibility = 'hidden';
-        frontImg.style.zIndex = isFaceDown ? '1' : '2';
-        
-        cardDiv.appendChild(frontImg);
-        placeholderDiv.style.backgroundColor = '#5a1a1a';
-        placeholderDiv.textContent = `No image: ${card.name}`;
-        
-        // Remove placeholder after a delay
-        setTimeout(() => {
-            if (placeholderDiv.parentNode === cardDiv) {
-                placeholderDiv.remove();
-            }
-        }, 1000);
+        // Use placeholder for missing image
+        cardFront.src = createPlaceholderSVG(card.name, card.type);
     }
     
-    // Add interaction event listeners directly
-    cardDiv.addEventListener('click', function(e) {
-        e.stopPropagation();
-        handleCardClick(e);
-    });
+    cardFront.alt = card.name;
+    cardElement.appendChild(cardFront);
     
-    cardDiv.addEventListener('dblclick', function(e) {
-        e.stopPropagation();
-        handleCardDoubleClick(e);
-    });
+    // Create the card back
+    const cardBack = document.createElement('img');
+    cardBack.className = 'card-back';
+    cardBack.src = isInspector ? 
+        cardData.cardBacks.large : 
+        cardData.cardBacks.small;
+    cardBack.alt = 'Card Back';
+    cardElement.appendChild(cardBack);
     
-    cardDiv.addEventListener('dragstart', function(e) {
-        e.stopPropagation();
-        handleCardDragStart(e);
-    });
+    // Add event listeners for cards
+    if (!isInspector) {
+        // Standard card interactions (click, double click, drag)
+        cardElement.addEventListener('click', handleCardClick);
+        cardElement.addEventListener('dblclick', handleCardDoubleClick);
+        
+        // Make cards draggable
+        cardElement.setAttribute('draggable', 'true');
+        cardElement.addEventListener('dragstart', handleCardDragStart);
+        cardElement.addEventListener('dragend', handleCardDragEnd);
+    }
     
-    cardDiv.addEventListener('dragend', function(e) {
-        e.stopPropagation();
-        handleCardDragEnd(e);
-    });
-    
-    return cardDiv;
+    return cardElement;
 }
 
 // Handle card click
@@ -7280,6 +7188,85 @@ function saveGame(saveName, saveType) {
     saveNotesContent();
     
     // Existing code follows...
+}
+
+// GitHub Pages Debugging Function
+function debugGitHubPagesHosting() {
+    console.log('===== GitHub Pages Hosting Debug =====');
+    console.log('Current URL:', window.location.href);
+    
+    // Check if base tag exists and is correctly set
+    const baseTag = document.querySelector('base');
+    console.log('Base tag exists:', !!baseTag);
+    if (baseTag) {
+        console.log('Base tag href:', baseTag.getAttribute('href'));
+    }
+    
+    // Check card-data.json loading
+    console.log('Testing card-data.json loading...');
+    fetch('assets/card-data.json')
+        .then(response => {
+            console.log('card-data.json fetch status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('card-data.json loaded successfully. Sample data:', {
+                monsters: data.deck.monster?.length || 0,
+                items: data.deck.item?.length || 0,
+                locations: data.deck.location?.length || 0,
+                NPCs: data.deck.NPC?.length || 0,
+                spells: data.deck.spell?.length || 0,
+                characters: data.nonDeck.character?.length || 0,
+                objectives: data.nonDeck.objective?.length || 0
+            });
+        })
+        .catch(error => {
+            console.error('Error loading card-data.json:', error);
+        });
+    
+    // Check background images loading
+    console.log('Testing background images loading...');
+    const testImages = [
+        'assets/JPG/other/gameboard_background.jpg',
+        'assets/JPG/other/cardslot_background.jpg',
+        'assets/JPG/other/d20_back.jpg',
+        'assets/PNG/menuIcon.png',
+        'assets/PNG/notesTab.png',
+        'assets/PNG/phasesTab.png'
+    ];
+    
+    testImages.forEach(src => {
+        const img = new Image();
+        img.onload = () => console.log(`✅ Successfully loaded: ${src}`);
+        img.onerror = () => console.error(`❌ Failed to load: ${src}`);
+        img.src = src;
+    });
+    
+    // Log deck sizes
+    console.log('Current deck sizes:');
+    console.log('- Main deck:', mainDeck?.length || 0);
+    console.log('- Alt deck:', altDeck?.length || 0);
+    console.log('- Main discard:', mainDiscard?.length || 0);
+    console.log('- Alt discard:', altDiscard?.length || 0);
+    
+    // Check for any error patterns
+    console.log('Looking for common error patterns...');
+    console.log('If you see the following errors, here are possible fixes:');
+    console.log('- 404 errors for assets: Check that all files exist and have correct casing');
+    console.log('- CORS errors: Make sure your GitHub Pages repository is properly configured');
+    console.log('- "Cannot read properties" errors: Check for undefined variables/objects');
+    console.log('===== End Debug Info =====');
+    
+    // Return true for chaining
+    return true;
+}
+
+// Call debug function after page load for GitHub Pages
+if (window.location.hostname.includes('github.io')) {
+    window.addEventListener('load', () => {
+        console.log('GitHub Pages detected, running debug...');
+        setTimeout(debugGitHubPagesHosting, 2000);
+    });
 }
 
 
