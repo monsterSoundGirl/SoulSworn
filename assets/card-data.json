@@ -104,17 +104,150 @@
     ],
     "location": [
       {
-        "id": "location_abandonedFactory",
-        "name": "Abandoned Factory",
+        "id": "location_4thStreetForge",
+        "name": "4th Street Forge",
         "type": "location",
-        "imageUrl": "assets/JPG/cards/deck/location/locations_abandonedFactory.jpg",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_4thStreetForge.jpg",
         "faceUp": false
       },
       {
-        "id": "location_alchemyShop",
-        "name": "Alchemy Shop",
+        "id": "location_bloodedBathHouse",
+        "name": "Blooded Bath House",
         "type": "location",
-        "imageUrl": "assets/JPG/cards/deck/location/locations_alchemyShop.jpg",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_bloodedBathHouse.jpg", 
+        "faceUp": false
+      },
+      {
+        "id": "location_crimsonHall",
+        "name": "Crimson Hall",
+        "type": "location",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_crimsonHall.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "location_crossroadStation",
+        "name": "Crossroad Station",
+        "type": "location",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_crossroadStation.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "location_darkBazaar",
+        "name": "Dark Bazaar",
+        "type": "location",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_darkBazaar.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "location_echoingAlley",
+        "name": "Echoing Alley",
+        "type": "location",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_echoingAlley.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "location_forgottenAltar",
+        "name": "Forgotten Altar",
+        "type": "location",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_forgottenAltar.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "location_goldenArchive",
+        "name": "Golden Archive",
+        "type": "location",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_goldenArchive.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "location_grandeRoma",
+        "name": "Grande Roma",
+        "type": "location",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_grandeRoma.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "location_hopeSanitarium",
+        "name": "Hope Sanitarium",
+        "type": "location",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_hopeSanitarium.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "location_legendsHospital",
+        "name": "Legends Hospital",
+        "type": "location",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_legendsHospital.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "location_monarchsCourt",
+        "name": "Monarchs Court",
+        "type": "location",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_monarchsCourt.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "location_neonGraveyard",
+        "name": "Neon Graveyard",
+        "type": "location",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_neonGraveyard.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "location_newPartyPub",
+        "name": "New Party Pub",
+        "type": "location",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_newPartyPub.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "location_oracleAvenue",
+        "name": "Oracle Avenue",
+        "type": "location",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_oracleAvenue.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "location_rustedFairground",
+        "name": "Rusted Fairground",
+        "type": "location",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_rustedFairground.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "location_thePhantomLine",
+        "name": "The Phantom Line",
+        "type": "location",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_thePhantomLine.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "location_unseelieGarden",
+        "name": "Unseelie Garden",
+        "type": "location",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_unseelieGarden.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "location_veinousOssuary",
+        "name": "Veinous Ossuary",
+        "type": "location",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_veinousOssuary.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "location_wholeGrocer",
+        "name": "Whole Grocer",
+        "type": "location",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_wholeGrocer.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "location_wickedBrew",
+        "name": "Wicked Brew",
+        "type": "location",
+        "imageUrl": "assets/JPG/cards/deck/location/locations_wickedBrew.jpg",
         "faceUp": false
       }
     ],
@@ -136,17 +269,87 @@
     ],
     "spell": [
       {
-        "id": "spell_banishingRitual",
-        "name": "Banishing Ritual",
+        "id": "spell_bagTrance",
+        "name": "Bag Trance",
         "type": "spell",
-        "imageUrl": "assets/JPG/cards/deck/spell/spells_banishingRitual.jpg",
+        "imageUrl": "assets/JPG/cards/deck/spell/spells_bagTrance.jpg",
         "faceUp": false
       },
       {
-        "id": "spell_bloodOath",
-        "name": "Blood Oath",
+        "id": "spell_borrowVisage",
+        "name": "Borrow Visage",
         "type": "spell",
-        "imageUrl": "assets/JPG/cards/deck/spell/spells_bloodOath.jpg",
+        "imageUrl": "assets/JPG/cards/deck/spell/spells_borrowVisage.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "spell_ghostWalk",
+        "name": "Ghost Walk",
+        "type": "spell",
+        "imageUrl": "assets/JPG/cards/deck/spell/spells_ghostWalk.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "spell_hungerHex",
+        "name": "Hunger Hex",
+        "type": "spell",
+        "imageUrl": "assets/JPG/cards/deck/spell/spells_hungerHex.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "spell_marionette",
+        "name": "Marionette",
+        "type": "spell",
+        "imageUrl": "assets/JPG/cards/deck/spell/spells_marionette.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "spell_mirrorSnap",
+        "name": "Mirror Snap",
+        "type": "spell",
+        "imageUrl": "assets/JPG/cards/deck/spell/spells_mirrorSnap.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "spell_mothLight",
+        "name": "Moth Light",
+        "type": "spell",
+        "imageUrl": "assets/JPG/cards/deck/spell/spells_mothLight.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "spell_redTether",
+        "name": "Red Tether",
+        "type": "spell",
+        "imageUrl": "assets/JPG/cards/deck/spell/spells_redTether.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "spell_sociopathicMutter",
+        "name": "Sociopathic Mutter",
+        "type": "spell",
+        "imageUrl": "assets/JPG/cards/deck/spell/spells_sociopathicMutter.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "spell_stitchLight",
+        "name": "Stitch Light",
+        "type": "spell",
+        "imageUrl": "assets/JPG/cards/deck/spell/spells_stitchLight.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "spell_stoneBreath",
+        "name": "Stone Breath",
+        "type": "spell",
+        "imageUrl": "assets/JPG/cards/deck/spell/spells_stoneBreath.jpg",
+        "faceUp": false
+      },
+      {
+        "id": "spell_wallFlower",
+        "name": "Wall Flower",
+        "type": "spell",
+        "imageUrl": "assets/JPG/cards/deck/spell/spells_wallFlower.jpg",
         "faceUp": false
       }
     ]
@@ -237,6 +440,132 @@
         "name": "Bury The Truth",
         "type": "objective",
         "imageUrl": "assets/JPG/cards/nonDeck/objective/objectives_buryTheTruth.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "objective_closeTheRift",
+        "name": "Close The Rift",
+        "type": "objective",
+        "imageUrl": "assets/JPG/cards/nonDeck/objective/objectives_closeTheRift.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "objective_destroyTheArifacts",
+        "name": "Destroy The Artifacts",
+        "type": "objective",
+        "imageUrl": "assets/JPG/cards/nonDeck/objective/objectives_destroyTheArifacts.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "objective_endTheCycle",
+        "name": "End The Cycle",
+        "type": "objective",
+        "imageUrl": "assets/JPG/cards/nonDeck/objective/objectives_endTheCycle.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "objective_escort",
+        "name": "Escort",
+        "type": "objective",
+        "imageUrl": "assets/JPG/cards/nonDeck/objective/objectives_escort.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "objective_femmeFatale",
+        "name": "Femme Fatale",
+        "type": "objective",
+        "imageUrl": "assets/JPG/cards/nonDeck/objective/objectives_femmeFatale.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "objective_findTheHollow",
+        "name": "Find The Hollow",
+        "type": "objective",
+        "imageUrl": "assets/JPG/cards/nonDeck/objective/objectives_findTheHollow.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "objective_forbiddenLove",
+        "name": "Forbidden Love",
+        "type": "objective",
+        "imageUrl": "assets/JPG/cards/nonDeck/objective/objectives_forbiddenLove.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "objective_letThemGo",
+        "name": "Let Them Go",
+        "type": "objective",
+        "imageUrl": "assets/JPG/cards/nonDeck/objective/objectives_letThemGo.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "objective_oneLastJob",
+        "name": "One Last Job",
+        "type": "objective",
+        "imageUrl": "assets/JPG/cards/nonDeck/objective/objectives_oneLastJob.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "objective_raceTheEclipse",
+        "name": "Race The Eclipse",
+        "type": "objective",
+        "imageUrl": "assets/JPG/cards/nonDeck/objective/objectives_raceTheEclipse.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "objective_ransom",
+        "name": "Ransom",
+        "type": "objective",
+        "imageUrl": "assets/JPG/cards/nonDeck/objective/objectives_ransom.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "objective_realWorld",
+        "name": "Real World",
+        "type": "objective",
+        "imageUrl": "assets/JPG/cards/nonDeck/objective/objectives_realWorld.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "objective_rescue",
+        "name": "Rescue",
+        "type": "objective",
+        "imageUrl": "assets/JPG/cards/nonDeck/objective/objectives_rescue.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "objective_sayGoodbye",
+        "name": "Say Goodbye",
+        "type": "objective",
+        "imageUrl": "assets/JPG/cards/nonDeck/objective/objectives_sayGoodbye.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "objective_sealThePact",
+        "name": "Seal The Pact",
+        "type": "objective",
+        "imageUrl": "assets/JPG/cards/nonDeck/objective/objectives_sealThePact.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "objective_severTheSource",
+        "name": "Sever The Source",
+        "type": "objective",
+        "imageUrl": "assets/JPG/cards/nonDeck/objective/objectives_severTheSource.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "objective_smotherTheSpark",
+        "name": "Smother The Spark",
+        "type": "objective",
+        "imageUrl": "assets/JPG/cards/nonDeck/objective/objectives_smotherTheSpark.jpg",
+        "faceUp": true
+      },
+      {
+        "id": "objective_trackThePredator",
+        "name": "Track The Predator",
+        "type": "objective",
+        "imageUrl": "assets/JPG/cards/nonDeck/objective/objectives_trackThePredator.jpg",
         "faceUp": true
       }
     ]
