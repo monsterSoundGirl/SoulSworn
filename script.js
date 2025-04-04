@@ -121,6 +121,16 @@ window.addEventListener('DOMContentLoaded', () => {
         toggleNotesTray(false);
     });
     
+    // Rules tray button
+    document.getElementById('rulesButton').addEventListener('click', () => {
+        toggleRulesTray();
+    });
+    
+    // Close rules button
+    document.getElementById('closeRules').addEventListener('click', () => {
+        toggleRulesTray(false);
+    });
+    
     // Initialize notes editor
     initializeNotesEditor();
     
@@ -6715,7 +6725,6 @@ function finalizeGame() {
   // If no tie or no awards, finalize the display
   finalizeDisplay(playersWithMaxAwards[0], maxAwards);
 }
-
 // Display the tie-breaker voting
 function displayTieBreakerVoting(tiedPlayerIndices) {
   const superlativeContainer = document.getElementById('superlativeContainer');
@@ -7239,6 +7248,22 @@ function saveNotesContent() {
     }
 }
 
+// Toggle the rules tray
+function toggleRulesTray(show) {
+    const rulesTray = document.getElementById('rulesTray');
+    
+    if (show === undefined) {
+        // Toggle current state
+        rulesTray.classList.toggle('open');
+    } else if (show) {
+        // Explicitly show
+        rulesTray.classList.add('open');
+    } else {
+        // Explicitly hide
+        rulesTray.classList.remove('open');
+    }
+}
+
 // Add save notes when game is saved
 function saveGame(saveName, saveType) {
     // Save the notes content first
@@ -7246,6 +7271,7 @@ function saveGame(saveName, saveType) {
     
     // Existing code follows...
 }
+
 
 
 

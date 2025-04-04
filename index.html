@@ -379,10 +379,27 @@
 
     <!-- Logo and Timer -->
     <!-- <div id="logo"></div> -->
+    <div id="turnTimer">
+      <div id="timerDisplay">00:00</div>
+      <div class="timer-controls">
+        <button id="timerToggleBtn">Start</button>
+        <button id="timerResetBtn">Reset</button>
+      </div>
+      <div class="timer-input">
+        <input type="text" id="timerMinutes" min="0" max="60" value="2">
+        <span>:</span>
+        <input type="text" id="timerSeconds" min="0" max="59" value="0">
+      </div>
+    </div>
     
     <!-- Notes Tray Button -->
     <div id="notesButton" class="icon">
       <img src="assets/PNG/notesTab.png" alt="Notes" style="width:100%; height:100%; object-fit:contain;">
+    </div>
+    
+    <!-- Rules Tray Button -->
+    <div id="rulesButton" class="icon">
+      <img src="assets/PNG/phasesTab.png" alt="Rules" style="width:100%; height:100%; object-fit:contain;">
     </div>
     
     <!-- Notes Tray -->
@@ -406,6 +423,17 @@
       </div>
       <div class="notes-content">
         <div id="notesEditor" contenteditable="true" spellcheck="true"></div>
+      </div>
+    </div>
+    
+    <!-- Rules Tray -->
+    <div id="rulesTray">
+      <div class="rules-header">
+        <h3>Game Rules</h3>
+        <button id="closeRules">&times;</button>
+      </div>
+      <div class="rules-content">
+        <!-- Content will be filled with rules background -->
       </div>
     </div>
   </div>
@@ -432,6 +460,7 @@
   </div>
 
   <!-- <script src="timer.js"></script> -->
+  <script src="turn-timer-4-2.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
