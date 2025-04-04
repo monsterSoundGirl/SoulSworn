@@ -1241,8 +1241,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Card back path
-const CARD_BACK_PATH = 'assets/JPG/cards/nonDeck/card_back/cardBack.jpg';
+// Base URL for assets - handles both local and GitHub Pages environments
+const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+  ? '' 
+  : '/SoulSworn';
+
+// Helper function to get asset path
+function getAssetPath(path) {
+  return `${BASE_URL}/${path}`;
+}
+
+// Update card back path
+const CARD_BACK_PATH = getAssetPath('assets/JPG/cards/nonDeck/card_back/cardBack.jpg');
 
 // Character cards (non-deck cards)
 const CHARACTER_CARDS = [
