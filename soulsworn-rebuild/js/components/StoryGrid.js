@@ -1,14 +1,21 @@
 import { getState, GameState } from '../state.js';
 import { createCardElement } from './Card.js';
+// Import utility functions
+import { createSlotElement, positionElement, handleElementError } from '../utils.js';
 
 /**
- * Renders the story grid slots based on coordinates.
+ * Renders the story grid slots and any cards placed within them.
+ *
+ * Fetches story grid slot definitions and their coordinates from GameState.
+ * Creates and positions each slot element using utility functions.
+ * If a slot has an assigned card, creates and positions the card element within that slot.
+ * Handles potential errors gracefully.
  */
 export function renderStoryGrid() {
     const gameContainer = document.getElementById('game-container');
     if (!gameContainer) {
-        console.error("Game container element (#game-container) not found!");
-        return;
+        // Use standardized error handling
+        return handleElementError("Game container element (#game-container) not found!");
     }
 
     // Get all board slots of type 'storyGrid'
@@ -16,47 +23,68 @@ export function renderStoryGrid() {
         GameState.boardSlots[slotId].type === 'storyGrid'
     );
 
-    // No need to sort based on old naming convention (e.g., 0-0)
-    // We rely on the coordinates directly.
-
     gridSlotIds.forEach(slotId => {
         const slotData = GameState.boardSlots[slotId];
         const coords = GameState.uiCoordinates[slotId];
 
         if (!slotData) {
-            console.error(`Story grid slot data not found for ID: ${slotId}`);
-            return; // continue to next slot
+            // Use standardized error handling and continue to the next iteration
+            handleElementError(`Story grid slot data not found for ID: ${slotId}`);
+            return; // Skips this iteration of forEach
         }
         if (!coords) {
-            console.error(`Story grid coordinates not found for ID: ${slotId}`);
-            return; // continue to next slot
+            // Use standardized error handling and continue
+            handleElementError(`Story grid coordinates not found for ID: ${slotId}`);
+            return; // Skips this iteration of forEach
         }
 
-        const slotElement = document.createElement('div');
-        slotElement.id = slotId; // Use the ID from the slot data (which matches JSON LABEL)
-        slotElement.classList.add('card-slot', 'story-grid-slot');
-        slotElement.dataset.slotId = slotId;
-        slotElement.dataset.slotType = 'storyGrid';
+        // Use utility function to create the slot element
+        // PlayerId is null for grid slots
+        const slotElement = createSlotElement(slotId, 'storyGrid', null, coords);
 
-        // Apply absolute positioning
-        slotElement.style.position = 'absolute';
-        slotElement.style.left = `${coords.X}px`;
-        slotElement.style.top = `${coords.Y}px`;
+        // Use utility function for positioning the slot
+        positionElement(slotElement, coords);
+        // Set size based on coordinates
         slotElement.style.width = `${coords.W}px`;
         slotElement.style.height = `${coords.H}px`;
+        slotElement.style.zIndex = '5'; // Slots below cards
 
-        // If a card is assigned, render it
-        const cardId = slotData.cardId; // This is the manifest key
-        const cardData = GameState.allCards[cardId];
+        // Append the slot to the game container first
+        gameContainer.appendChild(slotElement);
 
-        if (cardData && coords) {
-            const cardElement = createCardElement(cardData, cardId, slotId);
-            slotElement.appendChild(cardElement);
+        // Check if a card is assigned to this slot in the GameState
+        const cardManifestKey = slotData.cardId; // This should be the manifest key
 
-            // Apply positioning to the card image itself
-            cardElement.style.position = 'absolute';
-        }
+        if (cardManifestKey) {
+            const cardData = GameState.allCards[cardManifestKey];
 
-        gameContainer.appendChild(slotElement); // Append to game container
+            if (cardData) {
+                // Create the card element
+                const cardElement = createCardElement(cardData, cardManifestKey, slotId);
+
+                // Check if card creation was successful before positioning
+                if (cardElement && cardElement.tagName === 'IMG') {
+                    // Use utility function to position the card at the same coords as the slot
+                    positionElement(cardElement, coords);
+                    // Set card size
+                    cardElement.style.width = `${coords.W}px`;
+                    cardElement.style.height = `${coords.H}px`;
+                    cardElement.style.zIndex = '10'; // Cards above slots
+                    cardElement.dataset.currentSlot = slotId; // Update current slot
+
+                    // Append the card element directly to the game container
+                    gameContainer.appendChild(cardElement);
+                } else if (cardElement) {
+                     // If createCardElement returned an error placeholder, append and position it
+                    gameContainer.appendChild(cardElement);
+                    positionElement(cardElement, coords);
+                }
+            } else {
+                // Use standardized error handling if card data for the key is missing
+                handleElementError(`Card data not found for manifest key: ${cardManifestKey} in story grid slot ${slotId}`);
+                // Optionally, clear the cardId from the slotData in GameState if it's invalid?
+                // GameState.boardSlots[slotId].cardId = null;
+            }
+        } // else: No card assigned to this slot, only the empty slot is rendered.
     });
 } 

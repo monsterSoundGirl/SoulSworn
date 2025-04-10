@@ -37,20 +37,43 @@ This file documents debugging insights, solution approaches, and lessons learned
 
 # DEBUG HISTORY
 
-## [2025-04-10 15:05] - Card Manifest ID and Filename Discrepancies Fixed
+## [2025-04-10 17:10] - Drag and Drop Failure After Standardization
+- **Author:** Gemini
+- **Symptoms:** UI rendered correctly after standardizing `GameBoard.js`, but drag-and-drop functionality was completely broken. No console errors were initially observed when attempting to drag.
+- **Affected Components:** `main.js`, `utils.js`, all component files using utilities.
+- **Root Cause Analysis:** 
+    1.  **Module Export Error:** The utility functions in `utils.js` (`createSlotElement`, `positionElement`, `handleElementError`) were defined but not exported. The `export { ... }` line was commented out, causing `import` statements in other components to fail and throw a `SyntaxError: The requested module '../utils.js' does not provide an export named '...'`.
+    2.  **Coordinate Property Mismatch:** The `positionElement` utility function in `utils.js` expected coordinate objects with lowercase `x` and `y` properties, but `GameState.uiCoordinates` (populated from `UIcoordinates.json`) uses uppercase `X` and `Y`. This caused an `Error: Invalid parameters for positionElement` when rendering components tried to position elements.
+    3.  **Incorrect Event Listener Selector:** The `setupEventListeners` function in `main.js` used `document.querySelectorAll('.card-slot')` to find elements to attach drop listeners. However, the refactored components now use the `createSlotElement` utility, which assigns the class `game-slot`. The selector was therefore finding no elements, and no listeners were being attached.
+- **Solution:**
+    1.  Uncommented the `export { createSlotElement, positionElement, handleElementError };` line in `utils.js`.
+    2.  Modified `positionElement` in `utils.js` to check for and use `coords.X` and `coords.Y`.
+    3.  Changed the selector in `setupEventListeners` in `main.js` to `document.querySelectorAll('.game-slot')` and updated the `closest()` call similarly.
+- **Verification:** Refreshed the browser and confirmed that the UI rendered without errors and drag-and-drop functionality was restored between valid slots.
+- **Lessons Learned:** Ensure modules correctly export functions intended for use elsewhere. Be meticulous about data structure consistency (e.g., property names like X/Y vs x/y). When refactoring CSS classes used by JavaScript selectors, update the selectors accordingly.
+- **Related Issues:** Directly followed standardization of `GameBoard.js` (I1.3 Step 7).
+- **Tags:** #drag-and-drop, #event-handling, #modules, #exports, #selectors, #coordinates, #refactoring
+
+## [2025-04-10 16:45] - Component Structure Analysis for Standardization
 - **Author:** Claude
-- **Symptoms:** Potential issues with incorrect card IDs not matching their filenames.
-- **Affected Components:** `assets/card-manifest.json`
-- **Root Cause:** Several entries in the card manifest had discrepancies between their IDs and the actual filenames:
-  1. monster_3 had ID "mboneReaper" but the filename was "monsters_boneReaper.jpg"
-  2. monster_6 had imageUrl "monsters_gargoyle.jpg" but the file was actually "monsters_gargolye.jpg" (letters transposed)
-  3. npc_3 had ID "enigmaticTravler" but the filename was "enigmaticTraveler.jpg"
-  4. spell_10 had ID "stichLight" but the filename was "spells_stitchLight.jpg"
-- **Solution:** Updated the relevant entries in the card-manifest.json file to ensure consistency between IDs and filenames.
-- **Verification:** The manifest now correctly represents the actual files on disk.
-- **Lessons Learned:** Always verify consistency between reference IDs and actual resources to avoid subtle bugs.
-- **Related Issues:** Found while investigating KI-002 (Image Path Inconsistency).
-- **Tags:** #assets, #naming, #consistency
+- **Symptoms:** Inconsistent component structure, duplicate code patterns, and varying error handling approaches across components.
+- **Affected Components:** `Card.js`, `PlayerHand.js`, `StoryGrid.js`, `CharacterSlot.js`, `DeckPile.js`, `GameBoard.js`, `main.js`
+- **Root Cause Analysis:** Code was developed incrementally without standardized patterns, leading to:
+  1. Inconsistent parameter handling (e.g., `createCardElement` called with 1-3 parameters)
+  2. Different error handling strategies (some using immediate returns, others continuing execution)
+  3. Duplicate DOM element creation patterns in every component
+  4. Inconsistent documentation (some functions with JSDoc, others without)
+  5. Repeated positioning code across components
+- **Solution Plan:** 
+  1. Create a utilities module with shared functions
+  2. Standardize parameter handling and error approaches
+  3. Systematically refactor each component to use utility functions
+  4. Improve documentation with consistent JSDoc comments
+  5. Extract common UI operations to reduce duplication
+- **Verification Method:** Test functionality after updating each component
+- **Lessons Learned:** Establishing standardized patterns early in development is crucial for maintainability. Refactoring becomes more complex as the codebase grows.
+- **Related Issues:** Part of Code Cleanup Plan (I1.3, I1.4, I1.5)
+- **Tags:** #structure, #refactoring, #standardization, #documentation
 
 ## [2025-04-10 14:25] - KI-002 - Image Path Inconsistency Fixed
 - **Author:** Claude
@@ -155,4 +178,4 @@ This document records specific problems encountered and how they were solved dur
 
 *   **Problem 4: Drag FROM Mutable Error:** Attempting to drag a card *from* a mutable slot resulted in a `SyntaxError: Unexpected end of JSON input` in `main.js` during the `drop` event.
     *   **Root Cause:** When `renderGameBoard` created the card element inside a mutable slot, it called `createCardElement` without providing the `manifestKey` and `slotId` arguments. Consequently, the conditional logic in `createCardElement` prevented the `dragstart` listener (which sets the JSON data) from being attached to the card. The `drop` handler then received empty data from `event.dataTransfer.getData`, causing `JSON.parse` to fail.
-    *   **Solution:** Modified the call to `createCardElement` within the mutable slot rendering loop in `GameBoard.js` to pass the correct `manifestKey` (which is `slotData.cardId`) and `slotId`. 
+    *   **Solution:** Modified the call to `createCardElement` within the mutable slot rendering loop in `GameBoard.js` to pass the correct `manifestKey` (which is `

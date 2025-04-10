@@ -33,6 +33,50 @@ This file tracks all significant changes made to the codebase, providing a chron
 
 # CHANGE HISTORY
 
+## [2025-04-10 17:15] - Standardized GameBoard.js and Fixed Drag/Drop Issues
+- **Author:** Gemini
+- **Files:** 
+  - soulsworn-rebuild/js/components/GameBoard.js
+  - soulsworn-rebuild/js/utils.js
+  - soulsworn-rebuild/js/main.js
+- **Changes:** 
+  1. Refactored `GameBoard.js` to use utility functions (`createSlotElement`, `positionElement`, `handleElementError`) for rendering mutable slots and handling errors.
+  2. Added JSDoc to `renderGameBoard`.
+  3. Fixed `utils.js` by uncommenting the export statement for utility functions.
+  4. Fixed `utils.js` by correcting `positionElement` to use uppercase `X` and `Y` properties for coordinates.
+  5. Fixed `main.js` by updating `setupEventListeners` to use the correct selector (`.game-slot`) for attaching drag/drop listeners.
+- **Issue:** I1.3 (Step 7 - Standardize GameBoard.js), Subsequent debugging
+- **Functions Affected:** `renderGameBoard()`, `createSlotElement()`, `positionElement()`, `handleElementError()`, `setupEventListeners()`
+- **Reason:** Complete Step 7 of the component standardization plan. Address errors introduced or revealed during testing (module exports, coordinate properties, event listener selectors) to restore drag-and-drop functionality.
+
+## [2025-04-10 16:30] - Code Standardization Planning
+- **Author:** Claude
+- **Files:** 
+  - CONTINUE.md
+  - change_log.md
+- **Changes:** 
+  1. Created detailed implementation plan for standardizing component structure
+  2. Identified key inconsistencies in parameter handling, error handling, DOM element creation, and documentation
+  3. Developed step-by-step plan with 13 checkpoints to guide Gemini through the implementation
+  4. Updated CONTINUE.md with code duplication areas and standardization guidelines
+- **Issue:** I1.3, I1.4, I1.5 (Code Cleanup Plan - Standardize Component Structure, Improve Documentation, Refactor Duplicate Code)
+- **Functions Affected:** All functions in components, future utility functions
+- **Reason:** The codebase showed inconsistencies in component structure and parameter handling, with significant code duplication. A detailed plan with clear checkpoints was needed to ensure systematic standardization.
+
+## [YYYY-MM-DD HH:MM] - Code Cleanup: Console Logs & Commented Code
+- **Author:** Gemini
+- **Files:** 
+  - soulsworn-rebuild/js/components/Card.js
+  - soulsworn-rebuild/js/components/GameBoard.js
+  - soulsworn-rebuild/js/main.js
+  - soulsworn-rebuild/js/state.js
+- **Changes:** 
+  1. Commented out unnecessary `console.log` statements used for debugging across multiple files.
+  2. Removed obsolete commented-out code blocks from `Card.js` and `main.js`.
+- **Issue:** I1 (Code Cleanup Plan - Tasks 1 & 2)
+- **Functions Affected:** `createCardElement()`, `renderGameBoard()`, `setupEventListeners()`, `initializeState()`, `updateState()`, `drawCard()`, `moveCard()`
+- **Reason:** Improve code readability and maintainability as part of the planned cleanup (I1). Essential `console.error` and `console.warn` statements were preserved.
+
 ## [2025-04-10 15:00] - Fixed Card Manifest Discrepancies and Created Cleanup Plan
 - **Author:** Claude
 - **Files:** soulsworn-rebuild/assets/card-manifest.json, /Users/christianwright/Documents/SoulSworn/CONTINUE.md
@@ -168,8 +212,4 @@ This file tracks all significant changes made to the codebase, providing a chron
 
 ## [Timestamp: 2025-04-10 approx 08:15 UTC]
 
-*   **Fix:** Modified `js/components/Card.js` (`createCardElement`) to only set `draggable=true` and add `dragstart` listener if `manifestKey` and `slotId` are provided. This prevents non-card elements (like deck backs) rendered using this function from becoming inappropriately draggable.
-*   **Fix:** Commented out `console.warn` for missing `slotId` in `js/components/Card.js` as it's expected for non-draggable elements.
-*   **Fix:** Added call to `setupEventListeners()` after `renderGameBoard()` within the `drop` event listener in `js/main.js`. This re-attaches listeners to elements recreated during the board render, fixing the "one drag only" bug.
-*   **Fix:** Added missing import for `createCardElement` in `js/components/GameBoard.js` to resolve a `ReferenceError` when rendering cards in mutable slots.
-*   **Fix:** Modified `js/components/GameBoard.js` (`renderGameBoard`) to correctly pass the `manifestKey` and `slotId` when calling `createCardElement` for cards within mutable slots. This resolves the `SyntaxError: Unexpected end of JSON input` error when attempting to drag a card *from* a mutable slot. 
+*   **Fix:** Modified `js/components/Card.js` (`

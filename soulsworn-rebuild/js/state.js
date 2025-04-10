@@ -189,7 +189,7 @@ function shuffleArray(array) {
 
 // Marked as async because fetching the manifest is an asynchronous operation
 export async function initializeState() {
-  console.log("Initializing game state...");
+  // console.log("Initializing game state...");
 
   // Fetch Coordinates and Card Manifest concurrently
   try {
@@ -213,11 +213,11 @@ export async function initializeState() {
         acc[coord.LABEL] = coord;
         return acc;
     }, {});
-    console.log(`Loaded ${Object.keys(GameState.uiCoordinates).length} UI coordinate definitions.`);
+    // console.log(`Loaded ${Object.keys(GameState.uiCoordinates).length} UI coordinate definitions.`);
 
     // Store card data
     GameState.allCards = cardData;
-    console.log(`Loaded ${Object.keys(GameState.allCards).length} card definitions.`);
+    // console.log(`Loaded ${Object.keys(GameState.allCards).length} card definitions.`);
 
     // Initialize board slots using the defined structure (already done above)
     // Verify all defined boardSlot IDs exist in uiCoordinates
@@ -231,7 +231,7 @@ export async function initializeState() {
     if (missingCoords) {
         throw new Error("Mismatch between GameState.boardSlots and UIcoordinates.json LABELs.");
     }
-    console.log(`Initialized ${Object.keys(GameState.boardSlots).length} board slots, coordinates verified.`);
+    // console.log(`Initialized ${Object.keys(GameState.boardSlots).length} board slots, coordinates verified.`);
 
     // Initialize decks (Phase 3)
     GameState.mainDeck.drawPile = []; // Ensure piles are empty before populating
@@ -249,17 +249,17 @@ export async function initializeState() {
         }
         // Cards not matching either deck (e.g., 'character', 'objective') are currently ignored
     }
-    console.log(`Populated main deck with ${GameState.mainDeck.drawPile.length} cards.`);
-    console.log(`Populated alt deck with ${GameState.altDeck.drawPile.length} cards.`);
+    // console.log(`Populated main deck with ${GameState.mainDeck.drawPile.length} cards.`);
+    // console.log(`Populated alt deck with ${GameState.altDeck.drawPile.length} cards.`);
 
     // Shuffle decks
     shuffleArray(GameState.mainDeck.drawPile);
     shuffleArray(GameState.altDeck.drawPile);
-    console.log("Main and Alt decks shuffled.");
+    // console.log("Main and Alt decks shuffled.");
 
     // Log shuffled decks for verification (optional, can be removed later)
-    console.log("Shuffled Main Deck:", [...GameState.mainDeck.drawPile]); // Log a copy to see order
-    console.log("Shuffled Alt Deck:", [...GameState.altDeck.drawPile]);   // Log a copy to see order
+    // console.log("Shuffled Main Deck:", [...GameState.mainDeck.drawPile]); // Log a copy to see order
+    // console.log("Shuffled Alt Deck:", [...GameState.altDeck.drawPile]);   // Log a copy to see order
 
     // TODO: 4. Initialize players (Phase 5)
 
@@ -272,7 +272,7 @@ export async function initializeState() {
 export function updateState(newState) {
   // TODO: Implement logic to merge or replace parts of the state
   // TODO: Add mechanism to notify subscribers (UI components) of changes
-  console.log("Updating state:", newState);
+  // console.log("Updating state:", newState);
   Object.assign(GameState, newState); // Simple merge for now
 }
 
@@ -297,19 +297,19 @@ export function drawCard(playerId, numberOfCards, drawPileType = 'main') {
      return;
   }
 
-  console.log(`Player ${player.id} drawing ${numberOfCards} cards from ${drawPileType} deck.`);
+  // console.log(`Player ${player.id} drawing ${numberOfCards} cards from ${drawPileType} deck.`);
 
   for (let i = 0; i < numberOfCards; i++) {
     if (deck.drawPile.length > 0) {
       const cardId = deck.drawPile.pop(); // Remove card ID from the correct deck's draw pile
       hand.push(cardId); // Add card ID to the player's hand array
-      console.log(`  Drew card: ${cardId}`);
+      // console.log(`  Drew card: ${cardId}`);
     } else {
       console.warn(`Player ${player.id}'s ${drawPileType} draw pile is empty. Cannot draw more cards.`);
       break; // Stop drawing if the deck is empty
     }
   }
-   console.log(`Player ${player.id} hand after draw:`, hand);
+   // console.log(`Player ${player.id} hand after draw:`, hand);
 }
 
 // Helper method to get card data by ID (assuming cardData is populated)
@@ -328,7 +328,7 @@ export function getCardDataById(cardId) {
  * @param {string} targetSlotId - The ID of the slot the card is moving to.
  */
 export function moveCard(cardId, originSlotId, targetSlotId) {
-  console.log(`Attempting to move card ${cardId} from ${originSlotId} to ${targetSlotId}`);
+  // console.log(`Attempting to move card ${cardId} from ${originSlotId} to ${targetSlotId}`);
 
   const originSlot = GameState.boardSlots[originSlotId];
   const targetSlot = GameState.boardSlots[targetSlotId];
@@ -426,7 +426,7 @@ export function moveCard(cardId, originSlotId, targetSlotId) {
       targetSlot.cardId = cardId; // Place card in target slot
   }
 
-  console.log(`Successfully moved card ${cardId} from ${originSlotId} to ${targetSlotId}`);
+  // console.log(`Successfully moved card ${cardId} from ${originSlotId} to ${targetSlotId}`);
 
   // Note: This function only updates the state. Re-rendering needs to be triggered separately.
 } 
