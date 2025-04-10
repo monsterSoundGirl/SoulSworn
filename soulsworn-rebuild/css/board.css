@@ -1,0 +1,181 @@
+/* Basic layout for the SoulSworn game board */
+
+/* Overall game container is handled in main.css */
+/* We'll style the direct children of #game-container */
+
+#game-container {
+    border: 1px solid #555; /* Add a border for visualization */
+    background-color: #333; /* Dark background for the board */
+    box-sizing: border-box;
+}
+
+.player-area, .shared-area, .deck-area {
+    position: absolute; /* Added */
+    border: 1px dashed #777; /* Visualize areas */
+    padding: 5px;
+    box-sizing: border-box; /* Ensure padding/border are included in width/height */
+}
+
+.player-area {
+    background-color: #444;
+}
+
+.shared-area {
+    background-color: #3a3a3a;
+}
+
+.deck-area {
+    background-color: #4a4a4a;
+}
+
+/* Specific container styling */
+.player-hand-container, .player-character-container {
+    display: flex;
+    gap: 5px;
+    border: 1px dotted #999; /* Visualize sub-containers */
+    padding: 5px;
+    min-height: 110px; /* Ensure height for cards */
+    align-items: center;
+}
+
+.story-grid-container {
+    border: 1px solid #aaa;
+    padding: 10px;
+    background-color: #555;
+    position: relative; /* Needed if grid cells are positioned absolutely */
+    box-sizing: border-box;
+    width: 100%; /* Fill parent (.shared-area) */
+    height: 100%; /* Fill parent (.shared-area) */
+}
+
+.deck-pile-container {
+    display: flex;
+    flex-direction: column; /* Stack draw and discard */
+    align-items: center;
+    gap: 5px;
+    border: 1px dotted #999;
+    padding: 5px;
+}
+
+/* Placeholder styles for slots - filled by JS */
+.card-slot {
+    width: 80px; /* Adjusted to match JSON W */
+    height: 144px; /* Adjusted to match JSON H */
+    border: 1px solid #888;
+    background-color: rgba(255, 255, 255, 0.1); /* Slightly visible empty slot */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 10px;
+    color: #ccc;
+    box-sizing: border-box;
+    position: absolute; /* Changed to absolute for direct positioning */
+}
+
+.card-slot.deckDraw::after,
+.card-slot.deckDiscard::after {
+    content: attr(data-slot-id); /* Show ID for debugging */
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    font-size: 8px;
+    color: #aaa;
+}
+
+.card-slot img.card-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* Ensure image fits within slot */
+}
+
+/* Add IDs for specific area styling if needed later */
+/* #player1-area {} */
+/* #player2-area {} */
+/* #story-grid-area {} /* Corresponds to .shared-area */
+/* #deck-area {} */
+
+/* Placeholder UI Element Styling */
+.placeholder-ui {
+    position: absolute;
+    border: 1px dashed cyan; /* Temporary visualization */
+    background-color: rgba(0, 255, 255, 0.1);
+    box-sizing: border-box;
+    display: flex; /* Optional: center text */
+    justify-content: center; /* Optional: center text */
+    align-items: center; /* Optional: center text */
+    font-size: 12px; /* Optional: placeholder text */
+    color: cyan; /* Optional: placeholder text */
+}
+
+/* Add ::after pseudo-element to display text content */
+.placeholder-ui::after {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+/* == Absolute Positioning Rules based on UIcoordinates.json == */
+
+/* Placeholders */
+#menu-placeholder { top: 24px; left: 24px; width: 184px; height: 160px; }
+#menu-placeholder::after { content: "MENU"; }
+
+#inspector-placeholder { top: 240px; left: 24px; width: 376px; height: 600px; }
+#inspector-placeholder::after { content: "INSPECTOR"; }
+
+#d20-placeholder { top: 448px; left: 1504px; width: 184px; height: 184px; }
+#d20-placeholder::after { content: "D20"; }
+
+#logo-placeholder { top: 904px; left: 24px; width: 184px; height: 160px; }
+#logo-placeholder::after { content: "LOGO"; }
+
+#turn-timer-placeholder { top: 904px; left: 1504px; width: 184px; height: 160px; }
+#turn-timer-placeholder::after { content: "TURN-TIMER"; }
+
+/* Story grid slots are positioned absolutely by JS */
+.story-grid-slot::after {
+    content: attr(data-slot-id);
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    font-size: 8px;
+    color: #aaa;
+}
+
+/* Mutable slots visualization */
+.mutable-slot::after {
+    content: attr(data-slot-id);
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    font-size: 8px;
+    color: #aaa;
+}
+
+/* Player 1 (Assumed Bottom Left based on coords) */
+/* #p1-character-area {} /* Need coordinates if it's separate */
+/* #p1-hand-area {} /* Need coordinates if it's separate */
+/* Individual slots will be positioned by JS */
+
+/* Player 2 (Assumed Top Right based on coords) */
+/* #p2-character-area {} /* Need coordinates if it's separate */
+/* #p2-hand-area {} /* Need coordinates if it's separate */
+/* Individual slots will be positioned by JS */
+
+/* Player 3 (Assumed Bottom Left based on coords) */
+/* #p3-character-area {} /* Need coordinates */
+/* #p3-hand-area {} /* Need coordinates */
+
+/* Player 4 (Assumed Bottom Right based on coords) */
+/* #p4-character-area {} /* Need coordinates */
+/* #p4-hand-area {} /* Need coordinates */
+
+/* Shared Grid Area (Central) - The container itself doesn't have direct coords */
+/* #story-grid {} /* This is positioned relatively inside shared-area or directly? */
+/* Individual GRID slots will be positioned by JS */
+
+/* Deck/Discard/Mutable Areas */
+/* Individual slots (DECK, DISCARD, MUTABLE1-4, ALTDECK, ALTDISCARD) will be positioned by JS */
+
+/* == Card Slot Positioning (Handled by JS using data-slot-id) == */
+/* Example: .card-slot[data-slot-id="PLAYER1_HAND1"] { top: ...; left: ...; } */
+/* This will be added dynamically by the JS */

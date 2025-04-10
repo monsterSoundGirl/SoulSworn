@@ -1,0 +1,36 @@
+/* Basic Reset / Setup */
+body {
+  font-family: sans-serif;
+  margin: 20px;
+  background-color: #f4f4f4;
+}
+
+#game-container {
+  position: relative;
+  width: 1688px;
+  height: 1064px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background-color: #fff;
+  margin: 20px auto;
+  overflow: hidden;
+}
+
+h1, h2 {
+  color: #333;
+}
+
+/* Card Styling */
+.card-image {
+  width: 75px; /* Example width, adjust as needed */
+  height: auto; /* Maintain aspect ratio */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+  cursor: grab; /* Indicate draggable */
+}
+
+.card-image:active {
+  cursor: grabbing;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+}

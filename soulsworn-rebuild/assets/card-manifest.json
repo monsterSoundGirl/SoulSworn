@@ -1,0 +1,647 @@
+{
+  "cardBack": {
+    "id": "cardBack",
+    "type": "cardback",
+    "imageUrl": "assets/jpg/cards/cardback/cardBack.jpg"
+  },
+  "character_1": {
+    "id": "alleyWitch",
+    "type": "character",
+    "imageUrl": "assets/jpg/cards/character/characters_alleyWitch.jpg"
+  },
+  "character_2": {
+    "id": "cursedScholar",
+    "type": "character",
+    "imageUrl": "assets/jpg/cards/character/characters_cursedScholar.jpg"
+  },
+  "character_3": {
+    "id": "detective",
+    "type": "character",
+    "imageUrl": "assets/jpg/cards/character/characters_detective.jpg"
+  },
+  "character_4": {
+    "id": "monsterHunter",
+    "type": "character",
+    "imageUrl": "assets/jpg/cards/character/characters_monsterHunter.jpg"
+  },
+  "character_5": {
+    "id": "quietRogue",
+    "type": "character",
+    "imageUrl": "assets/jpg/cards/character/characters_quietRogue.jpg"
+  },
+  "character_6": {
+    "id": "reluctantHero",
+    "type": "character",
+    "imageUrl": "assets/jpg/cards/character/characters_reluctantHero.jpg"
+  },
+  "character_7": {
+    "id": "scarredShifter",
+    "type": "character",
+    "imageUrl": "assets/jpg/cards/character/characters_scarredShifter.jpg"
+  },
+  "character_8": {
+    "id": "spiritMedium",
+    "type": "character",
+    "imageUrl": "assets/jpg/cards/character/characters_spiritMedium.jpg"
+  },
+  "character_9": {
+    "id": "techSavant",
+    "type": "character",
+    "imageUrl": "assets/jpg/cards/character/characters_techSavant.jpg"
+  },
+  "item_1": {
+    "id": "amberSin",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_amberSin.jpg"
+  },
+  "item_2": {
+    "id": "atlantianDisc",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_atlantianDisc.jpg"
+  },
+  "item_3": {
+    "id": "blackGuitar",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_blackGuitar.jpg"
+  },
+  "item_4": {
+    "id": "bloodCandle",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_bloodCandle.jpg"
+  },
+  "item_5": {
+    "id": "bottomlessBag",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_bottomlessBag.jpg"
+  },
+  "item_6": {
+    "id": "chainsOfTheBound",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_chainsOfTheBound.jpg"
+  },
+  "item_7": {
+    "id": "charcoalPendant",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_charcoalPendant.jpg"
+  },
+  "item_8": {
+    "id": "curatorsNotebook",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_curatorsNotebook.jpg"
+  },
+  "item_9": {
+    "id": "cursedMobile",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_cursedMobile.jpg"
+  },
+  "item_10": {
+    "id": "devilsContract",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_devilsContract.jpg"
+  },
+  "item_11": {
+    "id": "diabloSauce",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_diabloSauce.jpg"
+  },
+  "item_12": {
+    "id": "dragonBoots",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_dragonBoots.jpg"
+  },
+  "item_13": {
+    "id": "enchantedMap",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_enchantedMap.jpg"
+  },
+  "item_14": {
+    "id": "ghoulPie",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_ghoulPie.jpg"
+  },
+  "item_15": {
+    "id": "gildedCross",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_gildedCross.jpg"
+  },
+  "item_16": {
+    "id": "graveSpade",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_graveSpade.jpg"
+  },
+  "item_17": {
+    "id": "heartOfStone",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_heartOfStone.jpg"
+  },
+  "item_18": {
+    "id": "hollowCoin",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_hollowCoin.jpg"
+  },
+  "item_19": {
+    "id": "huntersPal",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_huntersPal.jpg"
+  },
+  "item_20": {
+    "id": "marinersFlask",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_marinersFlask.jpg"
+  },
+  "item_21": {
+    "id": "oracle8Ball",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_oracle8Ball.jpg"
+  },
+  "item_22": {
+    "id": "ravenCup",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_ravenCup.jpg"
+  },
+  "item_23": {
+    "id": "ricetteDiFamiglia",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_ricetteDiFamiglia.jpg"
+  },
+  "item_24": {
+    "id": "saltTin",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_saltTin.jpg"
+  },
+  "item_25": {
+    "id": "shadowCloak",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_shadowCloak.jpg"
+  },
+  "item_26": {
+    "id": "silverSpoon",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_silverSpoon.jpg"
+  },
+  "item_27": {
+    "id": "spiritFlask",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_spiritFlask.jpg"
+  },
+  "item_28": {
+    "id": "theEidolon",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_theEidolon.jpg"
+  },
+  "item_29": {
+    "id": "theGodSpike",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_theGodSpike.jpg"
+  },
+  "item_30": {
+    "id": "trustyLighter",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_trustyLighter.jpg"
+  },
+  "item_31": {
+    "id": "vampireKey",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_vampireKey.jpg"
+  },
+  "item_32": {
+    "id": "viceDice",
+    "type": "item",
+    "imageUrl": "assets/jpg/cards/item/items_viceDice.jpg"
+  },
+  "location_1": {
+    "id": "4thStreetForge",
+    "type": "location",
+    "imageUrl": "assets/jpg/cards/location/locations_4thStreetForge.jpg"
+  },
+  "location_2": {
+    "id": "bloodedBathHouse",
+    "type": "location",
+    "imageUrl": "assets/jpg/cards/location/locations_bloodedBathHouse.jpg"
+  },
+  "location_3": {
+    "id": "crimsonHall",
+    "type": "location",
+    "imageUrl": "assets/jpg/cards/location/locations_crimsonHall.jpg"
+  },
+  "location_4": {
+    "id": "crossroadStation",
+    "type": "location",
+    "imageUrl": "assets/jpg/cards/location/locations_crossroadStation.jpg"
+  },
+  "location_5": {
+    "id": "darkBazaar",
+    "type": "location",
+    "imageUrl": "assets/jpg/cards/location/locations_darkBazaar.jpg"
+  },
+  "location_6": {
+    "id": "echoingAlley",
+    "type": "location",
+    "imageUrl": "assets/jpg/cards/location/locations_echoingAlley.jpg"
+  },
+  "location_7": {
+    "id": "forgottenAltar",
+    "type": "location",
+    "imageUrl": "assets/jpg/cards/location/locations_forgottenAltar.jpg"
+  },
+  "location_8": {
+    "id": "goldenArchive",
+    "type": "location",
+    "imageUrl": "assets/jpg/cards/location/locations_goldenArchive.jpg"
+  },
+  "location_9": {
+    "id": "grandeRoma",
+    "type": "location",
+    "imageUrl": "assets/jpg/cards/location/locations_grandeRoma.jpg"
+  },
+  "location_10": {
+    "id": "hopeSanitarium",
+    "type": "location",
+    "imageUrl": "assets/jpg/cards/location/locations_hopeSanitarium.jpg"
+  },
+  "location_11": {
+    "id": "legendsHospital",
+    "type": "location",
+    "imageUrl": "assets/jpg/cards/location/locations_legendsHospital.jpg"
+  },
+  "location_12": {
+    "id": "monarchsCourt",
+    "type": "location",
+    "imageUrl": "assets/jpg/cards/location/locations_monarchsCourt.jpg"
+  },
+  "location_13": {
+    "id": "neonGraveyard",
+    "type": "location",
+    "imageUrl": "assets/jpg/cards/location/locations_neonGraveyard.jpg"
+  },
+  "location_14": {
+    "id": "newPartyPub",
+    "type": "location",
+    "imageUrl": "assets/jpg/cards/location/locations_newPartyPub.jpg"
+  },
+  "location_15": {
+    "id": "oracleAvenue",
+    "type": "location",
+    "imageUrl": "assets/jpg/cards/location/locations_oracleAvenue.jpg"
+  },
+  "location_16": {
+    "id": "rustedFairground",
+    "type": "location",
+    "imageUrl": "assets/jpg/cards/location/locations_rustedFairground.jpg"
+  },
+  "location_17": {
+    "id": "thePhantomLine",
+    "type": "location",
+    "imageUrl": "assets/jpg/cards/location/locations_thePhantomLine.jpg"
+  },
+  "location_18": {
+    "id": "unseelieGarden",
+    "type": "location",
+    "imageUrl": "assets/jpg/cards/location/locations_unseelieGarden.jpg"
+  },
+  "location_19": {
+    "id": "veinousOssuary",
+    "type": "location",
+    "imageUrl": "assets/jpg/cards/location/locations_veinousOssuary.jpg"
+  },
+  "location_20": {
+    "id": "wholeGrocer",
+    "type": "location",
+    "imageUrl": "assets/jpg/cards/location/locations_wholeGrocer.jpg"
+  },
+  "location_21": {
+    "id": "wickedBrew",
+    "type": "location",
+    "imageUrl": "assets/jpg/cards/location/locations_wickedBrew.jpg"
+  },
+  "monster_1": {
+    "id": "ashenWalker",
+    "type": "monster",
+    "imageUrl": "assets/jpg/cards/monster/monsters_ashenWalker.jpg"
+  },
+  "monster_2": {
+    "id": "blackEyedKid",
+    "type": "monster",
+    "imageUrl": "assets/jpg/cards/monster/monsters_blackEyedKid.jpg"
+  },
+  "monster_3": {
+    "id": "mboneReaper",
+    "type": "monster",
+    "imageUrl": "assets/jpg/cards/monster/monsters_boneReaper.jpg"
+  },
+  "monster_4": {
+    "id": "carnivalCreep",
+    "type": "monster",
+    "imageUrl": "assets/jpg/cards/monster/monsters_carnivalCreep.jpg"
+  },
+  "monster_5": {
+    "id": "draugr",
+    "type": "monster",
+    "imageUrl": "assets/jpg/cards/monster/monsters_draugr.jpg"
+  },
+  "monster_6": {
+    "id": "gargoyle",
+    "type": "monster",
+    "imageUrl": "assets/jpg/cards/monster/monsters_gargoyle.jpg"
+  },
+  "monster_7": {
+    "id": "mghoul",
+    "type": "monster",
+    "imageUrl": "assets/jpg/cards/monster/monsters_ghoul.jpg"
+  },
+  "monster_8": {
+    "id": "manafuro",
+    "type": "monster",
+    "imageUrl": "assets/jpg/cards/monster/monsters_manafuro.jpg"
+  },
+  "monster_9": {
+    "id": "polterGeist",
+    "type": "monster",
+    "imageUrl": "assets/jpg/cards/monster/monsters_polterGeist.jpg"
+  },
+  "monster_10": {
+    "id": "shadowWraith",
+    "type": "monster",
+    "imageUrl": "assets/jpg/cards/monster/monsters_shadowWraith.jpg"
+  },
+  "monster_11": {
+    "id": "trashKitsune",
+    "type": "monster",
+    "imageUrl": "assets/jpg/cards/monster/monsters_trashKitsune.jpg"
+  },
+  "monster_12": {
+    "id": "urbanChimera",
+    "type": "monster",
+    "imageUrl": "assets/jpg/cards/monster/monsters_urbanChimera.jpg"
+  },
+  "npc_1": {
+    "id": "daddysLilPrincess",
+    "type": "npc",
+    "imageUrl": "assets/jpg/cards/npc/NPCs_daddysLilPrincess.jpg"
+  },
+  "npc_2": {
+    "id": "dreamingGirl",
+    "type": "npc",
+    "imageUrl": "assets/jpg/cards/npc/NPCs_dreamingGirl.jpg"
+  },
+  "npc_3": {
+    "id": "enigmaticTravler",
+    "type": "npc",
+    "imageUrl": "assets/jpg/cards/npc/NPCs_enigmaticTraveler.jpg"
+  },
+  "npc_4": {
+    "id": "exploitedDancer",
+    "type": "npc",
+    "imageUrl": "assets/jpg/cards/npc/NPCs_exploitedDancer.jpg"
+  },
+  "npc_5": {
+    "id": "fence",
+    "type": "npc",
+    "imageUrl": "assets/jpg/cards/npc/NPCs_fence.jpg"
+  },
+  "npc_6": {
+    "id": "formerLarper",
+    "type": "npc",
+    "imageUrl": "assets/jpg/cards/npc/NPCs_formerLarper.jpg"
+  },
+  "npc_7": {
+    "id": "influentialHipster",
+    "type": "npc",
+    "imageUrl": "assets/jpg/cards/npc/NPCs_influentialHipster.jpg"
+  },
+  "npc_8": {
+    "id": "loveInterest",
+    "type": "npc",
+    "imageUrl": "assets/jpg/cards/npc/NPCs_loveInterest.jpg"
+  },
+  "npc_9": {
+    "id": "lushwithaStory",
+    "type": "npc",
+    "imageUrl": "assets/jpg/cards/npc/NPCs_lushwithaStory.jpg"
+  },
+  "npc_10": {
+    "id": "mercenary",
+    "type": "npc",
+    "imageUrl": "assets/jpg/cards/npc/NPCs_mercenary.jpg"
+  },
+  "npc_11": {
+    "id": "officeBureaurat",
+    "type": "npc",
+    "imageUrl": "assets/jpg/cards/npc/NPCs_officeBureaurat.jpg"
+  },
+  "npc_12": {
+    "id": "pensiveNoble",
+    "type": "npc",
+    "imageUrl": "assets/jpg/cards/npc/NPCs_pensiveNoble.jpg"
+  },
+  "npc_13": {
+    "id": "seelieHouseServant",
+    "type": "npc",
+    "imageUrl": "assets/jpg/cards/npc/NPCs_seelieHouseServant.jpg"
+  },
+  "npc_14": {
+    "id": "sexyJournalist",
+    "type": "npc",
+    "imageUrl": "assets/jpg/cards/npc/NPCs_sexyJournalist.jpg"
+  },
+  "npc_15": {
+    "id": "sexyMechanic",
+    "type": "npc",
+    "imageUrl": "assets/jpg/cards/npc/NPCs_sexyMechanic.jpg"
+  },
+  "npc_16": {
+    "id": "smuggler",
+    "type": "npc",
+    "imageUrl": "assets/jpg/cards/npc/NPCs_smuggler.jpg"
+  },
+  "npc_17": {
+    "id": "snarkyShifter",
+    "type": "npc",
+    "imageUrl": "assets/jpg/cards/npc/NPCs_snarkyShifter.jpg"
+  },
+  "npc_18": {
+    "id": "transitOracle",
+    "type": "npc",
+    "imageUrl": "assets/jpg/cards/npc/NPCs_transitOracle.jpg"
+  },
+  "npc_19": {
+    "id": "undeadCop",
+    "type": "npc",
+    "imageUrl": "assets/jpg/cards/npc/NPCs_undeadCop.jpg"
+  },
+  "npc_20": {
+    "id": "upperWestLady",
+    "type": "npc",
+    "imageUrl": "assets/jpg/cards/npc/NPCs_upperWestLady.jpg"
+  },
+  "npc_21": {
+    "id": "zombieCoroner",
+    "type": "npc",
+    "imageUrl": "assets/jpg/cards/npc/NPCs_zombieCoroner.jpg"
+  },
+  "objective_1": {
+    "id": "bounty",
+    "type": "objective",
+    "imageUrl": "assets/jpg/cards/objective/objectives_bounty.jpg"
+  },
+  "objective_2": {
+    "id": "breachTheSanctuary",
+    "type": "objective",
+    "imageUrl": "assets/jpg/cards/objective/objectives_breachTheSanctuary.jpg"
+  },
+  "objective_3": {
+    "id": "buryTheTruth",
+    "type": "objective",
+    "imageUrl": "assets/jpg/cards/objective/objectives_buryTheTruth.jpg"
+  },
+  "objective_4": {
+    "id": "closeTheRift",
+    "type": "objective",
+    "imageUrl": "assets/jpg/cards/objective/objectives_closeTheRift.jpg"
+  },
+  "objective_5": {
+    "id": "destroyTheArtifact",
+    "type": "objective",
+    "imageUrl": "assets/jpg/cards/objective/objectives_destroyTheArtifact.jpg"
+  },
+  "objective_6": {
+    "id": "endTheCycle",
+    "type": "objective",
+    "imageUrl": "assets/jpg/cards/objective/objectives_endTheCycle.jpg"
+  },
+  "objective_7": {
+    "id": "escort",
+    "type": "objective",
+    "imageUrl": "assets/jpg/cards/objective/objectives_escort.jpg"
+  },
+  "objective_8": {
+    "id": "femmeFatale",
+    "type": "objective",
+    "imageUrl": "assets/jpg/cards/objective/objectives_femmeFatale.jpg"
+  },
+  "objective_9": {
+    "id": "findTheHollow",
+    "type": "objective",
+    "imageUrl": "assets/jpg/cards/objective/objectives_findTheHollow.jpg"
+  },
+  "objective_10": {
+    "id": "forbiddenLove",
+    "type": "objective",
+    "imageUrl": "assets/jpg/cards/objective/objectives_forbiddenLove.jpg"
+  },
+  "objective_11": {
+    "id": "letThemGo",
+    "type": "objective",
+    "imageUrl": "assets/jpg/cards/objective/objectives_letThemGo.jpg"
+  },
+  "objective_12": {
+    "id": "oneLastJob",
+    "type": "objective",
+    "imageUrl": "assets/jpg/cards/objective/objectives_oneLastJob.jpg"
+  },
+  "objective_13": {
+    "id": "raceTheEclipse",
+    "type": "objective",
+    "imageUrl": "assets/jpg/cards/objective/objectives_raceTheEclipse.jpg"
+  },
+  "objective_14": {
+    "id": "ransom",
+    "type": "objective",
+    "imageUrl": "assets/jpg/cards/objective/objectives_ransom.jpg"
+  },
+  "objective_15": {
+    "id": "realWorld",
+    "type": "objective",
+    "imageUrl": "assets/jpg/cards/objective/objectives_realWorld.jpg"
+  },
+  "objective_16": {
+    "id": "rescue",
+    "type": "objective",
+    "imageUrl": "assets/jpg/cards/objective/objectives_rescue.jpg"
+  },
+  "objective_17": {
+    "id": "sayGoodbye",
+    "type": "objective",
+    "imageUrl": "assets/jpg/cards/objective/objectives_sayGoodbye.jpg"
+  },
+  "objective_18": {
+    "id": "sealThePact",
+    "type": "objective",
+    "imageUrl": "assets/jpg/cards/objective/objectives_sealThePact.jpg"
+  },
+  "objective_19": {
+    "id": "severeTheSource",
+    "type": "objective",
+    "imageUrl": "assets/jpg/cards/objective/objectives_severeTheSource.jpg"
+  },
+  "objective_20": {
+    "id": "smotherTheSpark",
+    "type": "objective",
+    "imageUrl": "assets/jpg/cards/objective/objectives_smotherTheSpark.jpg"
+  },
+  "objective_21": {
+    "id": "trackThePredator",
+    "type": "objective",
+    "imageUrl": "assets/jpg/cards/objective/objectives_trackThePredator.jpg"
+  },
+  "spell_1": {
+    "id": "bagTrance",
+    "type": "spell",
+    "imageUrl": "assets/jpg/cards/spell/spells_bagTrance.jpg"
+  },
+  "spell_2": {
+    "id": "borrowVisage",
+    "type": "spell",
+    "imageUrl": "assets/jpg/cards/spell/spells_borrowVisage.jpg"
+  },
+  "spell_3": {
+    "id": "ghostWalk",
+    "type": "spell",
+    "imageUrl": "assets/jpg/cards/spell/spells_ghostWalk.jpg"
+  },
+  "spell_4": {
+    "id": "hungerHex",
+    "type": "spell",
+    "imageUrl": "assets/jpg/cards/spell/spells_hungerHex.jpg"
+  },
+  "spell_5": {
+    "id": "marionette",
+    "type": "spell",
+    "imageUrl": "assets/jpg/cards/spell/spells_marionette.jpg"
+  },
+  "spell_6": {
+    "id": "mirrorSnap",
+    "type": "spell",
+    "imageUrl": "assets/jpg/cards/spell/spells_mirrorSnap.jpg"
+  },
+  "spell_7": {
+    "id": "mothLight",
+    "type": "spell",
+    "imageUrl": "assets/jpg/cards/spell/spells_mothLight.jpg"
+  },
+  "spell_8": {
+    "id": "redTether",
+    "type": "spell",
+    "imageUrl": "assets/jpg/cards/spell/spells_redTether.jpg"
+  },
+  "spell_9": {
+    "id": "sociopathicMutter",
+    "type": "spell",
+    "imageUrl": "assets/jpg/cards/spell/spells_sociopathicMutter.jpg"
+  },
+  "spell_10": {
+    "id": "stichLight",
+    "type": "spell",
+    "imageUrl": "assets/jpg/cards/spell/spells_stitchLight.jpg"
+  },
+  "spell_11": {
+    "id": "stoneBreath",
+    "type": "spell",
+    "imageUrl": "assets/jpg/cards/spell/spells_stoneBreath.jpg"
+  },
+  "spell_12": {
+    "id": "wallFlower",
+    "type": "spell",
+    "imageUrl": "assets/jpg/cards/spell/spells_wallFlower.jpg"
+  }
+} 
