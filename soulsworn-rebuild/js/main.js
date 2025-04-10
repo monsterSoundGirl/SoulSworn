@@ -61,20 +61,11 @@ function setupEventListeners() {
     // Allow dropping onto the slot
     slot.addEventListener('dragover', (event) => {
       event.preventDefault();
-      // Optional: Add visual feedback for valid drop target
-      // slot.classList.add('drag-over');
     });
-
-    // Optional: Remove visual feedback when drag leaves
-    // slot.addEventListener('dragleave', () => {
-    //   slot.classList.remove('drag-over');
-    // });
 
     // Handle the actual drop
     slot.addEventListener('drop', (event) => {
       event.preventDefault();
-      // Optional: Remove visual feedback
-      // slot.classList.remove('drag-over');
 
       // Get the JSON data string
       const jsonData = event.dataTransfer.getData('application/json');
@@ -104,6 +95,9 @@ function setupEventListeners() {
 
         // Re-render the game board to reflect the state change
         renderGameBoard();
+
+        // *** Re-attach listeners to the newly rendered elements ***
+        setupEventListeners();
 
       } else {
         console.error("Missing cardId, originSlotId, or targetSlotId during drop.");

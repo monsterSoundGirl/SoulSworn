@@ -382,7 +382,6 @@ export function moveCard(cardId, originSlotId, targetSlotId) {
       if (cardIndex > -1) {
           hand.splice(cardIndex, 1); // Remove card from hand array
           cardFoundInOrigin = true;
-          console.log(`Removed ${cardId} from Player ${originSlot.playerId}'s hand.`);
       } else {
           console.error(`Move failed: Card ${cardId} not found in origin hand slot ${originSlotId} (Player ${originSlot.playerId}). Hand:`, hand);
           return; // Card isn't in the expected hand
@@ -391,7 +390,6 @@ export function moveCard(cardId, originSlotId, targetSlotId) {
       if (originSlot.cardId === cardId) {
           originSlot.cardId = null; // Remove card from origin slot
           cardFoundInOrigin = true;
-          console.log(`Removed ${cardId} from origin slot ${originSlotId}.`);
       } else {
           console.error(`Move failed: Card ${cardId} not found in origin slot ${originSlotId}. Found: ${originSlot.cardId}`);
           return; // Card isn't where we expect it
@@ -408,15 +406,12 @@ export function moveCard(cardId, originSlotId, targetSlotId) {
   // --- Handle Target Slot ---
   if (targetIsHand) { // Target is a Player Hand
       targetPlayer.hand.push(cardId); // Add card to target hand array
-      console.log(`Added ${cardId} to Player ${targetSlot.playerId}'s hand.`);
   } else if (targetIsDiscard) { // Target is a Discard Pile
       const deckType = targetSlot.deckType; // 'main' or 'alt'
       if (deckType === 'main') {
           GameState.mainDeck.discardPile.push(cardId);
-          console.log(`Added ${cardId} to Main discard pile.`);
       } else if (deckType === 'alt') {
           GameState.altDeck.discardPile.push(cardId);
-          console.log(`Added ${cardId} to Alt discard pile.`);
       } else {
           console.error(`Move failed: Target discard slot ${targetSlotId} has invalid deckType: ${deckType}`);
           // Attempt to revert origin removal? Or rely on cardFoundInOrigin check?
@@ -429,14 +424,9 @@ export function moveCard(cardId, originSlotId, targetSlotId) {
           // TODO: Implement game logic for occupied slots (e.g., swap, return to hand?)
       }
       targetSlot.cardId = cardId; // Place card in target slot
-      console.log(`Placed ${cardId} in target slot ${targetSlotId}.`);
   }
-  // TODO: Extend to handle target being a discard pile (array)
-
 
   console.log(`Successfully moved card ${cardId} from ${originSlotId} to ${targetSlotId}`);
-  // Log state changes for debugging (use structuredClone for deep copy if available and needed)
-  // console.log("GameState after move:", JSON.parse(JSON.stringify(GameState))); // Can be verbose
 
   // Note: This function only updates the state. Re-rendering needs to be triggered separately.
 } 

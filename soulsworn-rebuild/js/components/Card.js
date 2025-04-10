@@ -19,9 +19,10 @@ export function createCardElement(card, manifestKey, slotId) {
     errorDiv.style.height = '100px'; // Approx card height
     return errorDiv;
   }
-  if (!slotId) {
-    console.warn('Missing slotId for card:', card.id, '- Drag source may not be identified.');
-  }
+  // Removed the warning about missing slotId, as it's expected for non-draggable elements like deck backs
+  // if (!slotId) {
+  //  console.warn('Missing slotId for card:', card.id, '- Drag source may not be identified.');
+  // }
 
   const cardElement = document.createElement('img');
   cardElement.src = card.imageUrl;
@@ -31,19 +32,19 @@ export function createCardElement(card, manifestKey, slotId) {
   cardElement.dataset.cardId = card.id; // Store card ID for later reference
   cardElement.dataset.cardType = card.type; // Store card type
 
-  // Make cards draggable
-  cardElement.draggable = true;
-  cardElement.addEventListener('dragstart', (event) => {
-    // Store both cardId (using the manifest key) and origin slotId
-    const dragData = {
-      cardId: manifestKey, // Use the manifest key, which matches hand/deck arrays
-      originSlotId: slotId // Use the passed slotId
-    };
-    event.dataTransfer.setData('application/json', JSON.stringify(dragData));
-    console.log(`Drag Start: Card Key ${manifestKey} (id: ${card.id}) from Slot ${slotId}`);
-    // Optional: Set a drag image
-    // event.dataTransfer.setDragImage(cardElement, 0, 0);
-  });
+  // Make cards draggable ONLY if they have a manifestKey and are in a valid slot
+  if (manifestKey && slotId) {
+    cardElement.draggable = true;
+    cardElement.addEventListener('dragstart', (event) => {
+      // Store both cardId (using the manifest key) and origin slotId
+      const dragData = {
+        cardId: manifestKey, // Use the manifest key, which matches hand/deck arrays
+        originSlotId: slotId // Use the passed slotId
+      };
+      event.dataTransfer.setData('application/json', JSON.stringify(dragData));
+      console.log(`Drag Start: Card Key ${manifestKey} (id: ${card.id}) from Slot ${slotId}`);
+    });
+  } // End conditional draggable setup
 
   return cardElement;
 } 

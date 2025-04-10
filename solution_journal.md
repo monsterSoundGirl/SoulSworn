@@ -47,4 +47,22 @@ This document records specific problems encountered and how they were solved dur
 *   **Solution:**
     1.  Verified actual filename prefixes in image directories (`items_`, `spells_`, `locations_`, `monsters_`, `characters_`, `NPCs_`, `objectives_`).
     2.  Edited `assets/card-manifest.json`, correcting all `imageUrl` paths to use the correct plural prefixes.
-    3.  Corrected specific filename typos and errors within the `imageUrl` paths in the manifest. 
+    3.  Corrected specific filename typos and errors within the `imageUrl` paths in the manifest.
+
+## Debugging Drag and Drop (2025-04-10)
+
+*   **Problem 1: One Drag Limit:** After successfully dragging one card, subsequent drags failed. 
+    *   **Root Cause:** The `renderGameBoard` function, called after a successful drop in `main.js`, was removing and recreating board elements. The `dragstart`, `dragover`, and `drop` listeners were attached directly to these elements and were thus removed. `setupEventListeners` was only called once on initial load, so listeners weren't re-attached to the new elements.
+    *   **Solution:** Added a call to `setupEventListeners()` inside the `drop` listener in `main.js`, immediately after the `renderGameBoard()` call. This ensures listeners are re-attached after every render triggered by a drop. (Note: This recursive call is potentially problematic and may be refactored later using event delegation).
+
+*   **Problem 2: Deck Drag Warning/Error:** Console showed `Missing slotId for card: cardBack` and `Drag Start: Card Key undefined ...`. 
+    *   **Root Cause:** `createCardElement` in `Card.js` unconditionally set `draggable=true` and added a `dragstart` listener. `renderDeckPile` called `createCardElement` for the deck back image without providing `manifestKey` or `slotId`, leading to the element being wrongly draggable and having incomplete drag data.
+    *   **Solution:** Modified `createCardElement` to only set `draggable=true` and add the listener if both `manifestKey` and `slotId` are present. Also commented out the `console.warn` for missing `slotId` as it's now expected for non-draggable elements.
+
+*   **Problem 3: Mutable Slot Render Error:** Dragging a card *to* a mutable slot caused a `ReferenceError: createCardElement is not defined`.
+    *   **Root Cause:** The `renderGameBoard` function was calling `createCardElement` within its loop for rendering mutable slots, but the function was not imported into `GameBoard.js`.
+    *   **Solution:** Added `import { createCardElement } from './Card.js';` to `GameBoard.js`.
+
+*   **Problem 4: Drag FROM Mutable Error:** Attempting to drag a card *from* a mutable slot resulted in a `SyntaxError: Unexpected end of JSON input` in `main.js` during the `drop` event.
+    *   **Root Cause:** When `renderGameBoard` created the card element inside a mutable slot, it called `createCardElement` without providing the `manifestKey` and `slotId` arguments. Consequently, the conditional logic in `createCardElement` prevented the `dragstart` listener (which sets the JSON data) from being attached to the card. The `drop` handler then received empty data from `event.dataTransfer.getData`, causing `JSON.parse` to fail.
+    *   **Solution:** Modified the call to `createCardElement` within the mutable slot rendering loop in `GameBoard.js` to pass the correct `manifestKey` (which is `slotData.cardId`) and `slotId`. 

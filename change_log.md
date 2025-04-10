@@ -77,4 +77,36 @@
     *   Modified the `drop` listener in `js/main.js` to parse the transferred data (`cardId`, `originSlotId`) and identify the `targetSlotId`.
     *   Added a new function `moveCard(cardId, originSlotId, targetSlotId)` to `js/state.js` to handle basic state updates for moves between slots with a `cardId` property (grid, character).
     *   Updated the `drop` listener in `js/main.js` to call `moveCard` and then `renderGameBoard` to update the state and UI.
-*   **Note:** Current implementation of `moveCard` does not yet handle moves involving player hands or discard piles (arrays). 
+*   **Note:** Current implementation of `moveCard` does not yet handle moves involving player hands or discard piles (arrays).
+
+## [Current Date] - Phase 6: Drag & Drop Cleanup (Part 1)
+
+*   **Clean & Optimize:**
+    *   Reviewed `moveCard` function (`js/state.js`).
+    *   Removed unnecessary `console.log` statements and redundant comments from `moveCard`.
+
+## [Current Date] - Phase 6: Drag & Drop Cleanup (Part 2)
+
+*   **Clean & Optimize:**
+    *   Reviewed `createCardElement` function (`js/components/Card.js`).
+    *   Removed commented-out `setDragImage` line.
+
+## [Current Date] - Phase 6: Drag & Drop Cleanup (Part 3)
+
+*   **Clean & Optimize:**
+    *   Reviewed drag/drop event listeners (`dragover`, `drop`) in `setupEventListeners` (`js/main.js`).
+    *   Removed commented-out visual feedback lines and the `dragleave` listener.
+
+## [Current Date] - Phase 6: Drag & Drop Cleanup (Part 4)
+
+*   **Clean & Optimize:**
+    *   Reviewed rendering components (`PlayerHand.js`, `CharacterSlot.js`, `StoryGrid.js`).
+    *   Confirmed correct parameters (`cardData`, `manifestKey`, `slotId`) are passed to `createCardElement` in all three components.
+
+## [Timestamp: 2025-04-10 approx 08:15 UTC]
+
+*   **Fix:** Modified `js/components/Card.js` (`createCardElement`) to only set `draggable=true` and add `dragstart` listener if `manifestKey` and `slotId` are provided. This prevents non-card elements (like deck backs) rendered using this function from becoming inappropriately draggable.
+*   **Fix:** Commented out `console.warn` for missing `slotId` in `js/components/Card.js` as it's expected for non-draggable elements.
+*   **Fix:** Added call to `setupEventListeners()` after `renderGameBoard()` within the `drop` event listener in `js/main.js`. This re-attaches listeners to elements recreated during the board render, fixing the "one drag only" bug.
+*   **Fix:** Added missing import for `createCardElement` in `js/components/GameBoard.js` to resolve a `ReferenceError` when rendering cards in mutable slots.
+*   **Fix:** Modified `js/components/GameBoard.js` (`renderGameBoard`) to correctly pass the `manifestKey` and `slotId` when calling `createCardElement` for cards within mutable slots. This resolves the `SyntaxError: Unexpected end of JSON input` error when attempting to drag a card *from* a mutable slot. 

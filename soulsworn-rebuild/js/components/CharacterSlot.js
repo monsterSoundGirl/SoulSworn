@@ -16,7 +16,7 @@ export function renderCharacterSlot(playerId) {
     const playerKey = `player${playerId}`;
     if (!GameState.players[playerKey]) {
         console.warn(`Player data for player ${playerId} not found.`);
-        return; // Or handle as needed, maybe player doesn't exist yet
+        return;
     }
     const characterSlotId = GameState.players[playerKey].characterSlotId;
 

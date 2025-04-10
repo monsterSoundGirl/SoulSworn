@@ -6,7 +6,7 @@ import { createCardElement } from './Card.js';
  * @param {number} playerId - The ID of the player (1, 2, 3, or 4).
  * // Removed handContainerElement parameter
  */
-export function renderPlayerHand(playerId /* removed handContainerElement */) {
+export function renderPlayerHand(playerId) {
     const gameContainer = document.getElementById('game-container');
     if (!gameContainer) {
         console.error("Game container element (#game-container) not found!");
@@ -20,8 +20,6 @@ export function renderPlayerHand(playerId /* removed handContainerElement */) {
         return;
     }
     const handCardIds = player.hand; // Array of card IDs for the current player
-
-    // handContainerElement.innerHTML = ''; // No longer clearing specific container
 
     // Find all hand slot IDs for this player defined in boardSlots
     // These define the potential locations for hand cards.
@@ -52,7 +50,6 @@ export function renderPlayerHand(playerId /* removed handContainerElement */) {
                 cardElement.style.position = 'absolute';
                 cardElement.style.left = `${coords.X}px`;
                 cardElement.style.top = `${coords.Y}px`;
-                // Use coordinate dimensions or card's natural size? JSON W/H likely best.
                 cardElement.style.width = `${coords.W}px`;
                 cardElement.style.height = `${coords.H}px`;
                 cardElement.style.zIndex = '10'; // Ensure cards are above slots
@@ -79,8 +76,6 @@ export function renderPlayerHand(playerId /* removed handContainerElement */) {
             slotElement.dataset.slotId = slotId;
             slotElement.dataset.slotType = 'hand';
             slotElement.dataset.playerId = playerId;
-            // Add placeholder text maybe?
-            // slotElement.textContent = `P${playerId} Hand ${i + 1}`;
 
             // Apply absolute positioning
             slotElement.style.position = 'absolute';
@@ -95,6 +90,4 @@ export function renderPlayerHand(playerId /* removed handContainerElement */) {
              console.warn(`Data or coordinates missing for empty hand slot: ${slotId}`);
         }
     }
-
-    // Removed old logic that wrapped cards
 } 

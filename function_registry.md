@@ -31,16 +31,20 @@ This document lists all major functions, their purpose, parameters, return value
 *   **`moveCard(cardId, originSlotId, targetSlotId)`** (`js/state.js`)
     *   **Purpose:** Updates the `GameState` to reflect a card being moved between two board slots.
     *   **Parameters:** `cardId`, `originSlotId`, `targetSlotId`.
-    *   **Side Effects:** Modifies `GameState.boardSlots`. Currently handles moves between slots with a `cardId` property (e.g., grid, character). Needs extension for hands/discards (arrays).
+    *   **Side Effects:** Modifies `GameState.boardSlots`, `GameState.players[playerId].hand`, or `GameState.mainDeck/altDeck.discardPile`.
+    *   **Notes:** Reviewed and cleaned [Current Date]. Handles slot-to-slot, hand-to-slot/slot-to-hand, hand-to-hand, and slot/hand-to-discard moves. Includes basic validation and error logging. Minimal debug logs remain.
 *   **`setupEventListeners()`** (`js/main.js`)
     *   **Purpose:** Sets up global event listeners, specifically `dragover` and `drop` for `.card-slot` elements.
-    *   **Side Effects:** The `drop` listener parses drag data, calls `moveCard()`, and triggers `renderGameBoard()`.
-*   **`createCardElement(card, slotId)`** (`js/components/Card.js`)
-    *   **Purpose:** Creates a draggable card element.
-    *   **Parameters:** `card` object, `slotId` (ID of the card's current slot).
-    *   **Side Effects:** `dragstart` listener stores `cardId` and `originSlotId`.
-    *   **Notes:** `slotId` parameter added.
+    *   **Side Effects:** The `drop` listener parses drag data, calls `moveCard()`, triggers `renderGameBoard()`, and now recursively calls `setupEventListeners()` to re-attach listeners after the render.
+*   **`createCardElement(card, manifestKey, slotId)`** (`js/components/Card.js`)
+    *   **Purpose:** Creates a card element, making it draggable only if `manifestKey` and `slotId` are provided.
+    *   **Parameters:** `card` object, `manifestKey` (the manifest key used for state arrays), `slotId` (ID of the card's current slot).
+    *   **Side Effects:** If draggable, adds a `dragstart` listener that stores `manifestKey` (as `cardId`) and `originSlotId`.
+    *   **Notes:** Renamed `cardKey` parameter to `manifestKey` for clarity. Draggable attribute and listener are now conditional. `console.warn` for missing `slotId` removed.
 *   **`renderPlayerHand(playerId)`**, **`renderCharacterSlot(playerId)`**, **`renderStoryGrid()`** (`js/components/*`)
     *   **Purpose:** Render specific parts of the board.
     *   **Side Effects:** Calls `createCardElement`.
-    *   **Notes:** Updated to pass the appropriate `slotId` to `createCardElement`. 
+    *   **Notes:** Updated to pass the appropriate `slotId` and `cardKey` to `createCardElement`.
+*   **`renderGameBoard()`** (`js/components/GameBoard.js`)
+    *   **Purpose:** Orchestrates board rendering.
+    *   **Dependencies:** Now imports `createCardElement` to render cards in mutable slots.

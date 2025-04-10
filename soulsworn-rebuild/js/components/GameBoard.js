@@ -4,6 +4,7 @@ import { renderPlayerHand } from './PlayerHand.js';
 import { renderCharacterSlot } from './CharacterSlot.js';
 import { renderStoryGrid } from './StoryGrid.js';
 import { renderDeckPile } from './DeckPile.js';
+import { createCardElement } from './Card.js';
 import { getState, GameState } from '../state.js'; // Import GameState
 
 /**
@@ -65,7 +66,11 @@ export function renderGameBoard() {
             slotElement.style.height = `${coords.H}px`;
             // Content (if any card assigned)
             if (slotData.cardId && GameState.allCards[slotData.cardId]) {
-                const cardElement = createCardElement(GameState.allCards[slotData.cardId]);
+                const cardElement = createCardElement(
+                    GameState.allCards[slotData.cardId],
+                    slotData.cardId,
+                    slotId
+                );
                 slotElement.appendChild(cardElement);
             }
             gameContainer.appendChild(slotElement);

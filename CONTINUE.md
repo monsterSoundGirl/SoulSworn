@@ -46,7 +46,7 @@
 ## Session Summary & Completed Work
 
 *   **Documentation Consolidation:** Resolved issue where documentation (`function_registry.md`, `change_log.md`) was duplicated in the `soulsworn-rebuild/` directory. Consolidated all documentation into the root project directory (`./`).
-*   **Phase 6: Basic Card Interaction (Drag and Drop) (Implementation Complete, Testing Pending)**
+*   **Phase 6: Basic Card Interaction (Drag and Drop) (Implementation Complete, Testing Partially Complete)**
     *   **Goal:** Implement drag-and-drop functionality allowing players to move cards between valid slots (hand, grid, character, discard).
     *   **Completed Steps:**
         *   Verified `draggable="true"` on card elements (`js/components/Card.js`).
@@ -57,20 +57,44 @@
             *   Hand-to-hand
             *   Slot-to-discard / Hand-to-discard
         *   **Bug Fix:** Resolved critical bug where the `cardId` passed during `dragstart` (using internal card ID like "mirrorSnap") did not match the ID stored in state arrays like `player.hand` (which used the manifest key like "spell_6"). Updated `createCardElement` and its callers (`PlayerHand.js`, `CharacterSlot.js`, `StoryGrid.js`) to consistently use the manifest key for drag-and-drop operations.
-    *   **Pending Steps:**
-        *   Thorough testing of all drag-and-drop scenarios.
-        *   Optional CSS visual cues for dragging/dropping.
+        *   **Bug Fix:** Fixed error when dragging cards from mutable slots by properly passing the `manifestKey` and `slotId` when creating card elements in mutable slots.
+    *   **Testing Status:**
+        *   Successfully tested: Hand → Grid, Hand → Character Slot, Grid → Hand, Character → Hand, Intra-Hand movements
+        *   Partially tested: Grid → Grid, Character → Grid, Grid → Character
+        *   **Issue Identified:** Cards dragged to discard piles disappear instead of rendering in the discard pile
 
-## Next Phase: Code Clean & Optimize
+## Next Phase: Fix Discard Pile Rendering & Code Cleanup
 
-*   **Goal:** Review, clean, and potentially optimize the code related to the recent drag-and-drop implementation before proceeding with testing.
-*   **Rationale:** Significant changes were made quickly across multiple files (`state.js`, `Card.js`, `PlayerHand.js`, `CharacterSlot.js`, `StoryGrid.js`, `main.js`). A review pass will help ensure code clarity, remove redundancy, check for potential edge cases missed, and improve maintainability.
+*   **Goal 1: Fix Discard Pile Rendering**
+    *   **Issue Description:** When a card is dragged to the discard pile, the card visually disappears rather than showing up as the top card of the discard pile.
+    *   **Plan for Next Session:**
+        1.  **Investigate:** Examine the `renderDeckPile` function in `js/components/DeckPile.js` to understand how it renders the discard pile card.
+        2.  **Analyze:** Determine if the issue is with:
+            *   How the discard pile accesses the card ID from `GameState.boardSlots`
+            *   How the card's image path is constructed/retrieved
+            *   How the card element is created and appended to the DOM for discard piles
+        3.  **Fix Implementation:** Modify the appropriate code to correctly render the top card of the discard pile after a move.
+        4.  **Test:** Verify the fix works for all discard scenarios:
+            *   Hand → Discard
+            *   Grid Slot → Discard
+            *   Character Slot → Discard
 
-*   **Plan:**
-    1.  **Review `moveCard` (`js/state.js`):** Check logic paths, error handling, and clarity. Look for opportunities to simplify or improve robustness.
-    2.  **Review `createCardElement` (`js/components/Card.js`):** Verify parameter usage and `dragstart` logic consistency.
-    3.  **Review Event Listeners (`js/main.js`):** Examine the `dragstart`, `dragover`, and `drop` listeners in `setupEventListeners`. Ensure data parsing and function calls (`moveCard`, `renderGameBoard`) are correct.
-    4.  **Review Rendering Components (`PlayerHand.js`, `CharacterSlot.js`, `StoryGrid.js`):** Confirm the correct parameters (especially the manifest key) are passed to `createCardElement`.
-    5.  **General Cleanup:** Remove any commented-out old code, debug `console.log` statements that are no longer necessary (keep essential logs for move confirmation), and ensure consistent formatting.
+*   **Goal 2: Code Cleanup**
+    *   **Plan for Next Session:**
+        1.  **Remove Debug Code:** Identify and remove unnecessary `console.log` statements, commented-out code, and redundant functions across all files.
+        2.  **Standardize Component Code:** Ensure consistent parameter usage and naming conventions across all component files.
+        3.  **Review Event Handling:** Check for any inefficiencies in the event handling code, particularly the drag and drop listeners.
+        4.  **Documentation Updates:** Update function documentation to reflect recent changes and fixes.
 
-**Action for Next Session:** Start the **Clean & Optimize** phase by reviewing the `moveCard` function in `js/state.js`. 
+**Action for Next Session (New Chat):**
+
+1.  **Read Project Directory:** Ensure you have a complete overview of the project structure, including all subdirectories.
+2.  **Understand Current State:** Read this `CONTINUE.md` file fully.
+3.  **Focus on Discard Pile Fix:** First address the discard pile rendering issue by:
+    *   Reading `js/components/DeckPile.js` to understand how the discard pile is currently rendered
+    *   Analyzing the issue with card display in discard piles
+    *   Implementing a fix to correctly show cards in the discard pile
+    *   Testing the solution thoroughly
+4.  **Cleanup Code:** After fixing the discard pile issue, clean up the codebase by removing debugging code, standardizing components, and improving documentation.
+
+**Remember:** Pause after proposing your plan and after each significant step, waiting for user confirmation before proceeding. This ensures alignment and helps manage context efficiently. 
