@@ -1,50 +1,139 @@
-# Function Registry
+# FUNCTION REGISTRY
 
-This document lists all major functions, their purpose, parameters, return values, and dependencies.
+**------READ-ONLY SECTION START------**
 
-## Phase 1-4 Functions (See Git History for Details)
+## Purpose
+This registry documents all significant functions in the codebase, their purposes, parameters, return values, and crucially, their dependency relationships with other functions. This helps maintain code clarity and aids in understanding the impact of changes.
 
-*   `initializeState()` (js/state.js): Loads card manifest, initializes decks, shuffles.
-*   `shuffleArray()` (js/state.js): Helper for shuffling.
-*   `drawCard()` (js/state.js): Moves cards from draw pile to player hand state.
-*   `createCardElement()` (js/components/Card.js): Creates HTML element for a card.
-*   `renderGameBoard()` (js/components/GameBoard.js): Orchestrates board rendering.
-*   `renderPlayerHand()` (js/components/PlayerHand.js): Renders player hand slots/cards.
-*   `renderCharacterSlot()` (js/components/CharacterSlot.js): Renders player character slot.
-*   `renderStoryGrid()` (js/components/StoryGrid.js): Renders story grid slots.
-*   `renderDeckPile()` (js/components/DeckPile.js): Renders deck draw/discard piles.
+## Documentation Standards
+1. Each function entry must include:
+   - Function name and location
+   - Creation/last modified timestamp
+   - Purpose description
+   - Parameters and return value
+   - Function dependencies (calls to other functions)
+   - Reverse dependencies (functions that call this function)
+   - Usage context
 
-## Phase 5 Refactoring (Absolute Positioning - [2025-04-09])
+2. Format entries consistently:
+   ```
+   ## functionName(param1, param2) → returnType
+   - **File:** path/to/file.js
+   - **Created:** YYYY-MM-DD
+   - **Last Modified:** YYYY-MM-DD
+   - **Purpose:** Brief description of what the function does
+   
+   ### Parameters:
+   - `param1` (type): Description
+   - `param2` (type): Description
+   
+   ### Returns:
+   - (returnType): Description of return value
+   
+   ### Dependencies:
+   - **Calls:** otherFunction1(), otherFunction2()
+   - **Uses State:** stateVariable1, stateVariable2
+   
+   ### Called By:
+   - parentFunction1()
+   - parentFunction2()
+   
+   ### Notes:
+   - Any additional information, edge cases, or special considerations
+   ```
 
-*   **Focus:** Transitioned from CSS Flexbox/Grid layout to absolute positioning based on `UIcoordinates.json`.
-*   **Key Changes:**
-    *   `initializeState()`: Now also loads `UIcoordinates.json` and stores it in `GameState.uiCoordinates`.
-    *   `render*` functions (`PlayerHand`, `CharacterSlot`, `StoryGrid`, `DeckPile`): Modified to read coordinates from `GameState.uiCoordinates` and apply `position: absolute` styles directly to elements, appending them to `#game-container` instead of specific sub-containers.
-    *   `renderGameBoard()`: Updated to clear old elements correctly and call refactored component functions. Added rendering for `mutable` slots and Players 3/4.
-    *   `GameState` (`js/state.js`): Board slot IDs (`boardSlots`) updated to match `LABEL`s in `UIcoordinates.json`. Player state objects (`players`) simplified. Player 3/4 state and hand slots added.
-    *   `index.html`: Obsolete layout containers removed.
-    *   `css/board.css`: Old layout rules removed, placeholder UI element styling added/fixed.
-    *   `main.js`: Added draw calls for Player 3/4 initial hands. 
+3. Group functions by file/module
+4. Maintain the dependency relationships when functions are modified
+5. Update both direct function entries and any entries that list the function as a dependency
+6. Include a "Function Impact Map" for core functions that visualizes dependency chains
 
-## Phase 6: Drag and Drop ([Current Date])
+**------READ-ONLY SECTION END------**
 
-*   **`moveCard(cardId, originSlotId, targetSlotId)`** (`js/state.js`)
-    *   **Purpose:** Updates the `GameState` to reflect a card being moved between two board slots.
-    *   **Parameters:** `cardId`, `originSlotId`, `targetSlotId`.
-    *   **Side Effects:** Modifies `GameState.boardSlots`, `GameState.players[playerId].hand`, or `GameState.mainDeck/altDeck.discardPile`.
-    *   **Notes:** Reviewed and cleaned [Current Date]. Handles slot-to-slot, hand-to-slot/slot-to-hand, hand-to-hand, and slot/hand-to-discard moves. Includes basic validation and error logging. Minimal debug logs remain.
-*   **`setupEventListeners()`** (`js/main.js`)
-    *   **Purpose:** Sets up global event listeners, specifically `dragover` and `drop` for `.card-slot` elements.
-    *   **Side Effects:** The `drop` listener parses drag data, calls `moveCard()`, triggers `renderGameBoard()`, and now recursively calls `setupEventListeners()` to re-attach listeners after the render.
-*   **`createCardElement(card, manifestKey, slotId)`** (`js/components/Card.js`)
-    *   **Purpose:** Creates a card element, making it draggable only if `manifestKey` and `slotId` are provided.
-    *   **Parameters:** `card` object, `manifestKey` (the manifest key used for state arrays), `slotId` (ID of the card's current slot).
-    *   **Side Effects:** If draggable, adds a `dragstart` listener that stores `manifestKey` (as `cardId`) and `originSlotId`.
-    *   **Notes:** Renamed `cardKey` parameter to `manifestKey` for clarity. Draggable attribute and listener are now conditional. `console.warn` for missing `slotId` removed.
-*   **`renderPlayerHand(playerId)`**, **`renderCharacterSlot(playerId)`**, **`renderStoryGrid()`** (`js/components/*`)
-    *   **Purpose:** Render specific parts of the board.
-    *   **Side Effects:** Calls `createCardElement`.
-    *   **Notes:** Updated to pass the appropriate `slotId` and `cardKey` to `createCardElement`.
-*   **`renderGameBoard()`** (`js/components/GameBoard.js`)
-    *   **Purpose:** Orchestrates board rendering.
-    *   **Dependencies:** Now imports `createCardElement` to render cards in mutable slots.
+# FUNCTIONS BY FILE
+
+## js/state.js
+
+### moveCard(sourceType, sourceId, targetType, targetId) → boolean
+- **File:** js/state.js
+- **Created:** 2025-04-01
+- **Last Modified:** 2025-04-09
+- **Purpose:** Moves a card from a source location to a target location in the game state
+
+### Parameters:
+- `sourceType` (string): Type of source location ('hand', 'slot', 'character', 'mutable')
+- `sourceId` (string): ID of the source location
+- `targetType` (string): Type of target location ('hand', 'slot', 'character', 'mutable', 'discard')
+- `targetId` (string): ID of the target location
+
+### Returns:
+- (boolean): True if move was successful, false otherwise
+
+### Dependencies:
+- **Calls:** None directly
+- **Uses State:** GameState.players, GameState.boardSlots
+
+### Called By:
+- handleCardDrop() in js/main.js
+
+### Notes:
+- Handles multiple types of card movements in the game
+- Manages state updates when cards are moved between different zones
+
+## js/components/Card.js
+
+### createCardElement(cardId, manifestKey, slotId) → HTMLElement
+- **File:** js/components/Card.js  
+- **Created:** 2025-04-01
+- **Last Modified:** 2025-04-09
+- **Purpose:** Creates a card DOM element with proper styling and data attributes
+
+### Parameters:
+- `cardId` (string): Visual ID of the card (e.g., "mirrorSnap")
+- `manifestKey` (string): Key used in state arrays (e.g., "spell_6")
+- `slotId` (string): ID of the slot this card belongs to (optional)
+
+### Returns:
+- (HTMLElement): The created card DOM element
+
+### Dependencies:
+- **Calls:** None directly
+- **Uses State:** None directly, relies on card-manifest.json indirectly
+
+### Called By:
+- renderPlayerHand() in js/components/PlayerHand.js
+- renderCharacterSlot() in js/components/CharacterSlot.js
+- renderStoryGrid() in js/components/StoryGrid.js
+- renderGameBoard() in js/components/GameBoard.js
+
+### Notes:
+- Sets up drag functionality for cards
+- Ensures correct data is passed during drag operations
+- Critical for drag-and-drop card functionality
+
+## js/main.js
+
+### setupEventListeners() → void
+- **File:** js/main.js
+- **Created:** 2025-04-01
+- **Last Modified:** 2025-04-09
+- **Purpose:** Sets up event listeners for drag and drop functionality
+
+### Parameters:
+- None
+
+### Returns:
+- (void)
+
+### Dependencies:
+- **Calls:** moveCard(), renderGameBoard()
+- **Uses State:** None directly
+
+### Called By:
+- initializeGame() in js/main.js
+
+### Notes:
+- Establishes dragstart, dragover, and drop event handlers
+- Parses JSON data from transfer during drag operations
+- Updates the game state and re-renders after successful moves
+
+<!-- Add new function entries ABOVE this line -->

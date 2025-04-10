@@ -1,4 +1,56 @@
-# Solution Journal
+# DEBUG NOTES
+
+**------READ-ONLY SECTION START------**
+
+## Purpose
+This file documents debugging insights, solution approaches, and lessons learned when resolving issues in the codebase. It serves as a knowledge repository for recurring patterns, tricky bugs, and their solutions.
+
+## Documentation Standards
+1. Each entry must include:
+   - Issue ID and title
+   - Timestamp (ISO format: YYYY-MM-DD HH:MM)
+   - Author (Model: Claude or Gemini)
+   - Symptoms observed
+   - Root cause analysis
+   - Solution implemented
+   - Verification method
+   - Lessons learned
+
+2. Format entries consistently:
+   ```
+   ## [YYYY-MM-DD HH:MM] - KI-### - Issue Title
+   - **Author:** Model Name
+   - **Symptoms:** Observable behavior indicating the problem
+   - **Affected Components:** Component1, Component2
+   - **Root Cause:** Detailed explanation of what caused the issue
+   - **Solution:** How the issue was fixed
+   - **Verification:** How the fix was verified
+   - **Lessons Learned:** Key insights from debugging this issue
+   - **Related Issues:** KI-### (if applicable)
+   ```
+
+3. Include code snippets when relevant (before/after)
+4. Cross-reference related issues
+5. Tag entries with categories for easier searching (e.g., #rendering, #state-management, #event-handling)
+
+**------READ-ONLY SECTION END------**
+
+# DEBUG HISTORY
+
+## [2025-04-10 00:00] - Initial Documentation Creation
+- **Author:** Claude
+- **Symptoms:** N/A
+- **Affected Components:** N/A
+- **Root Cause:** N/A
+- **Solution:** Created the debug notes documentation file with template
+- **Verification:** N/A
+- **Lessons Learned:** Maintaining structured debug notes aids troubleshooting and prevents repeating past mistakes
+- **Related Issues:** N/A
+- **Tags:** #documentation
+
+<!-- Add new entries ABOVE this line -->
+
+# Debug Notes (formerly Solution Journal)
 
 This document records specific problems encountered and how they were solved during the development of SoulSworn 2.0.
 
