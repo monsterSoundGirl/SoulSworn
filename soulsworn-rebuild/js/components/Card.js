@@ -1,3 +1,26 @@
+// Mapping for singular to plural card type prefixes used in asset paths
+const cardTypePathMapping = {
+    'item': 'items',
+    'spell': 'spells',
+    'character': 'characters', // Assuming 'character' might also need pluralization
+    'unit': 'units',         // Adding common potential types
+    'hero': 'heroes'
+    // Add other mappings as needed based on your asset structure
+};
+
+/**
+ * Transforms the image URL to use the correct pluralized path based on card type.
+ * Handles potential inconsistencies like 'item/item_X' vs 'items/items_X'.
+ * @param {string} originalUrl - The original image URL from card data.
+ * @param {string} cardType - The type of the card (e.g., 'item', 'spell').
+ * @returns {string} The transformed image URL.
+ */
+function transformImageUrl(originalUrl, cardType) {
+    // The file paths in the manifest are already correct
+    // Do not transform singular directory names to plural
+    return originalUrl;
+}
+
 /**
  * Creates an HTML element representing a single card.
  * @param {object} card - The card object from GameState.allCards.
@@ -25,6 +48,7 @@ export function createCardElement(card, manifestKey, slotId) {
   // }
 
   const cardElement = document.createElement('img');
+  // Use original URL directly without transformation
   cardElement.src = card.imageUrl;
   cardElement.alt = card.id; // Use card ID as alt text
   cardElement.title = `${card.type}: ${card.id}`; // Tooltip

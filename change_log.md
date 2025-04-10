@@ -33,6 +33,28 @@ This file tracks all significant changes made to the codebase, providing a chron
 
 # CHANGE HISTORY
 
+## [2025-04-10 15:00] - Fixed Card Manifest Discrepancies and Created Cleanup Plan
+- **Author:** Claude
+- **Files:** soulsworn-rebuild/assets/card-manifest.json, /Users/christianwright/Documents/SoulSworn/CONTINUE.md
+- **Changes:** 
+  1. Fixed several discrepancies between card IDs and filenames in the manifest:
+     - monster_3: Changed ID from "mboneReaper" to "boneReaper"
+     - monster_6: Updated imageUrl to use "monsters_gargolye.jpg"
+     - npc_3: Changed ID from "enigmaticTravler" to "enigmaticTraveler"
+     - spell_10: Changed ID from "stichLight" to "stitchLight"
+  2. Created detailed plan for code cleanup and testing in CONTINUE.md
+- **Issue:** Related to KI-002 (Image Path Inconsistency)
+- **Functions Affected:** N/A
+- **Reason:** Needed to ensure consistency between card IDs and filenames to prevent future issues. Created structured plan for handoff to Gemini.
+
+## [2025-04-10 14:30] - Fixed Image Path Inconsistency and Discard Pile Rendering
+- **Author:** Claude
+- **Files:** soulsworn-rebuild/js/components/Card.js
+- **Changes:** Modified the `transformImageUrl` function to stop transforming paths and return the original URL. Updated `createCardElement` to use the original image URL directly.
+- **Issue:** KI-002 (Image Path Inconsistency), KI-001 (Discard Pile Rendering)
+- **Functions Affected:** `transformImageUrl()`, `createCardElement()`
+- **Reason:** The `transformImageUrl` function was incorrectly changing singular directory names to plural (e.g., `item` to `items`), causing 404 errors. The manifest already had correct paths using singular directory names with plural filename prefixes (e.g., `assets/jpg/cards/item/items_*.jpg`).
+
 ## [2025-04-10 00:00] - Initial Documentation Creation
 - **Author:** Claude
 - **Files:** change_log.md

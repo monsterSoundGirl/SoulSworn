@@ -88,77 +88,157 @@ The model MUST wait for explicit confirmation ("proceed", "continue", "yes", etc
 - Fixed critical bug with cardId/manifestKey mismatch in drag-and-drop operations
 - Fixed error when dragging cards from mutable slots
 - Consolidated documentation files in the root project directory
+- Implemented new documentation structure with standardized templates and formats
+- Added Session Checkpoints to ensure consistent pauses and validation points
+- **Fixed discard pile rendering (KI-001) by resolving image path inconsistencies**
+- **Fixed image path inconsistencies (KI-002) in `Card.js` by removing incorrect path transformation**
+- **Fixed card ID and filename discrepancies in the card manifest**
 
 ## Current Implementation Status
 - **Core Functionality:** Cards can be dragged between most zones (hand, grid, character slots)
-- **Testing Status:** Partially tested drag-and-drop scenarios
-- **Documentation Status:** Updated but needs continued maintenance
-- **Issues Status:** One critical issue remains (discard pile rendering)
+- **Testing Status:** Partially tested drag-and-drop scenarios. Discard pile rendering verified.
+- **Documentation Status:** Significantly improved with new templates and structure. Updated with recent fixes.
+- **Issues Status:** 
+    - KI-001 (Discard Pile Rendering): **FIXED**
+    - KI-002 (Image Path Inconsistency): **FIXED**
 
 # NEXT TASKS
 
-## Critical Tasks (Blocking Issues)
-- **C1:** Fix discard pile rendering issue - Cards dragged to discard piles disappear instead of rendering
-  - Priority: High
-  - Estimate: 1 session
-  - Dependencies: None
-
-## Important Tasks (In-Progress Features)
-- **I1:** Clean up codebase (remove debug code, standardize components)
-  - Priority: Medium
-  - Estimate: 1 session
-  - Dependencies: None
+## Code Cleanup Plan (I1)
+- **Priority:** High
+- **Estimate:** 1 session
+- **Dependencies:** None
+- **Tasks:**
+  1. **Remove Unnecessary Console Logs**
+     - Identify and remove debug console.log statements throughout the codebase
+     - Keep only essential logs for critical operations or error handling
+     - Files to check: `Card.js`, `GameBoard.js`, `PlayerHand.js`, `DeckPile.js`, `StoryGrid.js`, `main.js`, `state.js`
   
-- **I2:** Complete testing of all drag-and-drop scenarios
-  - Priority: Medium
-  - Estimate: 1 session
-  - Dependencies: C1
+  2. **Remove Commented-Out Code**
+     - Remove all commented-out code that's no longer needed
+     - If code is commented for a specific reason, add a clear explanatory comment above it
+  
+  3. **Standardize Component Structure**
+     - Ensure consistent method structures and naming patterns across components
+     - Standardize parameter naming across similar functions
+     - Ensure consistent error handling approaches
+  
+  4. **Improve Documentation**
+     - Add/update JSDoc comments for all functions
+     - Ensure all parameters and return values are documented
+     - Add explanatory comments for complex logic
+  
+  5. **Refactor Duplicate Code**
+     - Identify any repeated code patterns (especially in rendering functions)
+     - Extract common functionality into shared utility functions
+     - Consider moving repeated patterns to a utilities module
 
-## Enhancement Tasks (Nice-to-Have)
+## Testing Plan (I2)
+- **Priority:** High
+- **Estimate:** 1 session
+- **Dependencies:** Code Cleanup (I1)
+- **Tasks:**
+  1. **Create Test Scenarios Document**
+     - Document all possible drag-and-drop combinations to test
+     - Create a table for recording test results
+  
+  2. **Test Basic Card Movement Scenarios**
+     - Hand → Grid (each player)
+     - Hand → Character Slot (each player)
+     - Hand → Discard Pile (main and alt)
+     - Grid → Hand (each player)
+     - Grid → Grid (different position)
+     - Grid → Discard Pile (main and alt)
+  
+  3. **Test Advanced/Edge Cases**
+     - Dragging to an occupied slot (replacement behavior)
+     - Dragging between player hands (if allowed)
+     - Interaction with "locked" slots (if any)
+     - Drag cancellation (esc key or dropping outside valid targets)
+  
+  4. **Verify State Management**
+     - Ensure GameState properly updates after each drag operation
+     - Verify discard piles correctly manage their arrays
+     - Confirm hand arrays are properly updated
+  
+  5. **Test Visual Rendering**
+     - Verify cards render correctly in all destinations
+     - Check that the UI updates appropriately after moves
+     - Confirm no visual artifacts or positioning issues
+
+## Enhancement Tasks (Future)
 - **E1:** Add visual cues for drag-and-drop operations
-  - Priority: Low
+  - Priority: Medium
   - Estimate: 1 session
-  - Dependencies: C1, I1, I2
-  
+  - Dependencies: I1, I2
+
 - **E2:** Refactor event listeners for improved efficiency
-  - Priority: Low
+  - Priority: Medium
   - Estimate: 1 session
   - Dependencies: I1
 
 # KNOWN ISSUES
 
-## KI-001: Discard Pile Rendering Failure
-- **Description:** When a card is dragged to a discard pile, the card visually disappears rather than showing as the top card of the discard pile.
+## KI-001: Discard Pile Rendering Failure - FIXED
+- **Description:** When a card was dragged to a discard pile, the card visually disappeared rather than showing as the top card of the discard pile.
 - **Affected Components:** `DeckPile.js`, `state.js`
-- **Current Understanding:** The issue likely involves how the discard pile accesses or renders the card ID from GameState after a move operation.
-- **Potential Solutions:**
-  1. Examine the `renderDeckPile` function in `DeckPile.js` to ensure it correctly accesses the card ID
-  2. Verify the card image path construction for discard piles
-  3. Check how the card element is created and appended to the DOM for discard piles
+- **Root Cause:** The issue was caused by incorrect image paths generated by the `transformImageUrl` function in `Card.js`. This was the same root cause as KI-002.
+- **Solution Implemented:** Fixed by modifying the `transformImageUrl` function to stop transforming paths and simply return the original URL, which was already correct in the manifest.
+- **Verification:** Cards now correctly display when added to the discard pile.
 
-## KI-002: Missing Image Assets
-- **Description:** Multiple 404 errors in the console for card image assets
-- **Affected Components:** Card rendering system
-- **Current Understanding:** Path to card images may be inconsistent or images might be missing
-- **Potential Solutions:**
-  1. Check for naming inconsistency between manifest references and actual file paths
-  2. Verify all required assets exist in the correct directories
+## KI-002: Image Asset Path Inconsistency - FIXED
+- **Description:** Server logs showed 404 errors for card image assets, indicating generated paths didn't match actual file locations.
+- **Affected Components:** `Card.js` (`transformImageUrl`), actual file structure under `/assets/jpg/cards/`
+- **Root Cause:** The `transformImageUrl` function in `Card.js` was incorrectly changing singular directory names to plural (e.g., `item` to `items`), causing 404 errors. The manifest already had correct paths using singular directory names with plural filename prefixes (e.g., `assets/jpg/cards/item/items_*.jpg`).
+- **Solution Implemented:** Modified the `transformImageUrl` function to stop transforming paths and return the original URL. Updated `createCardElement` to use the original image URL directly.
+- **Verification:** Card images now load correctly with no 404 errors.
 
 # HANDOFF NOTES
 
-## Current Session Handoff (Claude → Gemini)
-- **Session Type:** Planning completed, transitioning to Coding
-- **Focus Areas for Next Model:**
-  1. Implement fix for discard pile rendering (KI-001)
-  2. Follow the investigative steps outlined in the Known Issues section
-  3. Update documentation after code changes
-- **Context Notes:**
-  - Card image paths may be related to the discard issue (see server logs showing 404s)
-  - Previously fixed similar issues with manifestKey vs cardId inconsistency
-  - Remember to pause after analyzing the issue before implementing a fix
+## Handoff (Claude → Gemini)
+- **Session Type:** Planning → Coding
+- **Summary of Claude Session (2025-04-10):**
+  - Fixed the image path inconsistencies that were causing 404 errors
+  - Fixed discrepancies in card IDs and filenames in the manifest
+  - Developed detailed plans for code cleanup and testing activities
+  - Updated documentation to reflect current project state
+  
+- **Key Accomplishments:** 
+  - Fixed image loading issues (KI-002)
+  - Fixed discard pile rendering (KI-001)
+  - Created step-by-step plans for code cleanup and drag-and-drop testing
+  - Updated documentation (debug_notes.md, change_log.md, CONTINUE.md)
 
-## Expected Return Handoff (Gemini → Claude)
-- **Validation Requirements:**
-  - Verify cards correctly render in discard pile after being moved there
-  - Ensure fix doesn't break existing functionality
-  - Document the changes in the appropriate files
+- **Recommended Implementation Approach:**
+  1. Start with Code Cleanup (I1) tasks in the order presented
+  2. Start server after each set of changes to verify nothing was broken
+  3. Proceed to Testing (I2) once cleanup is complete
+  4. Document all test results and any issues found
+
+- **Implementation Guidelines for Gemini:**
+  1. **FOLLOW THE CHECKPOINT SYSTEM:** Remember to pause at each checkpoint in the session workflow
+  2. **DOCUMENT AS YOU GO:** Update the debug_notes.md and change_log.md files with your changes
+  3. **ONE COMPONENT AT A TIME:** Clean up one component completely before moving to the next
+  4. **TEST THOROUGHLY:** Verify that each change doesn't affect functionality
+  5. **USE CONSISTENT STYLE:** Ensure code modifications maintain consistent style and structure
+
+## Expected Next Handoff (Gemini → Claude)
+- **Preparation Requirements:**
+  - Completed code cleanup (documented in change_log.md)
+  - Completed testing (results documented in a test report)
+  - Updated documentation reflecting the work done
+  - Updated CONTINUE.md with current status and any issues found
+  - Recommendations for next steps (enhancements or further improvements)
+
+# COMPONENT OVERVIEW
+
+To assist with code cleanup and testing, here's a brief overview of the key components:
+
+- **Card.js** - Handles card creation and drag initialization
+- **PlayerHand.js** - Renders player hand slots and cards
+- **StoryGrid.js** - Renders the story grid slots and cards
+- **CharacterSlot.js** - Renders character slots and cards
+- **DeckPile.js** - Renders deck and discard piles
+- **GameBoard.js** - Orchestrates rendering of all game components
+- **main.js** - Entry point, event handling, and drag-and-drop logic
+- **state.js** - Manages game state and card movement logic

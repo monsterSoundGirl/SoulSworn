@@ -69,12 +69,24 @@ export function renderDeckPile(deckType) {
     discardSlotElement.style.width = `${discardCoords.W}px`;
     discardSlotElement.style.height = `${discardCoords.H}px`;
 
-    // Render top discard card if available (unlikely initially)
-    if (discardSlotData.cardId && GameState.allCards[discardSlotData.cardId]) {
-        const cardElement = createCardElement(GameState.allCards[discardSlotData.cardId]);
-        discardSlotElement.appendChild(cardElement);
+    // Render top discard card if available
+    const discardPileArray = deckType === 'main' ? GameState.mainDeck.discardPile : GameState.altDeck.discardPile;
+    if (discardPileArray && discardPileArray.length > 0) {
+        const topCardId = discardPileArray[discardPileArray.length - 1];
+        const cardData = GameState.allCards[topCardId];
+        if (cardData) {
+            // Ensure createCardElement is ready to receive full card data if needed
+            const cardElement = createCardElement(cardData); 
+            discardSlotElement.innerHTML = ''; // Clear placeholder/previous card
+            discardSlotElement.appendChild(cardElement);
+        } else {
+            console.error(`Card data not found in GameState.allCards for card ID: ${topCardId}`);
+             discardSlotElement.innerHTML = ''; // Clear placeholder
+            discardSlotElement.textContent = 'Discard'; // Fallback text
+        }
     } else {
-        discardSlotElement.textContent = 'Discard'; // Placeholder text
+         discardSlotElement.innerHTML = ''; // Clear placeholder
+        discardSlotElement.textContent = 'Discard'; // Placeholder text if discard pile is empty
     }
     gameContainer.appendChild(discardSlotElement);
 }

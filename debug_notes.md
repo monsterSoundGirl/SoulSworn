@@ -37,6 +37,44 @@ This file documents debugging insights, solution approaches, and lessons learned
 
 # DEBUG HISTORY
 
+## [2025-04-10 15:05] - Card Manifest ID and Filename Discrepancies Fixed
+- **Author:** Claude
+- **Symptoms:** Potential issues with incorrect card IDs not matching their filenames.
+- **Affected Components:** `assets/card-manifest.json`
+- **Root Cause:** Several entries in the card manifest had discrepancies between their IDs and the actual filenames:
+  1. monster_3 had ID "mboneReaper" but the filename was "monsters_boneReaper.jpg"
+  2. monster_6 had imageUrl "monsters_gargoyle.jpg" but the file was actually "monsters_gargolye.jpg" (letters transposed)
+  3. npc_3 had ID "enigmaticTravler" but the filename was "enigmaticTraveler.jpg"
+  4. spell_10 had ID "stichLight" but the filename was "spells_stitchLight.jpg"
+- **Solution:** Updated the relevant entries in the card-manifest.json file to ensure consistency between IDs and filenames.
+- **Verification:** The manifest now correctly represents the actual files on disk.
+- **Lessons Learned:** Always verify consistency between reference IDs and actual resources to avoid subtle bugs.
+- **Related Issues:** Found while investigating KI-002 (Image Path Inconsistency).
+- **Tags:** #assets, #naming, #consistency
+
+## [2025-04-10 14:25] - KI-002 - Image Path Inconsistency Fixed
+- **Author:** Claude
+- **Symptoms:** Console showing numerous 404 errors for card images. The error paths were of the form `/assets/jpg/cards/items/items_silverSpoon.jpg` (with plural directory names).
+- **Affected Components:** `Card.js`, `DeckPile.js`
+- **Root Cause:** The `transformImageUrl` function in `Card.js` was incorrectly modifying correct image paths from the card manifest. The manifest had the right paths using singular directory names (e.g., `assets/jpg/cards/item/items_silverSpoon.jpg`), but the transformation function was changing the directory name from singular to plural, creating nonexistent paths (e.g., `assets/jpg/cards/items/items_silverSpoon.jpg`).
+- **Solution:** Modified the `transformImageUrl` function to simply return the original URL without transformation, and updated the `createCardElement` function to use the original URL directly:
+  ```javascript
+  // Before:
+  function transformImageUrl(originalUrl, cardType) {
+      // Complex logic that modified directory names from singular to plural
+  }
+  // After:
+  function transformImageUrl(originalUrl, cardType) {
+      // The file paths in the manifest are already correct
+      // Do not transform singular directory names to plural
+      return originalUrl;
+  }
+  ```
+- **Verification:** The fix was verified by checking if card images load correctly after the change.
+- **Lessons Learned:** Asset path structures should be carefully documented and tested. In this case, the correct structure was `assets/jpg/cards/<singular_type>/<plural_type>_*.jpg` (e.g., `item/items_silverSpoon.jpg`), but code was trying to "fix" what wasn't broken.
+- **Related Issues:** KI-001 (Discard Pile Rendering) - This issue was likely caused by the same root problem, as cards weren't rendering in the discard pile due to the image loading failures.
+- **Tags:** #assets, #paths, #rendering
+
 ## [2025-04-10 00:00] - Initial Documentation Creation
 - **Author:** Claude
 - **Symptoms:** N/A

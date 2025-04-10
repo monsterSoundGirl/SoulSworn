@@ -325,7 +325,7 @@
     "imageUrl": "assets/jpg/cards/monster/monsters_blackEyedKid.jpg"
   },
   "monster_3": {
-    "id": "mboneReaper",
+    "id": "boneReaper",
     "type": "monster",
     "imageUrl": "assets/jpg/cards/monster/monsters_boneReaper.jpg"
   },
@@ -342,7 +342,7 @@
   "monster_6": {
     "id": "gargoyle",
     "type": "monster",
-    "imageUrl": "assets/jpg/cards/monster/monsters_gargoyle.jpg"
+    "imageUrl": "assets/jpg/cards/monster/monsters_gargolye.jpg"
   },
   "monster_7": {
     "id": "mghoul",
@@ -385,7 +385,7 @@
     "imageUrl": "assets/jpg/cards/npc/NPCs_dreamingGirl.jpg"
   },
   "npc_3": {
-    "id": "enigmaticTravler",
+    "id": "enigmaticTraveler",
     "type": "npc",
     "imageUrl": "assets/jpg/cards/npc/NPCs_enigmaticTraveler.jpg"
   },
@@ -630,7 +630,7 @@
     "imageUrl": "assets/jpg/cards/spell/spells_sociopathicMutter.jpg"
   },
   "spell_10": {
-    "id": "stichLight",
+    "id": "stitchLight",
     "type": "spell",
     "imageUrl": "assets/jpg/cards/spell/spells_stitchLight.jpg"
   },
