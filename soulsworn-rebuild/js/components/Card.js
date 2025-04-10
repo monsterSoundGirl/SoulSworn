@@ -2,9 +2,11 @@
  * Creates an HTML element representing a single card.
  * @param {object} card - The card object from GameState.allCards.
  *                          Expected structure: { id: string, type: string, imageUrl: string }
+ * @param {string} manifestKey - The key used for this card in GameState.allCards (e.g., 'item_1', 'spell_6').
+ * @param {string} slotId - The ID of the board slot this card is currently in.
  * @returns {HTMLImageElement} An image element representing the card.
  */
-export function createCardElement(card) {
+export function createCardElement(card, manifestKey, slotId) {
   if (!card || !card.id || !card.imageUrl) {
     console.error('Invalid card data provided to createCardElement:', card);
     // Return a placeholder or throw an error, depending on desired handling
@@ -17,6 +19,9 @@ export function createCardElement(card) {
     errorDiv.style.height = '100px'; // Approx card height
     return errorDiv;
   }
+  if (!slotId) {
+    console.warn('Missing slotId for card:', card.id, '- Drag source may not be identified.');
+  }
 
   const cardElement = document.createElement('img');
   cardElement.src = card.imageUrl;
@@ -26,13 +31,17 @@ export function createCardElement(card) {
   cardElement.dataset.cardId = card.id; // Store card ID for later reference
   cardElement.dataset.cardType = card.type; // Store card type
 
-  // Make cards draggable (basic setup for Phase 4)
+  // Make cards draggable
   cardElement.draggable = true;
   cardElement.addEventListener('dragstart', (event) => {
-    console.log(`Drag Start: ${card.id}`);
-    // Pass the card ID with the drag event
-    event.dataTransfer.setData('text/plain', card.id);
-    // Optional: Set a drag image (can be the card itself or a custom one)
+    // Store both cardId (using the manifest key) and origin slotId
+    const dragData = {
+      cardId: manifestKey, // Use the manifest key, which matches hand/deck arrays
+      originSlotId: slotId // Use the passed slotId
+    };
+    event.dataTransfer.setData('application/json', JSON.stringify(dragData));
+    console.log(`Drag Start: Card Key ${manifestKey} (id: ${card.id}) from Slot ${slotId}`);
+    // Optional: Set a drag image
     // event.dataTransfer.setDragImage(cardElement, 0, 0);
   });
 

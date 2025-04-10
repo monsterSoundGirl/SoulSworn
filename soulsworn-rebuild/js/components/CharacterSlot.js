@@ -52,9 +52,19 @@ export function renderCharacterSlot(playerId) {
     slotElement.style.height = `${coords.H}px`;
 
     // If a character card is assigned (unlikely initially, maybe later)
-    if (slotData.cardId && GameState.allCards[slotData.cardId]) {
-        const cardElement = createCardElement(GameState.allCards[slotData.cardId]);
+    const cardId = slotData.cardId;
+    const cardData = GameState.allCards[cardId];
+
+    if (cardData && coords) {
+        const cardElement = createCardElement(cardData, cardId, slotData.id);
         slotElement.appendChild(cardElement);
+
+        // Apply positioning to the card image itself
+        cardElement.style.position = 'absolute';
+        cardElement.style.left = `${coords.X}px`;
+        cardElement.style.top = `${coords.Y}px`;
+        cardElement.style.width = `${coords.W}px`;
+        cardElement.style.height = `${coords.H}px`;
     }
 
     gameContainer.appendChild(slotElement);

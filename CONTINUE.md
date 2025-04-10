@@ -38,70 +38,39 @@
 
 ## Environment
 
-*   **Project Root:** `soulsworn-rebuild/`
-*   **Testing:** Python HTTP Server (`cd soulsworn-rebuild && python3 -m http.server`), access via `http://localhost:8000/index.html`
+*   **Project Root:** `/Users/christianwright/Documents/SoulSworn/`
+*   **Working Directory:** `soulsworn-rebuild/`
+*   **Testing:** Python HTTP Server (`cd soulsworn-rebuild && python3 -m http.server 8001`). Access via `http://localhost:8001/index.html` (Use port 8000 or another if 8001 is taken).
 *   **Note:** Browser cache/hard refresh (Cmd/Ctrl+Shift+R) may be needed after changes.
 
-## Completed Work
+## Session Summary & Completed Work
 
-*   **Phase 1: Project Setup & Static Card Rendering (Complete)**
-    *   Task 1: Initial directory structure created (`soulsworn-rebuild/`). Old project archived (`Soulsworn_1.0/`).
-    *   Task 2 & 3: Basic `index.html` and `css/main.css` created.
-    *   Task 4: Initial `js/state.js` with placeholder `GameState` implemented.
-    *   Task 5: Basic `js/main.js` entry point implemented.
-    *   Task 6: Card data loading via `assets/card-manifest.json` implemented in `js/state.js`.
-    *   Task 7: Basic `js/components/Card.js` component implemented.
-    *   Task 8: Debugged asset loading issues (CORS, path discrepancies).
+*   **Documentation Consolidation:** Resolved issue where documentation (`function_registry.md`, `change_log.md`) was duplicated in the `soulsworn-rebuild/` directory. Consolidated all documentation into the root project directory (`./`).
+*   **Phase 6: Basic Card Interaction (Drag and Drop) (Implementation Complete, Testing Pending)**
+    *   **Goal:** Implement drag-and-drop functionality allowing players to move cards between valid slots (hand, grid, character, discard).
+    *   **Completed Steps:**
+        *   Verified `draggable="true"` on card elements (`js/components/Card.js`).
+        *   Implemented `dragstart`, `dragover`, `drop` listeners (`js/main.js`, `js/components/Card.js`).
+        *   Extended `moveCard` function (`js/state.js`) to handle moves involving:
+            *   Slot-to-slot (grid, character, mutable)
+            *   Hand-to-slot / Slot-to-hand
+            *   Hand-to-hand
+            *   Slot-to-discard / Hand-to-discard
+        *   **Bug Fix:** Resolved critical bug where the `cardId` passed during `dragstart` (using internal card ID like "mirrorSnap") did not match the ID stored in state arrays like `player.hand` (which used the manifest key like "spell_6"). Updated `createCardElement` and its callers (`PlayerHand.js`, `CharacterSlot.js`, `StoryGrid.js`) to consistently use the manifest key for drag-and-drop operations.
+    *   **Pending Steps:**
+        *   Thorough testing of all drag-and-drop scenarios.
+        *   Optional CSS visual cues for dragging/dropping.
 
-*   **Phase 2: Core Board Layout & State Initialization (Complete)**
-    *   Task 1: Defined all `BoardSlot` objects (hands, grid, decks, etc.) with unique IDs in `GameState` (`js/state.js`).
-    *   Task 2: Implemented CSS (Flexbox/Grid) in `css/board.css` and updated `index.html` to visually structure the board layout (player areas, shared area, deck area).
-    *   Task 3: Created UI components (`js/components/GameBoard.js`, `PlayerHand.js`, `CharacterSlot.js`, `StoryGrid.js`, `DeckPile.js`) to dynamically create HTML elements for each `BoardSlot` based on `GameState`.
-    *   Task 4: Updated `js/main.js` to call `renderGameBoard()` to orchestrate the initial board rendering.
-    *   Task 5: Verified the UI reflects the initial empty state of all `BoardSlot`s, including card backs on draw piles.
+## Next Phase: Code Clean & Optimize
 
-*   **Phase 3: Deck Initialization & Shuffling (Complete)**
-    *   Task 1: Defined `assignedCardTypes` for main (`item`, `spell`) and alt (`location`, `monster`) decks in `GameState` (`js/state.js`).
-    *   Task 2: Implemented logic in `initializeState` (`js/state.js`) to populate `drawPile` arrays based on card types.
-    *   Task 3: Implemented Fisher-Yates shuffle (`shuffleArray` function) in `js/state.js` and applied it to both `drawPile` arrays within `initializeState`.
-    *   Task 4: Verified deck initialization and shuffling via console logs in `initializeState`.
+*   **Goal:** Review, clean, and potentially optimize the code related to the recent drag-and-drop implementation before proceeding with testing.
+*   **Rationale:** Significant changes were made quickly across multiple files (`state.js`, `Card.js`, `PlayerHand.js`, `CharacterSlot.js`, `StoryGrid.js`, `main.js`). A review pass will help ensure code clarity, remove redundancy, check for potential edge cases missed, and improve maintainability.
 
-*   **Phase 4: Initial Hand Drawing & Rendering (Complete)**
-    *   Task 1: Defined initial hand size (`initialHandSize = 5`) in `GameState` (`js/state.js`).
-    *   Task 2: Implemented `drawCard` function in `js/state.js` to move cards from global draw piles to player hand arrays.
-    *   Task 3: Called `drawCard` in `js/main.js` after `initializeState` to deal initial hands.
-    *   Task 4: Updated `js/components/PlayerHand.js` to render cards from `GameState.players[playerId].hand`.
-    *   Task 5: Verification assumed complete for planning purposes.
+*   **Plan:**
+    1.  **Review `moveCard` (`js/state.js`):** Check logic paths, error handling, and clarity. Look for opportunities to simplify or improve robustness.
+    2.  **Review `createCardElement` (`js/components/Card.js`):** Verify parameter usage and `dragstart` logic consistency.
+    3.  **Review Event Listeners (`js/main.js`):** Examine the `dragstart`, `dragover`, and `drop` listeners in `setupEventListeners`. Ensure data parsing and function calls (`moveCard`, `renderGameBoard`) are correct.
+    4.  **Review Rendering Components (`PlayerHand.js`, `CharacterSlot.js`, `StoryGrid.js`):** Confirm the correct parameters (especially the manifest key) are passed to `createCardElement`.
+    5.  **General Cleanup:** Remove any commented-out old code, debug `console.log` statements that are no longer necessary (keep essential logs for move confirmation), and ensure consistent formatting.
 
-## Current Activity: Phase 5 Implementation (Partially Complete)
-
-*   **Context:** Transitioned UI layout from Flexbox/Grid to absolute positioning based on `UIcoordinates.json`.
-*   **Completed Steps:**
-    1.  **CSS Modified:** `css/main.css` updated for `position: relative` on `#game-container` with fixed dimensions derived from `UIcoordinates.json`. `css/board.css` updated to remove old layout rules, set core elements/slots to `position: absolute`.
-    2.  **HTML Placeholders Added:** `div` elements with appropriate IDs added to `index.html` for `MENU`, `INSPECTOR`, `D20`, `LOGO`, `TURN-TIMER`.
-    3.  **Placeholder CSS Added:** Absolute positioning applied via CSS rules in `board.css` for the new placeholder elements.
-    4.  **JS Refactored:**
-        *   `js/state.js`: Updated to load `UIcoordinates.json`, store coordinates keyed by `LABEL`, and align `GameState.boardSlots` keys/content with `UIcoordinates.json` `LABEL`s.
-        *   JS Components (`PlayerHand.js`, `CharacterSlot.js`, `StoryGrid.js`, `DeckPile.js`): Refactored to remove container parameters, append elements directly to `#game-container`, and apply absolute positioning (`top`, `left`, `width`, `height`) via inline styles based on `GameState.uiCoordinates`.
-        *   `js/components/GameBoard.js`: Updated to clear dynamic elements correctly, call refactored components, and added rendering for `mutable` slots.
-    5.  **Debugging:**
-        *   Resolved Python HTTP server port conflict (`OSError: [Errno 48] Address already in use`) by switching to port 8001.
-        *   Corrected label mismatches in `UIcoordinates.json` (e.g., `PLAYER 1_HAND1` vs `PLAYER1_HAND1`) to align with `GameState.boardSlots` expectations. This resolved the `initializeState` error and subsequent empty deck warnings.
-        *   Identified and corrected systematic `imageUrl` path errors in `assets/card-manifest.json`:
-            *   Changed filename prefixes from singular (`item_`, `spell_`, etc.) to plural (`items_`, `spells_`, etc.) to match actual image filenames.
-            *   Fixed specific filename typos (e.g., `items_vampireKey.jpg`, `locations_oracleAvenue.jpg`, `spells_redTether.jpg`) and formatting (`characters_techSavant.jpg`).
-
-## Next Steps (Test & Clean - Phase 5 Completion)
-
-1.  **Test/Verify (Card Images):** Launch the application (`python3 -m http.server 8001`) and **hard refresh** the browser (`http://localhost:8001/index.html`, Cmd/Ctrl+Shift+R).
-    *   Verify that all card images (hands, decks) now load correctly without `404 (File not found)` errors in the console.
-2.  **Test/Verify (Layout):** Visually inspect the layout.
-    *   Verify elements (placeholders, card slots, cards) are positioned according to `UIcoordinates.json`.
-    *   Confirm initial hands are drawn and rendered correctly in their absolute positions.
-3.  **Debug:** Address any remaining errors or visual inconsistencies found during testing.
-4.  **Cleanup:**
-    *   Remove obsolete container `div` elements (`player1-area`, `player2-area`, `shared-area`, `deck-area`, `p1-hand-area`, etc.) from `index.html`.
-    *   Remove corresponding obsolete CSS rules (e.g., `.player-area`, `.shared-area`, `.player-hand-container`) from `board.css` and potentially `main.css`.
-5.  **Documentation:** Update `change_log.md` and `function_registry.md` to reflect the refactoring. Add notes to `solution_journal.md` if significant issues were overcome.
-
-**Action for Next Session:** Resume at **Next Steps - Step 1**, verifying the card image loading after the manifest corrections. Then proceed with layout verification, further debugging, cleanup, and documentation. 
+**Action for Next Session:** Start the **Clean & Optimize** phase by reviewing the `moveCard` function in `js/state.js`. 

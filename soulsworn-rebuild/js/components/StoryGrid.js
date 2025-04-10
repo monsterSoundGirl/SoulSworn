@@ -46,9 +46,15 @@ export function renderStoryGrid() {
         slotElement.style.height = `${coords.H}px`;
 
         // If a card is assigned, render it
-        if (slotData.cardId && GameState.allCards[slotData.cardId]) { // Use GameState
-            const cardElement = createCardElement(GameState.allCards[slotData.cardId]);
+        const cardId = slotData.cardId; // This is the manifest key
+        const cardData = GameState.allCards[cardId];
+
+        if (cardData && coords) {
+            const cardElement = createCardElement(cardData, cardId, slotId);
             slotElement.appendChild(cardElement);
+
+            // Apply positioning to the card image itself
+            cardElement.style.position = 'absolute';
         }
 
         gameContainer.appendChild(slotElement); // Append to game container

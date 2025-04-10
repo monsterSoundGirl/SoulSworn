@@ -1,6 +1,6 @@
 // Main entry point for the SoulSworn application
 
-import { initializeState, getState, drawCard, GameState } from './state.js';
+import { initializeState, getState, drawCard, GameState, moveCard } from './state.js';
 // import { createCardElement } from './components/Card.js'; // No longer needed for direct sample rendering
 // Import other modules (UI components, logic, services) as they are created
 import { renderGameBoard } from './components/GameBoard.js'; // Import the main board renderer
@@ -51,6 +51,65 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Placeholder for event listener setup
 function setupEventListeners() {
-  console.log("Setting up event listeners... (Placeholder)");
+  console.log("Setting up event listeners...");
   // Add event listeners for buttons, drag/drop, etc. in future phases
+
+  // --- Phase 6: Drag and Drop Event Listeners ---
+  const slots = document.querySelectorAll('.card-slot'); // Select all potential drop targets
+
+  slots.forEach(slot => {
+    // Allow dropping onto the slot
+    slot.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      // Optional: Add visual feedback for valid drop target
+      // slot.classList.add('drag-over');
+    });
+
+    // Optional: Remove visual feedback when drag leaves
+    // slot.addEventListener('dragleave', () => {
+    //   slot.classList.remove('drag-over');
+    // });
+
+    // Handle the actual drop
+    slot.addEventListener('drop', (event) => {
+      event.preventDefault();
+      // Optional: Remove visual feedback
+      // slot.classList.remove('drag-over');
+
+      // Get the JSON data string
+      const jsonData = event.dataTransfer.getData('application/json');
+      let dragData;
+      try {
+        dragData = JSON.parse(jsonData);
+      } catch (error) {
+        console.error("Error parsing drag data:", error);
+        return;
+      }
+
+      const { cardId, originSlotId } = dragData; // Extract cardId and originSlotId
+
+      // Find the closest parent that is a slot and get its ID
+      const targetSlotElement = event.target.closest('.card-slot');
+      if (!targetSlotElement) {
+          console.error("Drop target is not a valid slot:", event.target);
+          return;
+      }
+      const targetSlotId = targetSlotElement.dataset.slotId;
+
+      if (cardId && originSlotId && targetSlotId) { // Check all three IDs
+        console.log(`Card ${cardId} from ${originSlotId} dropped onto slot ${targetSlotId}`);
+
+        // Update the game state
+        moveCard(cardId, originSlotId, targetSlotId);
+
+        // Re-render the game board to reflect the state change
+        renderGameBoard();
+
+      } else {
+        console.error("Missing cardId, originSlotId, or targetSlotId during drop.");
+        console.log('Received Data:', { cardId, originSlotId, targetSlotId }); // Log what was received
+      }
+    });
+  });
+  // --- End Phase 6 ---
 } 

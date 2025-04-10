@@ -56,6 +56,25 @@
     *   Removed obsolete CSS rules from `board.css` related to removed container elements.
     *   Fixed placeholder styling by replacing incorrect `content` property with proper `::after` pseudo-elements.
     *   Added CSS rules to display slot IDs for story grid and mutable slots to improve debugging.
+*   **Layout Fixes:**
+    *   Corrected the Y coordinate for `GRID30` in `UIcoordinates.json` to resolve overlap.
+    *   Enabled rendering for Player 3 & 4 character slots and hands in `js/components/GameBoard.js`.
+    *   Added initial state definitions for Player 3 & 4 in `js/state.js`.
+    *   Added initial hand draw calls for Player 3 & 4 in `js/main.js`.
+    *   Added `boardSlots` definitions for Player 3 & 4 hand slots in `js/state.js`.
 *   **Validation:**
     *   Verified that all card images are loading correctly (fixed in previous session).
-    *   Confirmed that all UI elements (including GRID30) are properly positioned according to `UIcoordinates.json`. 
+    *   Confirmed that all UI elements (GRID30, Player 3/4 hands/chars) are properly positioned and rendered.
+
+## [YYYY-MM-DD] - Phase 6: Basic Drag & Drop Implementation (Part 1)
+
+*   **Step 1: Draggable Attribute**
+    *   Verified `draggable="true"` attribute and basic `dragstart` listener were already present in `js/components/Card.js`.
+*   **Step 2: Event Listeners & State Update (Partial)**
+    *   Added `dragover` and `drop` event listeners to `.card-slot` elements in `js/main.js` within the `setupEventListeners` function.
+    *   Modified `js/components/Card.js` (`createCardElement`) to accept `slotId` parameter and store both `cardId` and `originSlotId` in `event.dataTransfer` during `dragstart`.
+    *   Updated calling locations (`PlayerHand.js`, `CharacterSlot.js`, `StoryGrid.js`) to pass the correct `slotId` to `createCardElement`.
+    *   Modified the `drop` listener in `js/main.js` to parse the transferred data (`cardId`, `originSlotId`) and identify the `targetSlotId`.
+    *   Added a new function `moveCard(cardId, originSlotId, targetSlotId)` to `js/state.js` to handle basic state updates for moves between slots with a `cardId` property (grid, character).
+    *   Updated the `drop` listener in `js/main.js` to call `moveCard` and then `renderGameBoard` to update the state and UI.
+*   **Note:** Current implementation of `moveCard` does not yet handle moves involving player hands or discard piles (arrays). 

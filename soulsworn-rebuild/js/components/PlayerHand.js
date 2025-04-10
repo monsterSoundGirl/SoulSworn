@@ -37,14 +37,15 @@ export function renderPlayerHand(playerId /* removed handContainerElement */) {
 
     // Render cards currently in hand, placing them in the corresponding slots
     handCardIds.forEach((cardId, index) => {
+        const manifestKey = cardId; // The ID in the hand IS the manifest key
         if (index < playerHandSlotIds.length) {
             const targetSlotId = playerHandSlotIds[index];
-            const cardData = GameState.allCards[cardId];
+            const cardData = GameState.allCards[manifestKey];
             const coords = GameState.uiCoordinates[targetSlotId];
 
             if (cardData && coords) {
-                const cardElement = createCardElement(cardData);
-                cardElement.dataset.cardId = cardId;
+                const cardElement = createCardElement(cardData, manifestKey, targetSlotId);
+                cardElement.dataset.cardId = manifestKey; // Set dataset based on manifestKey
                 cardElement.dataset.currentSlot = targetSlotId; // Track where the card is
 
                 // Apply absolute positioning directly to the card image
@@ -58,10 +59,10 @@ export function renderPlayerHand(playerId /* removed handContainerElement */) {
 
                 gameContainer.appendChild(cardElement);
             } else {
-                console.warn(`Card data or coordinates missing for card ${cardId} in slot ${targetSlotId}`);
+                console.warn(`Card data or coordinates missing for card key ${manifestKey} in slot ${targetSlotId}`);
             }
         } else {
-            console.warn(`Player ${playerId} has more cards (${handCardIds.length}) than defined hand slots (${playerHandSlotIds.length}). Card ${cardId} not rendered.`);
+            console.warn(`Player ${playerId} has more cards (${handCardIds.length}) than defined hand slots (${playerHandSlotIds.length}). Card key ${manifestKey} not rendered.`);
         }
     });
 
