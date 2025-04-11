@@ -1,7 +1,25 @@
+/**
+ * Soulsworn PlayerHand Component
+ * 
+ * Responsible for rendering player hand areas and the cards contained within them.
+ * This component handles:
+ * - Determining which hand slots belong to a specific player
+ * - Rendering occupied hand slots with their corresponding cards
+ * - Rendering empty hand slots as drop targets
+ * - Positioning elements based on coordinates from UIcoordinates.json
+ * 
+ * The PlayerHand component is a critical part of the game UI that displays cards
+ * that a player can use during their turn. Cards in hand are draggable and can be
+ * moved to other valid zones on the board.
+ * 
+ * @module PlayerHand
+ */
+
 import { getState, GameState } from '../state.js';
-import { createCardElement } from './Card.js';
 // Import utility functions
-import { createSlotElement, positionElement, handleElementError } from '../utils.js';
+import { handleElementError } from '../utils.js'; // Keep for initial checks
+// Import new render utility functions
+import { renderSlotWithCard, validateRenderData } from '../utils/renderUtils.js';
 
 /**
  * Renders the hand slots and cards for a specific player.
@@ -11,27 +29,45 @@ import { createSlotElement, positionElement, handleElementError } from '../utils
  * Renders empty placeholder slots for unoccupied hand slots using utility functions.
  * Handles potential errors like missing container or data gracefully.
  *
- * @param {number} playerId - The ID of the player (1 or 2) whose hand to render.
+ * @param {number} playerId - The ID of the player (1-4) whose hand to render.
+ * @returns {void} - No return value; renders directly to the DOM.
+ * @throws {Error} - Handled internally via handleElementError.
+ * 
+ * @example
+ * // Render player 1's hand
+ * renderPlayerHand(1);
+ * 
+ * @example
+ * // Render all player hands
+ * renderPlayerHand(1);
+ * renderPlayerHand(2);
+ * renderPlayerHand(3);
+ * renderPlayerHand(4);
  */
 export function renderPlayerHand(playerId) {
+    console.log(`DEBUG: renderPlayerHand called for player ${playerId}`);
+    
     const gameContainer = document.getElementById('game-container');
-    if (!gameContainer) {
-        // Use standardized error handling
-        return handleElementError("Game container element (#game-container) not found!");
+    if (!validateRenderData(gameContainer, "Game container element (#game-container) not found!")) {
+        console.error("DEBUG: Game container not found!");
+        return; // Exit if container not found
     }
 
     const playerKey = `player${playerId}`;
     const player = GameState.players[playerKey];
-    if (!player) {
-        // Use standardized error handling
-        return handleElementError(`Player ${playerKey} not found in GameState.players`);
+    if (!validateRenderData(player, `Player ${playerKey} not found in GameState.players`)) {
+        console.error(`DEBUG: Player ${playerKey} data missing`);
+        return; // Exit if player data missing
     }
-    const handCardManifestKeys = player.hand; // Array of card manifest keys
+    const handCardManifestKeys = player.hand || []; // Ensure it's an array
+    console.log(`DEBUG: ${playerKey} hand cards:`, handCardManifestKeys);
 
     // Find all hand slot IDs for this player defined in boardSlots
     const playerHandSlotIds = Object.keys(GameState.boardSlots).filter(slotId =>
-        GameState.boardSlots[slotId].type === 'hand' && GameState.boardSlots[slotId].playerId === playerId
+        GameState.boardSlots[slotId]?.type === 'hand' && GameState.boardSlots[slotId]?.playerId === player.id
     );
+    console.log(`DEBUG: Found ${playerHandSlotIds.length} hand slots for ${playerKey}:`, playerHandSlotIds);
+    
     // Sort them numerically (e.g., PLAYER1_HAND1, PLAYER1_HAND2)
     playerHandSlotIds.sort((a, b) => {
         const numA = parseInt(a.match(/\d+$/)?.[0] || '0');
@@ -39,68 +75,61 @@ export function renderPlayerHand(playerId) {
         return numA - numB;
     });
 
-    // Render cards currently in hand
-    handCardManifestKeys.forEach((manifestKey, index) => {
-        if (index < playerHandSlotIds.length) {
-            const targetSlotId = playerHandSlotIds[index];
-            const cardData = GameState.allCards[manifestKey];
-            // Get coordinates from the SLOT definition in uiCoordinates
-            const coords = GameState.uiCoordinates[targetSlotId];
+    // Iterate through all defined hand slots for the player
+    playerHandSlotIds.forEach((slotId, index) => {
+        console.log(`DEBUG: Rendering hand slot ${slotId} (index ${index})`);
+        const coords = GameState.uiCoordinates[slotId];
+        if (!validateRenderData(coords, `Coordinates not found for hand slot: ${slotId}`)) {
+            console.error(`DEBUG: Coordinates missing for slot ${slotId}`);
+            return; // Skip this slot if coords are missing
+        }
+        console.log(`DEBUG: Coords for ${slotId}:`, coords);
 
-            if (cardData && coords) {
-                // Create the card element using the Card component function
-                const cardElement = createCardElement(cardData, manifestKey, targetSlotId);
-                // Ensure cardElement is valid before positioning (createCardElement might return an error div)
-                if (cardElement && cardElement.tagName === 'IMG') {
-                    // Use utility function for positioning
-                    positionElement(cardElement, coords); // Position based on slot coords
-                    // Adjust card size based on coordinate dimensions (W/H)
-                    cardElement.style.width = `${coords.W}px`;
-                    cardElement.style.height = `${coords.H}px`;
-                    cardElement.style.zIndex = '10'; // Keep cards above slots
-                    cardElement.dataset.currentSlot = targetSlotId;
-
-                    gameContainer.appendChild(cardElement);
-                } else if (cardElement) {
-                    // If createCardElement returned an error placeholder, append it
-                    gameContainer.appendChild(cardElement);
-                    // Optionally position the error placeholder too
-                    positionElement(cardElement, coords);
-                }
-            } else {
-                // Use standardized warning/error handling
-                handleElementError(`Card data or coordinates missing for card key ${manifestKey} in slot ${targetSlotId}`);
+        let cardData = null;
+        let manifestKey = null;
+        // Check if there's a card for this slot index
+        if (index < handCardManifestKeys.length) {
+            manifestKey = handCardManifestKeys[index];
+            cardData = GameState.allCards[manifestKey];
+            // Add manifestKey to cardData for drag operations
+            if (cardData) {
+                cardData.manifestKey = manifestKey;
+            }
+            console.log(`DEBUG: Card for slot ${slotId}, manifestKey:`, manifestKey, "cardData:", cardData);
+            if (!validateRenderData(cardData, `Card data not found for manifest key: ${manifestKey} in hand slot ${slotId}`)) {
+                console.error(`DEBUG: Invalid card data for ${manifestKey}`);
+                cardData = null; // Treat as empty if card data is invalid
+                manifestKey = null;
             }
         } else {
-            // Use standardized warning/error handling
-            handleElementError(`Player ${playerId} has more cards (${handCardManifestKeys.length}) than defined hand slots (${playerHandSlotIds.length}). Card key ${manifestKey} not rendered.`);
+            console.log(`DEBUG: No card for slot ${slotId} (empty slot)`);
+        }
+
+        // Render the slot, passing cardData (which is null if no card or invalid card data)
+        console.log(`DEBUG: Calling renderSlotWithCard for ${slotId}`);
+        const handSlotElement = renderSlotWithCard(
+            slotId,
+            'hand',
+            playerKey,
+            coords,
+            cardData, // Pass the card data object or null
+            5,        // slotZIndex
+            10        // cardZIndex
+        );
+
+        // Append the slot (with or without card) if successfully created
+        if (handSlotElement) {
+            console.log(`DEBUG: Successfully created hand slot element for ${slotId}`);
+            // Set size based on coordinates (renderSlotWithCard doesn't handle size)
+            handSlotElement.style.width = `${coords.W}px`;
+            handSlotElement.style.height = `${coords.H}px`;
+            gameContainer.appendChild(handSlotElement);
+            console.log(`DEBUG: Appended hand slot element ${slotId} to game container`);
+        } else {
+            // Error logged by renderSlotWithCard, additional logging if needed
+            console.error(`DEBUG: Failed to render hand slot ${slotId} for player ${playerId}`);
         }
     });
-
-    // Render empty placeholder slots for the remaining hand positions
-    for (let i = handCardManifestKeys.length; i < playerHandSlotIds.length; i++) {
-        const slotId = playerHandSlotIds[i];
-        const slotData = GameState.boardSlots[slotId];
-        const coords = GameState.uiCoordinates[slotId];
-
-        if (slotData && coords) {
-            // Use utility function to create the slot element
-            const slotElement = createSlotElement(slotId, 'hand', playerId, coords);
-
-            // Add specific classes for empty hand slots if needed
-            slotElement.classList.add('empty-hand-slot');
-
-            // Use utility function for positioning
-            positionElement(slotElement, coords);
-            // Set size based on coordinates
-            slotElement.style.width = `${coords.W}px`;
-            slotElement.style.height = `${coords.H}px`;
-            slotElement.style.zIndex = '5'; // Ensure slots are below cards
-
-            gameContainer.appendChild(slotElement);
-        } else {
-            // Use standardized warning/error handling
-            handleElementError(`Slot data or coordinates missing for empty hand slot: ${slotId}`);
-        }
-    }
+    
+    console.log(`DEBUG: renderPlayerHand completed for player ${playerId}`);
 } 

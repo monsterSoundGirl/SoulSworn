@@ -1,3 +1,19 @@
+/**
+ * Soulsworn Card Component
+ * 
+ * Responsible for creating and configuring card DOM elements across the game UI.
+ * This module handles:
+ * - Creating card image elements with proper attributes
+ * - Setting up drag-and-drop functionality for cards
+ * - Managing card paths and image URLs
+ * - Error handling for invalid card data
+ * 
+ * The Card component is used by all other components that need to display cards,
+ * including PlayerHand, StoryGrid, CharacterSlot, DeckPile, and others.
+ * 
+ * @module Card
+ */
+
 // Mapping for singular to plural card type prefixes used in asset paths
 const cardTypePathMapping = {
     'item': 'items',
@@ -9,11 +25,20 @@ const cardTypePathMapping = {
 };
 
 /**
- * Transforms the image URL to use the correct pluralized path based on card type.
- * Handles potential inconsistencies like 'item/item_X' vs 'items/items_X'.
+ * Previously transformed image URLs to handle path inconsistencies, now acts as a passthrough.
+ * 
+ * This function was originally designed to handle inconsistencies between singular/plural 
+ * card type directories and filenames. After fixing KI-002 (Image Asset Path Inconsistency),
+ * it now returns the original URL unchanged since the paths in the card manifest are already
+ * correctly formatted.
+ * 
  * @param {string} originalUrl - The original image URL from card data.
- * @param {string} cardType - The type of the card (e.g., 'item', 'spell').
- * @returns {string} The transformed image URL.
+ * @returns {string} The unmodified image URL.
+ * 
+ * @example
+ * // Card manifest now contains correct paths like:
+ * // "imageUrl": "assets/jpg/cards/item/items_saltTin.jpg"
+ * const imageUrl = transformImageUrl(card.imageUrl);  // Returns original URL
  */
 function transformImageUrl(originalUrl) {
     // Note: Path transformation was removed (Fix for KI-002).
@@ -45,60 +70,60 @@ function transformImageUrl(originalUrl) {
  *                                              or a `<div>` placeholder on error.
  */
 export function createCardElement(card, manifestKey, slotId) {
-  // Basic validation for the card object structure
-  if (!card || typeof card !== 'object' || !card.id || !card.imageUrl || !card.type) {
-    console.error('Invalid or incomplete card data provided to createCardElement:', card);
-    // Return a placeholder div to avoid breaking the layout entirely
-    const errorDiv = document.createElement('div');
-    errorDiv.textContent = 'Error: Card Data Invalid';
-    errorDiv.className = 'card-error-placeholder'; // Assign a class for potential styling
-    errorDiv.style.color = 'red';
-    errorDiv.style.border = '1px solid red';
-    errorDiv.style.width = '70px'; // Match typical card dimensions
-    errorDiv.style.height = '100px';
-    errorDiv.style.display = 'inline-block'; // Ensure it takes space
-    errorDiv.title = `Invalid Card Data: ${JSON.stringify(card)}`;
-    return errorDiv;
-  }
+    // KI-005 Debugging
+    console.log(`[Card.js->createCardElement] Called with:`, { card, manifestKey, slotId });
 
-  const cardElement = document.createElement('img');
-  // Use the provided imageUrl directly (paths should be correct in the manifest)
-  cardElement.src = card.imageUrl;
-  cardElement.alt = card.id; // Use the descriptive card ID for accessibility
-  cardElement.title = `${card.type}: ${card.id}`; // Tooltip showing type and ID
-  cardElement.classList.add('card-image'); // Base class for styling
+    // Basic validation for the card object structure
+    if (!card || typeof card !== 'object' || !card.id || !card.imageUrl || !card.type) {
+        console.error('Invalid or incomplete card data provided to createCardElement:', card);
+        // Return a placeholder div to avoid breaking the layout entirely
+        const errorDiv = document.createElement('div');
+        errorDiv.textContent = 'Error: Card Data Invalid';
+        errorDiv.className = 'card-error-placeholder'; // Assign a class for potential styling
+        errorDiv.style.color = 'red';
+        errorDiv.style.border = '1px solid red';
+        errorDiv.style.width = '70px'; // Match typical card dimensions
+        errorDiv.style.height = '100px';
+        errorDiv.style.display = 'inline-block'; // Ensure it takes space
+        errorDiv.title = `Invalid Card Data: ${JSON.stringify(card)}`;
+        return errorDiv;
+    }
 
-  // Add data attributes for easy identification in the DOM and event handling
-  cardElement.dataset.cardId = card.id; // The actual card identifier (e.g., "Item Card 1")
-  cardElement.dataset.manifestKey = manifestKey; // The key used in game state (e.g., "item_1")
-  cardElement.dataset.cardType = card.type;
-  cardElement.dataset.originSlotId = slotId; // Store original slot
+    const cardElement = document.createElement('img');
+    // Use the provided imageUrl directly (paths should be correct in the manifest)
+    cardElement.src = card.imageUrl;
+    cardElement.alt = card.id; // Use the descriptive card ID for accessibility
+    cardElement.title = `${card.type}: ${card.id}`; // Tooltip showing type and ID
+    cardElement.classList.add('card-image'); // Base class for styling
 
-  // Cards are only draggable if they have a manifestKey (represent a specific instance)
-  // and are being placed within a known slot.
-  if (manifestKey && slotId) {
-    cardElement.draggable = true;
-    cardElement.addEventListener('dragstart', (event) => {
-      // We MUST use manifestKey as cardId here, as it's the identifier used in game state arrays (hands, decks).
-      // card.id is just descriptive metadata.
-      const dragData = {
-        cardId: manifestKey,      // Critical: Use the state management key
-        originSlotId: slotId      // The slot the drag started from
-      };
-      event.dataTransfer.setData('application/json', JSON.stringify(dragData));
-      // Optional: Add visual feedback for drag start
-      // cardElement.classList.add('dragging');
-    });
+    // Add data attributes for easy identification in the DOM and event handling
+    cardElement.dataset.cardId = card.id; // The actual card identifier (e.g., "Item Card 1")
+    cardElement.dataset.manifestKey = manifestKey; // The key used in game state (e.g., "item_1")
+    cardElement.dataset.cardType = card.type;
+    cardElement.dataset.originSlotId = slotId; // Store original slot
 
-    // Optional: Clean up visual feedback on drag end
-    // cardElement.addEventListener('dragend', (event) => {
-    //   cardElement.classList.remove('dragging');
-    // });
+    // KI-005 Debugging
+    console.log(`[Card.js->createCardElement] Setting data attributes:`, { cardId: card.id, manifestKey });
 
-  } else {
-    // If no manifestKey or slotId, it shouldn't be draggable (e.g., a card shown in a gallery)
-    cardElement.draggable = false;
-  }
+    // Cards are only draggable if they have a manifestKey (represent a specific instance)
+    // and are being placed within a known slot.
+    if (manifestKey && slotId) {
+        cardElement.draggable = true;
+        cardElement.addEventListener('dragstart', (event) => {
+            // We MUST use manifestKey as cardId here, as it's the identifier used in game state arrays (hands, decks).
+            // card.id is just descriptive metadata.
+            const dragData = {
+                cardId: manifestKey,      // Critical: Use the state management key
+                originSlotId: slotId      // The slot the drag started from
+            };
+            event.dataTransfer.setData('application/json', JSON.stringify(dragData));
+            // KI-005 Debugging: Log data being set for transfer
+            console.log(`[Card.js->dragstart] Setting dataTransfer:`, { manifestKey, originSlotId: slotId });
+        });
+    } else {
+        // If no manifestKey or slotId, it shouldn't be draggable (e.g., a card shown in a gallery)
+        cardElement.draggable = false;
+    }
 
-  return cardElement;
+    return cardElement;
 } 

@@ -115,8 +115,8 @@ This registry documents all significant functions in the codebase, their purpose
 ### setupEventListeners() → void
 - **File:** js/main.js
 - **Created:** 2025-04-01
-- **Last Modified:** 2025-04-10
-- **Purpose:** Sets up event listeners for drag and drop functionality on game slots.
+- **Last Modified:** 2025-04-11
+- **Purpose:** Sets up global event listeners for drag-and-drop using event delegation attached to the main game container (#game-container). Handles drag start, drag over, and drop events for cards and slots efficiently.
 
 ### Parameters:
 - None
@@ -130,14 +130,13 @@ This registry documents all significant functions in the codebase, their purpose
 
 ### Called By:
 - Initial setup in js/main.js
-- Recursively by the drop event handler within itself.
 
 ### Notes:
-- Selects elements with `.game-slot` class to attach listeners.
-- Handles `dragover` and `drop` events.
+- Uses event delegation on `#game-container` for efficiency.
+- Handles `dragstart`, `dragover`, and `drop` events.
 - Parses JSON data from transfer during drag operations.
 - Updates the game state and re-renders after successful moves.
-- Calls itself recursively to re-attach listeners after render (potential for optimization later).
+- Identifies event targets using `event.target.closest()`.
 
 ## js/utils.js
 

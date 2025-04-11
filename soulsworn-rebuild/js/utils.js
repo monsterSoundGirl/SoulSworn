@@ -1,72 +1,117 @@
 /**
  * Soulsworn Utilities Module
- * Provides shared helper functions for the Soulsworn game UI.
+ * Provides shared helper functions for the Soulsworn game UI components.
+ * These utilities standardize common operations like element creation, positioning,
+ * and error handling across the application.
+ * 
+ * @module Utils
  */
 
 /**
- * Creates a standard slot DOM element.
- * @param {string} slotId - The unique ID for the slot.
- * @param {string} slotType - The type of slot (e.g., 'hand', 'grid', 'character', 'deck', 'discard').
- * @param {string|null} playerId - The player ID ('player1', 'player2') if applicable, otherwise null.
- * @param {object} coords - An object with x and y coordinates for positioning.
- * @returns {HTMLElement} The created slot element.
+ * Creates a standardized game slot DOM element with appropriate attributes and styling.
+ * All game slots (hand slots, grid slots, character slots, etc.) should be created using
+ * this function to ensure consistent structure and behavior.
+ * 
+ * @param {string} slotId - The unique ID for the slot (must match IDs in GameState.boardSlots).
+ * @param {string} slotType - The type of slot ('hand', 'grid', 'storyGrid', 'character', 'deckDraw', 'deckDiscard', 'mutable').
+ * @param {string|null} playerId - The player ID if applicable (1-4), otherwise null for shared board slots.
+ * @param {object} coords - An object with X and Y coordinates from UIcoordinates.json.
+ * @param {number} coords.X - The X coordinate for absolute positioning.
+ * @param {number} coords.Y - The Y coordinate for absolute positioning.
+ * @returns {HTMLElement} The created slot element ready to be added to the DOM.
  * @throws {Error} If required parameters are missing or invalid.
+ * 
+ * @example
+ * // Create a player hand slot
+ * const handSlot = createSlotElement('PLAYER1_HAND1', 'hand', '1', {X: 100, Y: 500});
+ * 
+ * @example
+ * // Create a story grid slot
+ * const gridSlot = createSlotElement('GRID1', 'storyGrid', null, {X: 300, Y: 200});
  */
 function createSlotElement(slotId, slotType, playerId, coords) {
-    // TODO: Implement standardized slot element creation logic.
-    // Placeholder implementation:
     if (!slotId || !slotType || !coords) {
         throw new Error('Missing required parameters for createSlotElement');
     }
+    
     const element = document.createElement('div');
     element.id = slotId;
     element.classList.add('game-slot', `${slotType}-slot`); // Add standard and specific classes
+    
+    // Add data attributes for query selectors and event handling
     if (playerId) {
-        element.dataset.playerId = playerId; // Add player ID if provided
+        element.dataset.playerId = playerId;
     }
-    element.dataset.slotType = slotType; // Add slot type
+    element.dataset.slotType = slotType;
+    element.dataset.slotId = slotId;
 
-    // Apply basic styling (positioning handled separately)
-    element.style.border = '1px dashed grey'; // Example style
-    element.style.width = '100px'; // Example width
-    element.style.height = '150px'; // Example height
+    // Apply basic styling (positioning handled separately by positionElement)
+    element.style.border = '1px dashed grey';
+    element.style.width = '100px';
+    element.style.height = '150px';
 
-    console.log(`Created slot: ${slotId} of type ${slotType}`); // Basic log for now
     return element;
 }
 
 /**
- * Applies absolute positioning to a DOM element based on coordinates.
+ * Applies absolute positioning to a DOM element based on coordinates from UIcoordinates.json.
+ * Should be used after creating elements with createSlotElement to place them on the game board.
+ * 
  * @param {HTMLElement} element - The DOM element to position.
- * @param {object} coords - An object with x and y coordinates.
+ * @param {object} coords - An object with X and Y coordinates.
+ * @param {number} coords.X - The X coordinate for absolute positioning.
+ * @param {number} coords.Y - The Y coordinate for absolute positioning.
  * @throws {Error} If the element or coordinates are invalid.
+ * 
+ * @example
+ * // Position an element using coordinates from UIcoordinates.json
+ * const slot = createSlotElement('GRID5', 'storyGrid', null, coords);
+ * positionElement(slot, coords);
+ * gameBoard.appendChild(slot);
  */
 function positionElement(element, coords) {
-    // TODO: Implement standardized positioning logic.
-    // Placeholder implementation:
-    // Use uppercase X and Y to match UIcoordinates.json structure
     if (!element || !coords || typeof coords.X !== 'number' || typeof coords.Y !== 'number') {
         throw new Error('Invalid parameters for positionElement: requires element and coords object with numeric X and Y properties.');
     }
+    
     element.style.position = 'absolute';
     element.style.left = `${coords.X}px`;
     element.style.top = `${coords.Y}px`;
-    console.log(`Positioned element ${element.id || '(no id)'} at (${coords.X}, ${coords.Y})`);
 }
 
 /**
- * Handles errors consistently, logging a message and optionally returning a fallback value.
+ * Handles errors consistently throughout the application, logging an error message
+ * and optionally providing a fallback value to maintain application flow.
+ * 
+ * Use this function for non-critical errors where the application can continue
+ * with a fallback option rather than throwing exceptions.
+ * 
  * @param {string} message - The error message to log.
  * @param {*} [fallback=null] - An optional fallback value to return.
  * @returns {*} The fallback value.
+ * 
+ * @example
+ * // Handle an error when creating a card element
+ * try {
+ *   return createCardElement(cardData);
+ * } catch (error) {
+ *   return handleElementError(`Failed to create card ${cardData.id}: ${error.message}`, document.createElement('div'));
+ * }
+ * 
+ * @example
+ * // Handle missing data without crashing
+ * const data = fetchData() || handleElementError('Data fetch failed', defaultData);
  */
 function handleElementError(message, fallback = null) {
-    // TODO: Implement standardized error handling (e.g., user notification).
-    // Placeholder implementation:
     console.error(`Error: ${message}`);
-    // Potentially add logic here for user-facing error display
+    
+    // In the future, this could include:
+    // - User-visible error notifications
+    // - Error logging to server
+    // - Specific fallback behaviors based on error types
+    
     return fallback;
 }
 
-// Export functions if using modules in the future, otherwise they are globally available
+// Export functions for module use throughout the application
 export { createSlotElement, positionElement, handleElementError }; 

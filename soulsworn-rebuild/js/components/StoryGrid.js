@@ -1,90 +1,105 @@
+/**
+ * Soulsworn StoryGrid Component
+ * 
+ * Responsible for rendering the main story grid area of the game board.
+ * This component handles:
+ * - Creating and positioning all story grid slot elements
+ * - Rendering cards placed in grid slots
+ * - Maintaining proper z-index layering (slots below cards)
+ * - Handling error cases for missing data
+ * 
+ * The story grid is the central play area where cards create the game narrative.
+ * It consists of multiple slots arranged in a grid pattern, each capable of
+ * holding a single card. Cards can be dragged to and from these slots during gameplay.
+ * 
+ * @module StoryGrid
+ */
+
 import { getState, GameState } from '../state.js';
-import { createCardElement } from './Card.js';
 // Import utility functions
-import { createSlotElement, positionElement, handleElementError } from '../utils.js';
+import { handleElementError } from '../utils.js'; // Keep for initial checks
+// Import new render utility functions
+import { renderSlotWithCard, validateRenderData } from '../utils/renderUtils.js';
 
 /**
  * Renders the story grid slots and any cards placed within them.
  *
- * Fetches story grid slot definitions and their coordinates from GameState.
- * Creates and positions each slot element using utility functions.
- * If a slot has an assigned card, creates and positions the card element within that slot.
- * Handles potential errors gracefully.
+ * This function:
+ * 1. Identifies all slots of type 'storyGrid' in the GameState
+ * 2. Creates DOM elements for each grid slot using utility functions
+ * 3. Positions these elements based on coordinates from UIcoordinates.json
+ * 4. Renders cards that are assigned to grid slots in the current state
+ * 5. Sets appropriate z-index values to maintain proper layering
+ * 
+ * @returns {void} - No return value; renders directly to the DOM
+ * @throws {Error} - Handled internally via handleElementError
+ * 
+ * @example
+ * // Render the entire story grid
+ * renderStoryGrid();
+ * 
+ * @example
+ * // Typical usage after state changes
+ * moveCard(cardId, originSlotId, 'GRID5');
+ * renderGameBoard(); // Will call renderStoryGrid internally
  */
 export function renderStoryGrid() {
     const gameContainer = document.getElementById('game-container');
-    if (!gameContainer) {
-        // Use standardized error handling
-        return handleElementError("Game container element (#game-container) not found!");
+    if (!validateRenderData(gameContainer, "Game container element (#game-container) not found!")) {
+        return; // Exit if container not found
     }
 
     // Get all board slots of type 'storyGrid'
     const gridSlotIds = Object.keys(GameState.boardSlots).filter(slotId =>
-        GameState.boardSlots[slotId].type === 'storyGrid'
+        GameState.boardSlots[slotId]?.type === 'storyGrid'
     );
 
     gridSlotIds.forEach(slotId => {
         const slotData = GameState.boardSlots[slotId];
         const coords = GameState.uiCoordinates[slotId];
 
-        if (!slotData) {
-            // Use standardized error handling and continue to the next iteration
-            handleElementError(`Story grid slot data not found for ID: ${slotId}`);
-            return; // Skips this iteration of forEach
-        }
-        if (!coords) {
-            // Use standardized error handling and continue
-            handleElementError(`Story grid coordinates not found for ID: ${slotId}`);
-            return; // Skips this iteration of forEach
+        // Basic validation for existence before proceeding
+        if (!validateRenderData(slotData, `Story grid slot data not found for ID: ${slotId}`) ||
+            !validateRenderData(coords, `Story grid coordinates not found for ID: ${slotId}`)) {
+            return; // Skip this iteration
         }
 
-        // Use utility function to create the slot element
-        // PlayerId is null for grid slots
-        const slotElement = createSlotElement(slotId, 'storyGrid', null, coords);
-
-        // Use utility function for positioning the slot
-        positionElement(slotElement, coords);
-        // Set size based on coordinates
-        slotElement.style.width = `${coords.W}px`;
-        slotElement.style.height = `${coords.H}px`;
-        slotElement.style.zIndex = '5'; // Slots below cards
-
-        // Append the slot to the game container first
-        gameContainer.appendChild(slotElement);
-
-        // Check if a card is assigned to this slot in the GameState
-        const cardManifestKey = slotData.cardId; // This should be the manifest key
-
+        // Retrieve card data if a card is assigned
+        const cardManifestKey = slotData.cardId;
+        let cardData = null;
         if (cardManifestKey) {
-            const cardData = GameState.allCards[cardManifestKey];
-
+            cardData = GameState.allCards[cardManifestKey];
             if (cardData) {
-                // Create the card element
-                const cardElement = createCardElement(cardData, cardManifestKey, slotId);
-
-                // Check if card creation was successful before positioning
-                if (cardElement && cardElement.tagName === 'IMG') {
-                    // Use utility function to position the card at the same coords as the slot
-                    positionElement(cardElement, coords);
-                    // Set card size
-                    cardElement.style.width = `${coords.W}px`;
-                    cardElement.style.height = `${coords.H}px`;
-                    cardElement.style.zIndex = '10'; // Cards above slots
-                    cardElement.dataset.currentSlot = slotId; // Update current slot
-
-                    // Append the card element directly to the game container
-                    gameContainer.appendChild(cardElement);
-                } else if (cardElement) {
-                     // If createCardElement returned an error placeholder, append and position it
-                    gameContainer.appendChild(cardElement);
-                    positionElement(cardElement, coords);
-                }
-            } else {
-                // Use standardized error handling if card data for the key is missing
-                handleElementError(`Card data not found for manifest key: ${cardManifestKey} in story grid slot ${slotId}`);
-                // Optionally, clear the cardId from the slotData in GameState if it's invalid?
+                // Add manifestKey to cardData for drag operations
+                cardData.manifestKey = cardManifestKey;
+            }
+            if (!validateRenderData(cardData, `Card data not found for manifest key: ${cardManifestKey} in story grid slot ${slotId}`)) {
+                cardData = null; // Treat as empty if card data invalid
+                // Optionally clear invalid key from state
                 // GameState.boardSlots[slotId].cardId = null;
             }
-        } // else: No card assigned to this slot, only the empty slot is rendered.
+        }
+
+        // Use the new utility function to render the slot and potentially the card
+        const gridSlotElement = renderSlotWithCard(
+            slotId,
+            'storyGrid',        // slotType
+            null,             // playerId (null for grid slots)
+            coords,
+            cardData,           // Pass the retrieved cardData object or null
+            5,                  // slotZIndex
+            10                  // cardZIndex
+        );
+
+        // Append the resulting element (slot with or without card) to the container
+        if (gridSlotElement) {
+            // Set size based on coordinates (renderSlotWithCard doesn't handle size)
+            gridSlotElement.style.width = `${coords.W}px`;
+            gridSlotElement.style.height = `${coords.H}px`;
+            gameContainer.appendChild(gridSlotElement);
+        } else {
+            // Error logged by renderSlotWithCard, additional logging if needed
+            console.error(`Failed to render story grid slot ${slotId}`);
+        }
     });
 } 

@@ -1,95 +1,112 @@
+/**
+ * Soulsworn CharacterSlot Component
+ * 
+ * Responsible for rendering character slots that represent player avatars/roles.
+ * This component handles:
+ * - Creating and positioning character slot elements for each player
+ * - Rendering character cards assigned to these slots
+ * - Managing slot and card layering through z-index
+ * - Error handling for missing slot data or coordinates
+ * 
+ * Character slots are special areas of the game board that represent a player's
+ * avatar or role in the game. These slots can hold character cards that define
+ * a player's abilities and attributes during gameplay.
+ * 
+ * @module CharacterSlot
+ */
+
 import { getState, GameState } from '../state.js';
-import { createCardElement } from './Card.js';
+// Removed createCardElement import as it's handled by renderUtils
 // Import utility functions
-import { createSlotElement, positionElement, handleElementError } from '../utils.js';
+import { handleElementError } from '../utils.js'; // Keep handleElementError for initial checks
+// Import new render utility functions
+import { renderSlotWithCard, validateRenderData } from '../utils/renderUtils.js';
 
 /**
  * Renders the character slot for a specific player, including any assigned card.
  *
- * Fetches the character slot definition and coordinates based on the playerId.
- * Creates and positions the slot element using utility functions.
- * If a card is assigned to the slot, creates and positions the card element.
- * Handles potential errors gracefully.
+ * This function:
+ * 1. Retrieves the character slot ID for the specified player
+ * 2. Fetches the slot data and coordinates from GameState
+ * 3. Creates the slot element using utility functions
+ * 4. If a character card is assigned to the slot, renders and positions it
+ * 5. Maintains proper layering with z-index values
  *
- * @param {number} playerId - The ID of the player (1 or 2) whose character slot to render.
+ * @param {number} playerId - The ID of the player (1-4) whose character slot to render.
+ * @returns {void} - No return value; renders directly to the DOM.
+ * @throws {Error} - Handled internally via handleElementError.
+ * 
+ * @example
+ * // Render player 1's character slot
+ * renderCharacterSlot(1);
+ * 
+ * @example
+ * // Render all player character slots
+ * for (let i = 1; i <= 4; i++) {
+ *   renderCharacterSlot(i);
+ * }
  */
 export function renderCharacterSlot(playerId) {
     const gameContainer = document.getElementById('game-container');
-    if (!gameContainer) {
-        // Use standardized error handling
-        return handleElementError("Game container element (#game-container) not found!");
+    if (!validateRenderData(gameContainer, "Game container element (#game-container) not found!")) {
+        return; // Exit if container is not found
     }
 
     const playerKey = `player${playerId}`;
     const player = GameState.players[playerKey];
-    if (!player) {
-        // Use standardized error handling
-        return handleElementError(`Player data for ${playerKey} not found.`);
+    if (!validateRenderData(player, `Player data for ${playerKey} not found.`)) {
+        return; // Exit if player data is missing
     }
     const characterSlotId = player.characterSlotId;
-
-    if (!characterSlotId) {
-        // Use standardized error handling
-        return handleElementError(`Character slot ID not found for player ${playerId}`);
+    if (!validateRenderData(characterSlotId, `Character slot ID not found for player ${playerId}`)) {
+        return; // Exit if slot ID is missing
     }
 
     const slotData = GameState.boardSlots[characterSlotId];
     const coords = GameState.uiCoordinates[characterSlotId];
 
-    if (!slotData) {
-        // Use standardized error handling
-        return handleElementError(`Character slot data not found for ID: ${characterSlotId}`);
-    }
-    if (!coords) {
-        // Use standardized error handling
-        return handleElementError(`Character slot coordinates not found for ID: ${characterSlotId}`);
+    // Use validateRenderData for slotData and coords
+    if (!validateRenderData(slotData, `Character slot data not found for ID: ${characterSlotId}`) ||
+        !validateRenderData(coords, `Character slot coordinates not found for ID: ${characterSlotId}`)) {
+        return; // Exit if essential data is missing
     }
 
-    // Use utility function to create the slot element
-    const slotElement = createSlotElement(characterSlotId, 'character', playerId, coords);
-
-    // Use utility function for positioning the slot
-    positionElement(slotElement, coords);
-    // Set size based on coordinates
-    slotElement.style.width = `${coords.W}px`;
-    slotElement.style.height = `${coords.H}px`;
-    slotElement.style.zIndex = '5'; // Slots below cards
-
-    // Append the slot element to the game container
-    gameContainer.appendChild(slotElement);
-
-    // Check if a card is assigned to this character slot
+    // Retrieve card data if a card is assigned
     const cardManifestKey = slotData.cardId; // This should be the manifest key
-
+    let cardData = null;
     if (cardManifestKey) {
-        const cardData = GameState.allCards[cardManifestKey];
-
+        cardData = GameState.allCards[cardManifestKey];
         if (cardData) {
-            // Create the card element
-            const cardElement = createCardElement(cardData, cardManifestKey, characterSlotId);
-
-            // Check if card creation was successful
-            if (cardElement && cardElement.tagName === 'IMG') {
-                // Use utility function to position the card (same position as the slot)
-                positionElement(cardElement, coords);
-                // Set card size
-                cardElement.style.width = `${coords.W}px`;
-                cardElement.style.height = `${coords.H}px`;
-                cardElement.style.zIndex = '10'; // Cards above slots
-                cardElement.dataset.currentSlot = characterSlotId; // Update current slot
-
-                // Append the card element directly to the game container
-                gameContainer.appendChild(cardElement);
-            } else if (cardElement) {
-                // If createCardElement returned an error placeholder, append and position it
-                gameContainer.appendChild(cardElement);
-                positionElement(cardElement, coords);
-            }
-        } else {
-            // Use standardized error handling if card data for the key is missing
-            handleElementError(`Card data not found for manifest key: ${cardManifestKey} in character slot ${characterSlotId}`);
-            // Potentially clear the invalid cardId from the GameState slot
+            // Add manifestKey to cardData for drag operations
+            cardData.manifestKey = cardManifestKey;
+        }
+        if (!validateRenderData(cardData, `Card data not found for manifest key: ${cardManifestKey} in character slot ${characterSlotId}`)) {
+            // Log error, but proceed to render the empty slot
+            cardData = null; // Ensure we pass null if card data is invalid
+            // Optionally clear the invalid key from state (consider if this is desired behavior)
             // GameState.boardSlots[characterSlotId].cardId = null;
         }
-    } // else: No card assigned, only the empty slot is rendered.
+    }
+
+    // Use the new utility function to render the slot and potentially the card
+    const characterSlotElement = renderSlotWithCard(
+        characterSlotId,
+        'character',        // slotType
+        playerKey,          // Pass playerKey (e.g., 'player1') instead of just ID
+        coords,
+        cardData,           // Pass the retrieved cardData object or null
+        5,                  // slotZIndex (slots below cards)
+        10                  // cardZIndex (cards above slots)
+    );
+
+    // Append the resulting element (slot with or without card) to the container
+    if (characterSlotElement) {
+        // Set size based on coordinates (renderSlotWithCard doesn't handle size)
+        characterSlotElement.style.width = `${coords.W}px`;
+        characterSlotElement.style.height = `${coords.H}px`;
+        gameContainer.appendChild(characterSlotElement);
+    } else {
+        // Error handled by renderSlotWithCard, but log here if needed
+        console.error(`Failed to render character slot ${characterSlotId}`);
+    }
 } 

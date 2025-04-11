@@ -37,6 +37,41 @@ This file documents debugging insights, solution approaches, and lessons learned
 
 # DEBUG HISTORY
 
+## [2025-04-11 HH:MM] - Card ID Mismatch in Drag Operations
+- **Author:** Claude
+- **Symptoms:** Cards render in player hands but appear with positioning issues. When attempting to drag cards, console shows errors: `Move failed: Card amberSin not found in origin hand slot PLAYER1_HAND1 (Player 1). Hand: ['item_1', 'spell_7', 'item_7', 'item_26', 'item_18']`
+- **Affected Components:** PlayerHand.js, Card.js, main.js (event handling), renderUtils.js
+- **Root Cause Analysis:** After refactoring to use renderUtils.js and improving event delegation, there appears to be a mismatch between:
+  1. How card IDs are stored in the game state (e.g., 'item_1', 'spell_7')
+  2. How they're attached to DOM elements during rendering
+  3. How they're captured during drag events (capturing "amberSin" instead of the actual item_X format)
+  
+  This suggests an inconsistency between manifestKey and cardId handling in the refactored code.
+- **Proposed Investigative Steps:**
+  1. Add detailed logging in dragstart event handler to identify exactly which element attributes are being captured
+  2. Check how card data is passed from state to rendering functions to DOM elements
+  3. Verify correct parent-child relationships for event delegation
+  4. Ensure consistent ID format between state and UI elements
+- **Verification Method:** Test drag operations between all zones after fixes
+- **Related Issues:** Related to the refactoring work in I1.5, particularly the changes to event handling and rendering
+- **Tags:** #drag-and-drop, #event-handling, #data-attributes, #refactoring
+
+## [2025-04-11 HH:MM] - KI-004 - Player Hand Rendering Failure
+- **Author:** Claude
+- **Symptoms:** Player hands were not rendering on screen despite cards being properly drawn in the game state. Console logs showed: "DEBUG: player1 hand cards: (5) [...card ids...]" followed by "DEBUG: Found 0 hand slots for player1: []" for all players.
+- **Affected Components:** PlayerHand.js
+- **Root Cause:** In the `renderPlayerHand` function, the filter to find hand slots was looking for slots where `GameState.boardSlots[slotId].playerId === playerKey`, comparing a numeric value (1, 2, 3, 4) to a string ('player1', 'player2', etc.). This type mismatch caused no slots to be found.
+- **Solution:** Modified the filter to use `player.id` (numeric) instead of `playerKey` (string): 
+  ```javascript
+  const playerHandSlotIds = Object.keys(GameState.boardSlots).filter(slotId =>
+      GameState.boardSlots[slotId]?.type === 'hand' && GameState.boardSlots[slotId]?.playerId === player.id
+  );
+  ```
+- **Verification:** Fixed the code and tested - player hands now render correctly and show all cards.
+- **Lessons Learned:** When refactoring code, pay close attention to data types in comparisons, especially between IDs represented in different formats across the codebase. Add more type checking or standardize ID formats throughout the application.
+- **Related Issues:** This bug was introduced during I1.5 refactoring.
+- **Tags:** #rendering, #type-mismatch, #filter, #refactoring
+
 ## [2025-04-10 17:10] - Drag and Drop Failure After Standardization
 - **Author:** Gemini
 - **Symptoms:** UI rendered correctly after standardizing `GameBoard.js`, but drag-and-drop functionality was completely broken. No console errors were initially observed when attempting to drag.
@@ -108,6 +143,52 @@ This file documents debugging insights, solution approaches, and lessons learned
 - **Lessons Learned:** Maintaining structured debug notes aids troubleshooting and prevents repeating past mistakes
 - **Related Issues:** N/A
 - **Tags:** #documentation
+
+## [YYYY-MM-DD HH:MM] - Card Rendering Position Fix
+- **Author:** Gemini
+- **Symptoms:** Card images rendered offset from their parent slots (down and to the right), instead of being centered within them.
+- **Affected Components:** `renderUtils.js`
+- **Root Cause:** The `renderCardElement` function was calling `applyElementStyling` on the card image, applying the same absolute coordinates as the parent slot. An absolutely positioned element (card) inside another absolutely positioned element (slot) with the same coordinates results in the inner element aligning its top-left corner with the parent's top-left, rather than being positioned relative to the parent.
+- **Solution:** Removed the `applyElementStyling` call from within `renderCardElement`. Card elements now have default positioning and rely on the parent slot's Flexbox properties (`display: flex`, `justify-content: center`, `align-items: center`) to center them.
+- **Verification:** Refreshed the application and confirmed cards render correctly centered within their slots.
+- **Lessons Learned:** Nested absolute positioning requires careful consideration of the coordinate reference point. Often, relying on parent layout (like Flexbox or Grid) for child positioning is simpler and more robust.
+- **Tags:** #rendering, #positioning, #css, #absolute-positioning, #refactoring
+
+## [2025-04-11 HH:MM] - KI-005 - Card ID Mismatch in Drag Operations
+- **Author:** Claude / Gemini
+- **Symptoms:** Cards render correctly after positioning fix. When attempting to drag cards (e.g., hand to grid), console shows `Move failed: Target container not found for slot [TargetSlotId] with type [TargetSlotType]` error originating from `state.js`, and the move is rejected (`Move rejected by state logic...`).
+- **Affected Components:** `state.js` (`moveCard` function), potentially `main.js` (data transfer format - though seems correct now), `Card.js` (data attributes - seems correct now).
+- **Root Cause Analysis (Updated):** 
+    - Added detailed console logging throughout the drag-and-drop flow (`Card.js`, `main.js`, `state.js`).
+    - Logs confirm that the correct `manifestKey` (e.g., 'item_14') is correctly captured during `dragstart`, stored in `event.dataTransfer`, retrieved during `drop`, and passed to `moveCard`.
+    - The failure occurs specifically within the `moveCard` function when determining the **target container**. 
+    - The current logic attempts to find a container based on `targetSlot.cardId` for types like 'storyGrid', 'character', 'mutable'. When the target slot is empty (`cardId` is `null`), this incorrectly leads to a "Target container not found" error.
+    - The logic fails to distinguish between target types requiring array manipulation (hands, discards) and types requiring direct property assignment (`cardId` on the slot object itself).
+- **Proposed Investigative Steps (Revised):**
+    1.  Refactor the target handling logic within `state.js` -> `moveCard`.
+    2.  Correctly identify the target based on `targetSlot.type`.
+    3.  For array-based targets (hand, discard), push `manifestKey` to the appropriate array.
+    4.  For slot-based targets (storyGrid, character, mutable), assign `manifestKey` directly to `targetSlot.cardId`.
+    5.  Implement logic to handle already occupied target slots (currently warns, should potentially prevent or swap based on rules).
+- **Verification Method:** Test drag operations between all valid zones after refactoring `moveCard`.
+- **Related Issues:** Related to the refactoring work in I1.5, specifically changes in `state.js`.
+- **Tags:** #drag-and-drop, #event-handling, #state-management, #refactoring, #logic-error
+
+## [2025-04-11 HH:MM] - KI-004 - Player Hand Rendering Failure
+- **Author:** Claude
+- **Symptoms:** Player hands were not rendering on screen despite cards being properly drawn in the game state. Console logs showed: "DEBUG: player1 hand cards: (5) [...card ids...]" followed by "DEBUG: Found 0 hand slots for player1: []" for all players.
+- **Affected Components:** PlayerHand.js
+- **Root Cause:** In the `renderPlayerHand` function, the filter to find hand slots was looking for slots where `GameState.boardSlots[slotId].playerId === playerKey`, comparing a numeric value (1, 2, 3, 4) to a string ('player1', 'player2', etc.). This type mismatch caused no slots to be found.
+- **Solution:** Modified the filter to use `player.id` (numeric) instead of `playerKey` (string): 
+  ```javascript
+  const playerHandSlotIds = Object.keys(GameState.boardSlots).filter(slotId =>
+      GameState.boardSlots[slotId]?.type === 'hand' && GameState.boardSlots[slotId]?.playerId === player.id
+  );
+  ```
+- **Verification:** Fixed the code and tested - player hands now render correctly and show all cards.
+- **Lessons Learned:** When refactoring code, pay close attention to data types in comparisons, especially between IDs represented in different formats across the codebase. Add more type checking or standardize ID formats throughout the application.
+- **Related Issues:** This bug was introduced during I1.5 refactoring.
+- **Tags:** #rendering, #type-mismatch, #filter, #refactoring
 
 <!-- Add new entries ABOVE this line -->
 

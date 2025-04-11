@@ -33,6 +33,58 @@ This file tracks all significant changes made to the codebase, providing a chron
 
 # CHANGE HISTORY
 
+## [YYYY-MM-DD HH:MM] - Fixed Card Rendering Position
+- **Author:** Gemini
+- **Files:** soulsworn-rebuild/js/utils/renderUtils.js
+- **Changes:** Removed redundant absolute positioning call (`applyElementStyling`) from within `renderCardElement`. Card elements now rely on parent slot's Flexbox for positioning.
+- **Issue:** Visual bug - cards rendered offset from their parent slots.
+- **Functions Affected:** `renderCardElement()`
+- **Reason:** Card elements were being absolutely positioned using the same coordinates as their already absolutely positioned parent slots, causing incorrect visual placement. Corrected logic to position cards relative to their parent slot.
+
+## [2025-04-11 HH:MM] - Identified Critical Drag-and-Drop Issue
+- **Author:** Claude
+- **Files:** 
+  - soulsworn-rebuild/js/components/PlayerHand.js
+  - soulsworn-rebuild/js/components/Card.js
+  - soulsworn-rebuild/js/main.js
+  - soulsworn-rebuild/js/utils/renderUtils.js
+- **Changes:** 
+  - Identified card ID mismatch issue in drag-and-drop operations
+  - Partially fixed player hand rendering by updating the playerId comparison in PlayerHand.js (string vs number issue)
+  - Created comprehensive analysis and debugging plan in CONTINUE.md and debug_notes.md
+- **Issue:** New issue found after addressing KI-004
+- **Functions Affected:** Drag event handlers in main.js, renderCardElement(), renderSlotWithCard()
+- **Reason:** After fixing the player hand slot detection, revealed an underlying issue with how card IDs are handled between state and UI elements. Console shows errors indicating a mismatch between IDs used in drag operations ("amberSin") vs. actual state IDs ("item_1", etc.).
+
+## [2025-04-11 HH:MM] - Fixed Player Hand Rendering Issue
+- **Author:** Claude
+- **Files:** 
+  - soulsworn-rebuild/js/components/PlayerHand.js
+- **Changes:** 
+  - Fixed a critical bug in `renderPlayerHand` where the player hand filter was incorrectly comparing string player keys (e.g., 'player1') against numeric IDs in the boardSlots definition (e.g., 1).
+  - Updated the filter to use `player.id` (numeric) instead of `playerKey` (string) for comparing against slot playerId.
+- **Issue:** Bug introduced during I1.5 refactoring
+- **Functions Affected:** `renderPlayerHand()`
+- **Reason:** After recent refactoring, player hands were not displaying even though cards were properly drawn in the state. Console logs showed "Found 0 hand slots" for all players because the filter wasn't matching any slots due to the type mismatch in the comparison.
+
+## [2025-04-11 HH:MM] - Refactor Components with Render Utils & Fix Discard Drag (I1.5 Part 1)
+- **Author:** Gemini
+- **Files:**
+  - soulsworn-rebuild/js/utils/renderUtils.js (Created)
+  - soulsworn-rebuild/js/components/CharacterSlot.js
+  - soulsworn-rebuild/js/components/PlayerHand.js
+  - soulsworn-rebuild/js/components/StoryGrid.js
+  - soulsworn-rebuild/js/components/DeckPile.js
+  - soulsworn-rebuild/js/components/GameBoard.js
+- **Changes:**
+  1. Created `renderUtils.js` module with `applyElementStyling`, `validateRenderData`, `renderCardElement`, `renderSlotWithCard` functions and JSDoc.
+  2. Refactored `CharacterSlot.js`, `PlayerHand.js`, `StoryGrid.js`, `DeckPile.js`, and `GameBoard.js` (mutable slot part) to use the new render utilities, reducing code duplication.
+  3. Fixed KI-003 (Drag from Discard) by modifying `DeckPile.js` to use `renderCardElement` for the top discard card, ensuring it's absolutely positioned like other draggable cards.
+  4. Removed direct dependencies on `createSlotElement`, `positionElement`, and (mostly) `createCardElement` from refactored components.
+- **Issue:** I1.5 (Steps 11, 12a, 12b, 12c, 12d, 12e), KI-003
+- **Functions Affected:** `renderCharacterSlot()`, `renderPlayerHand()`, `renderStoryGrid()`, `renderDeckPile()`, `renderGameBoard()`, `applyElementStyling()`, `validateRenderData()`, `renderCardElement()`, `renderSlotWithCard()`
+- **Reason:** Execute the planned refactoring (I1.5) to centralize rendering logic, improve code consistency, and fix the known issue with dragging cards from discard piles (KI-003).
+
 ## [2025-04-10 17:15] - Standardized GameBoard.js and Fixed Drag/Drop Issues
 - **Author:** Gemini
 - **Files:** 
@@ -213,3 +265,31 @@ This file tracks all significant changes made to the codebase, providing a chron
 ## [Timestamp: 2025-04-10 approx 08:15 UTC]
 
 *   **Fix:** Modified `js/components/Card.js` (`
+
+## 2025-04-11
+- **Type:** Refactor
+- **Description:** Refactored `setupEventListeners` in `main.js` to use event delegation attached to `#game-container`. Removed recursive call after render, improving efficiency. Updated related JSDoc.
+- **Related Task:** I1.5 (Step 13)
+
+## 2025-04-11
+- **Type:** Refactor
+- **Description:** Completed initial refactoring of core components (`CharacterSlot`, `PlayerHand`, `StoryGrid`, `DeckPile`, `GameBoard` - mutable slots) to use new `renderUtils.js` module. Standardized rendering logic and reduced code duplication. Updated JSDoc in affected files.
+- **Related Task:** I1.5 (Step 12)
+
+## 2025-04-11
+- **Type:** Fix
+- **Description:** Addressed issue where cards could not be dragged *from* discard piles. Adjusted rendering logic in `DeckPile.js` to ensure discard cards have correct draggable attributes and data set.
+- **Related Task:** KI-003 (Integrated into I1.5 Step 12)
+
+## 2025-04-11
+- **Type:** Chore
+- **Description:** Created `js/utils/renderUtils.js` module to centralize common rendering logic (slot/card creation, styling, validation). Added initial utility functions (`applyElementStyling`, `validateRenderData`, `renderCardElement`, `renderSlotWithCard`). Added comprehensive JSDoc.
+- **Related Task:** I1.5 (Step 11)
+
+## 2025-04-11
+- **Type:** Docs
+- **Description:** Completed comprehensive documentation improvements (I1.4). Added/updated module headers, JSDoc for functions (including parameters, returns, examples), `@typedef` for state structures, and error handling details across all component, utility, and state management files. Removed TODOs.
+- **Related Task:** I1.4 (Steps 8-10)
+
+## Older Entries
+- (Previous change log entries would be listed here)

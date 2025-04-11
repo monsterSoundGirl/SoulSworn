@@ -1,3 +1,16 @@
+/**
+ * Soulsworn State Management Module
+ * 
+ * Central repository for game state storage and manipulation. This module handles:
+ * - Loading and initializing card data and UI coordinates
+ * - Managing deck creation, shuffling, and card distribution
+ * - Tracking card locations across the board
+ * - Processing card movement between game zones
+ * - Maintaining player hands and character assignments
+ * 
+ * @module State
+ */
+
 // Placeholder for the central game state
 
 export const GameState = {
@@ -145,39 +158,46 @@ export const GameState = {
 
 // --- Data Structure Definitions (for reference) ---
 
-/*
-Card: {
-  id: String (unique identifier, e.g., 'character_knight.jpg'),
-  type: String (e.g., 'Character', 'Objective', 'Spell'),
-  imageUrl: String (path to image)
-}
+/**
+ * @typedef {Object} Card
+ * @property {string} id - Unique identifier with descriptive name (e.g., 'boneReaper')
+ * @property {string} type - Card type category ('item', 'spell', 'location', 'monster', etc.)
+ * @property {string} imageUrl - Path to the card image file
+ */
 
-Player: {
-  id: Number (1-4),
-  name: String,
-  handSlotIds: Array<String> (references to BoardSlot IDs),
-  characterCardSlotId: String (reference to BoardSlot ID),
-  tokens: { physical: number, emotional: number, rational: number }
-}
+/**
+ * @typedef {Object} Player
+ * @property {number} id - Player number (1-4)
+ * @property {Array<string>} hand - Array of card IDs in player's hand
+ * @property {string} characterSlotId - ID of the slot holding player's character card
+ */
 
-Deck: {
-  type: String ('main' or 'alt'),
-  assignedCardTypes: Array<String>,
-  drawPile: Array<String> (Card ids),
-  discardPile: Array<String> (Card ids)
-}
+/**
+ * @typedef {Object} Deck
+ * @property {string} type - Deck identifier ('main' or 'alt')
+ * @property {Array<string>} assignedCardTypes - Types of cards included in this deck
+ * @property {Array<string>} drawPile - Array of card IDs in the draw pile
+ * @property {Array<string>} discardPile - Array of card IDs in the discard pile
+ */
 
-BoardSlot: {
-  id: String (unique identifier, e.g., 'storyGrid-0-0'),
-  type: String (e.g., 'hand', 'storyGrid', 'character'),
-  playerId: Number | null,
-  cardId: String | null (Card id)
-}
-*/
+/**
+ * @typedef {Object} BoardSlot
+ * @property {string} id - Unique identifier matching UIcoordinates.json LABEL
+ * @property {string} type - Slot type ('hand', 'storyGrid', 'character', 'deckDraw', 'deckDiscard', 'mutable')
+ * @property {number|null} playerId - Player ID if applicable, null for shared board slots
+ * @property {string|null} cardId - Card ID currently in slot, or null if empty
+ * @property {string} [deckType] - For deck slots, identifies which deck ('main' or 'alt')
+ */
 
 // --- Helper Functions ---
 
-// Fisher-Yates (Knuth) Shuffle
+/**
+ * Shuffles an array in-place using the Fisher-Yates (Knuth) algorithm
+ * Used for randomizing deck order in the game.
+ * 
+ * @param {Array} array - The array to shuffle
+ * @returns {void} - The array is modified in-place
+ */
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -187,7 +207,19 @@ function shuffleArray(array) {
 
 // --- State Management Functions ---
 
-// Marked as async because fetching the manifest is an asynchronous operation
+/**
+ * Initializes the game state by loading assets, setting up decks, and preparing the board.
+ * This must be called and awaited before the game can start.
+ * The function:
+ * 1. Loads UI coordinates and card data from JSON files
+ * 2. Maps coordinates to board slots for positioning
+ * 3. Sorts cards into appropriate decks based on type
+ * 4. Shuffles decks to randomize game start
+ * 
+ * @async
+ * @returns {Promise<void>} A promise that resolves when initialization is complete
+ * @throws {Error} If asset loading fails or board slot definitions don't match coordinates
+ */
 export async function initializeState() {
   // console.log("Initializing game state...");
 
@@ -269,6 +301,12 @@ export async function initializeState() {
   }
 }
 
+/**
+ * Updates the game state with new properties.
+ * Simple implementation that merges the provided state object with the current GameState.
+ * 
+ * @param {Object} newState - An object containing state properties to update
+ */
 export function updateState(newState) {
   // TODO: Implement logic to merge or replace parts of the state
   // TODO: Add mechanism to notify subscribers (UI components) of changes
@@ -276,12 +314,25 @@ export function updateState(newState) {
   Object.assign(GameState, newState); // Simple merge for now
 }
 
+/**
+ * Returns the current game state.
+ * 
+ * @returns {Object} The current GameState object
+ */
 export function getState() {
   // TODO: Potentially add cloning or immutability later if needed
   return GameState;
 }
 
-// Method to draw cards for a player
+/**
+ * Draws cards from a deck into a player's hand.
+ * Adds cards to the player's hand array and removes them from the appropriate deck's drawPile.
+ * 
+ * @param {string} playerId - The player identifier (e.g., 'player1', 'player2')
+ * @param {number} numberOfCards - How many cards to draw
+ * @param {string} [drawPileType='main'] - Which deck to draw from ('main' or 'alt')
+ * @returns {void}
+ */
 export function drawCard(playerId, numberOfCards, drawPileType = 'main') {
   const player = GameState.players[playerId]; // Get the correct player object ('player1' or 'player2')
   if (!player) {
@@ -312,7 +363,12 @@ export function drawCard(playerId, numberOfCards, drawPileType = 'main') {
    // console.log(`Player ${player.id} hand after draw:`, hand);
 }
 
-// Helper method to get card data by ID (assuming cardData is populated)
+/**
+ * Retrieves card data for a specific card ID.
+ * 
+ * @param {string} cardId - The ID of the card to look up
+ * @returns {Card|null} The card data object or null if not found
+ */
 export function getCardDataById(cardId) {
   // Implementation of getCardDataById method
   // Placeholder: should retrieve from GameState.allCards or similar
@@ -322,111 +378,264 @@ export function getCardDataById(cardId) {
 // --- Phase 6: Card Movement Logic ---
 
 /**
- * Moves a card between two board slots or between slots and player hands/discard piles in the GameState.
- * @param {string} cardId - The ID of the card being moved.
+ * Moves a card with the given manifestKey from the origin slot to the target slot.
+ * Handles moves between different container types (hand, character, grid, deck/discard).
+ * 
+ * @param {string} manifestKey - The unique key of the card to move (e.g., 'item_1').
  * @param {string} originSlotId - The ID of the slot the card is moving from.
  * @param {string} targetSlotId - The ID of the slot the card is moving to.
+ * @returns {boolean} True if the move was successful, false otherwise.
  */
-export function moveCard(cardId, originSlotId, targetSlotId) {
-  // console.log(`Attempting to move card ${cardId} from ${originSlotId} to ${targetSlotId}`);
+export function moveCard(manifestKey, originSlotId, targetSlotId) {
+  // KI-005 Debugging: Log parameters received
+  console.log(`[state.js->moveCard] Called with:`, { manifestKey, originSlotId, targetSlotId });
+
+  // --- FIX: Re-declare singleCardTargetTypes --- 
+  const singleCardTargetTypes = ['character', 'storyGrid', 'mutable'];
 
   const originSlot = GameState.boardSlots[originSlotId];
   const targetSlot = GameState.boardSlots[targetSlotId];
 
-  // --- Basic Validation ---
-  if (!originSlot) {
-    console.error(`Move failed: Origin slot ${originSlotId} not found.`);
-    return;
-  }
-  if (!targetSlot) {
-    console.error(`Move failed: Target slot ${targetSlotId} not found.`);
-    return;
-  }
-  if (!cardId) {
-      console.error(`Move failed: Invalid cardId provided.`);
-      return;
+  if (!originSlot || !targetSlot) {
+    console.error(`Move failed: Invalid originSlotId (${originSlotId}) or targetSlotId (${targetSlotId})`);
+    return false;
   }
 
-  // TODO: Add more validation based on game rules (e.g., is target slot occupied? Is move valid?)
+  // KI-005 Debugging: Log slot info
+  console.log(`[state.js->moveCard] Origin Slot Info:`, JSON.parse(JSON.stringify(originSlot))); // Log deep copy
+  console.log(`[state.js->moveCard] Target Slot Info:`, JSON.parse(JSON.stringify(targetSlot))); // Log deep copy
 
-  // --- Determine Origin/Target Types ---
-  let originIsHand = originSlot.type === 'hand';
-  let targetIsHand = targetSlot.type === 'hand';
-  let targetIsDiscard = targetSlot.type === 'deckDiscard';
+  // Check if the target slot is occupied
+  if (targetSlot.cardId) {
+    console.log(`DEBUG moveCard: Target slot ${targetSlotId} (${targetSlot.type}) is occupied by ${targetSlot.cardId}. Checking rules...`);
 
-  let originPlayer = null;
-  let targetPlayer = null;
+    // --- BEGIN MODIFICATION: Implement Swap Logic for Story Grid ---
+    if (targetSlot.type === 'storyGrid') {
+      console.log(`DEBUG moveCard: Initiating SWAP for storyGrid target slot ${targetSlotId}.`);
+      const cardInTargetSlot = targetSlot.cardId; // Card B (ID of card originally in target)
+      const draggedCardId = manifestKey; // Card A (ID of card being dragged)
 
-  if (originIsHand) {
-    originPlayer = GameState.players['player' + originSlot.playerId];
-    if (!originPlayer) {
-        console.error(`Move failed: Could not find player data for origin slot ${originSlotId} (PlayerID: ${originSlot.playerId})`);
-        return;
+      // --- Find Origin ---
+      const originSlot = GameState.boardSlots[originSlotId];
+      let originPlayerHand = null;
+      let isOriginHand = false;
+
+      if (originSlot && originSlot.type === 'hand') {
+        // --- FIX: Access hand directly from GameState instead of non-existent getPlayerHand --- 
+        originPlayerHand = GameState.players['player' + originSlot.playerId]?.hand;
+        isOriginHand = true;
+         if (!originPlayerHand) {
+             console.error(`ERROR moveCard (Swap): Origin player hand array not found for Player ${originSlot.playerId} (slot ${originSlotId}). Aborting swap.`);
+             return false;
+         }
+      } else if (!originSlot) {
+         console.error(`ERROR moveCard (Swap): Origin slot object not found for ${originSlotId} (and not a hand). Aborting swap.`);
+         return false;
+      }
+      // At this point, originSlot is valid if !isOriginHand, and originPlayerHand is valid if isOriginHand
+
+      // --- Perform Swap ---
+      console.log(`DEBUG moveCard (Swap): Swapping ${draggedCardId} (from ${originSlotId}) with ${cardInTargetSlot} (in ${targetSlotId})`);
+
+      // 1. Place dragged card (A) into target slot
+      console.log(`DEBUG moveCard (Swap): Before Swap Target Update (A) - Target ${targetSlotId} Before: ${targetSlot.cardId}`);
+      targetSlot.cardId = draggedCardId; // A -> Target
+      console.log(`DEBUG moveCard (Swap): After Swap Target Update (A) - Target ${targetSlotId} After: ${targetSlot.cardId}`);
+
+      // 2. Remove dragged card (A) from origin slot
+      console.log(`DEBUG moveCard (Swap): Before Swap Origin Removal (A) - Origin ${originSlotId} Before: ${isOriginHand ? JSON.stringify(originPlayerHand) : originSlot.cardId}`);
+      if (isOriginHand) { // Origin is hand
+        const indexA = originPlayerHand.indexOf(draggedCardId);
+        if (indexA > -1) {
+          originPlayerHand.splice(indexA, 1); // Remove A from hand
+        } else { console.warn(`WARN moveCard (Swap): Dragged card ${draggedCardId} not found in origin hand ${originSlotId}`); }
+      } else { // Origin is a slot (storyGrid, character, mutable)
+        if (originSlot.cardId === draggedCardId) {
+          originSlot.cardId = null; // Clear A from origin slot (temporarily)
+        } else { console.warn(`WARN moveCard (Swap): Dragged card ${draggedCardId} mismatch in origin slot ${originSlotId} (contains ${originSlot.cardId})`); }
+      }
+      console.log(`DEBUG moveCard (Swap): After Swap Origin Removal (A) - Origin ${originSlotId} After: ${isOriginHand ? JSON.stringify(originPlayerHand) : originSlot.cardId}`);
+
+      // 3. Place original target card (B) into origin slot
+      console.log(`DEBUG moveCard (Swap): Before Swap Origin Placement (B) - Origin ${originSlotId} Before: ${isOriginHand ? JSON.stringify(originPlayerHand) : originSlot.cardId}`);
+       if (isOriginHand) { // Origin is hand
+         originPlayerHand.push(cardInTargetSlot); // B -> Hand
+       } else { // Origin is a slot
+         originSlot.cardId = cardInTargetSlot; // B -> Origin Slot
+       }
+       console.log(`DEBUG moveCard (Swap): After Swap Origin Placement (B) - Origin ${originSlotId} After: ${isOriginHand ? JSON.stringify(originPlayerHand) : originSlot.cardId}`);
+
+      console.log(`DEBUG moveCard: Swap complete for ${targetSlotId}.`);
+      return true; // Swap successful
+
+    } else {
+      // Original logic for non-storyGrid occupied slots (prevent move)
+      console.warn(`Move failed: Target slot ${targetSlotId} (${targetSlot.type}) is already occupied by card ${targetSlot.cardId}. Move prevented as it's not a storyGrid.`);
+      console.warn(`DEBUG moveCard: Move prevented (occupied, non-grid) - Origin: ${originSlotId}, Target: ${targetSlotId}, Card: ${manifestKey}`);
+      return false;
     }
-  }
+    // --- END MODIFICATION ---
 
-  if (targetIsHand) {
-    targetPlayer = GameState.players['player' + targetSlot.playerId];
-     if (!targetPlayer) {
-        console.error(`Move failed: Could not find player data for target slot ${targetSlotId} (PlayerID: ${targetSlot.playerId})`);
-        return;
+  } else {
+     // Target slot is empty, proceed with normal move (Property assignment)
+     console.log(`DEBUG moveCard: Target slot ${targetSlotId} (${targetSlot.type}) is empty. Assigning cardId.`);
+     // Existing logic for empty property-based slots...
+     // logStateModification('Before Target Update (Empty)', ...) etc.
+
+    // --- Find and Remove Card from Origin ---
+    if (originSlot.type === 'hand') {
+      const playerHand = GameState.players['player' + originSlot.playerId]?.hand;
+      const originBoardSlot = GameState.boardSlots[originSlotId]; // Get the specific slot object
+
+      if (playerHand) {
+        const cardIndex = playerHand.indexOf(manifestKey);
+        if (cardIndex !== -1) {
+          console.log(`[state.js->moveCard] BEFORE Hand Splice: Player ${originSlot.playerId} Hand is [${playerHand.join(', ')}], attempting to remove ${manifestKey} at index ${cardIndex}`);
+          playerHand.splice(cardIndex, 1);
+          console.log(`[state.js->moveCard] AFTER Hand Splice: Player ${originSlot.playerId} Hand is NOW [${playerHand.join(', ')}`);
+          // Also clear the specific hand slot's cardId in boardSlots for consistency
+          if (originBoardSlot) {
+              console.log(`[state.js->moveCard] BEFORE Origin Hand Slot Clear: Slot ${originSlotId}.cardId is ${originBoardSlot.cardId}`);
+              originBoardSlot.cardId = null;
+              console.log(`[state.js->moveCard] AFTER Origin Hand Slot Clear: Slot ${originSlotId}.cardId is NOW ${originBoardSlot.cardId}`);
+          } else {
+               console.warn(`[state.js->moveCard] Could not find origin board slot ${originSlotId} to clear cardId.`);
+          }
+          console.log(`[state.js->moveCard] Card ${manifestKey} removed from Player ${originSlot.playerId} hand array.`);
+        } else {
+          console.error(`Move failed: Card ${manifestKey} not found in origin hand slot ${originSlotId} (Player ${originSlot.playerId}). Hand:`, playerHand);
+          return false;
+        }
+      } else {
+          console.error(`Move failed: Origin player hand not found for player ${originSlot.playerId}`);
+          return false;
+      }
+    } else if (originSlot.type === 'deckDiscard') {
+        const discardPile = (originSlot.deckType === 'main' ? GameState.mainDeck : GameState.altDeck)?.discardPile;
+        const discardBoardSlot = GameState.boardSlots[originSlotId];
+        if (discardPile) {
+            // Only the top card of the discard pile can be dragged (implicitly handled by UI event listeners)
+            // Verify the card being dragged IS the top card for safety
+            if (discardPile.length > 0 && discardPile[discardPile.length - 1] === manifestKey) {
+                console.log(`[state.js->moveCard] BEFORE Discard Pop: ${originSlot.deckType} Discard is [${discardPile.join(', ')}], attempting to pop ${manifestKey}`);
+                discardPile.pop(); // Remove the top card
+                console.log(`[state.js->moveCard] AFTER Discard Pop: ${originSlot.deckType} Discard is NOW [${discardPile.join(', ')}]`);
+                console.log(`[state.js->moveCard] Card ${manifestKey} removed from ${originSlot.deckType} discard pile.`);
+                // Clear the board slot's cardId
+                if (discardBoardSlot) {
+                    console.log(`[state.js->moveCard] BEFORE Origin Discard Slot Clear: Slot ${originSlotId}.cardId is ${discardBoardSlot.cardId}`);
+                    discardBoardSlot.cardId = null;
+                    console.log(`[state.js->moveCard] AFTER Origin Discard Slot Clear: Slot ${originSlotId}.cardId is NOW ${discardBoardSlot.cardId}`);
+                }
+            } else {
+                console.error(`Move failed: Card ${manifestKey} is not the top card of the ${originSlot.deckType} discard pile or pile is empty. Pile:`, discardPile);
+                return false;
+            }
+        } else {
+             console.error(`Move failed: Origin discard pile not found for deck type ${originSlot.deckType}`);
+             return false;
+        }
+    } else if (singleCardTargetTypes.includes(originSlot.type)) { // Character, StoryGrid, Mutable
+      if (originSlot.cardId === manifestKey) {
+        console.log(`[state.js->moveCard] BEFORE Origin Single Slot Clear: Slot ${originSlotId}.cardId is ${originSlot.cardId}`);
+        originSlot.cardId = null; // Clear the card ID from the slot
+        console.log(`[state.js->moveCard] AFTER Origin Single Slot Clear: Slot ${originSlotId}.cardId is NOW ${originSlot.cardId}`);
+        console.log(`[state.js->moveCard] Card ${manifestKey} removed from origin ${originSlot.type} slot ${originSlotId}.`);
+      } else {
+        console.error(`Move failed: Card ${manifestKey} not found in origin ${originSlot.type} slot ${originSlotId}. Slot contains: ${originSlot.cardId}`);
+        return false;
+      }
+    } else {
+      console.error(`Move failed: Invalid or unhandled origin slot type "${originSlot.type}" for slot ${originSlotId}.`);
+      return false;
     }
-  }
 
+    // --- Add Card to Target ---
+    let cardAdded = false;
+    if (targetSlot.type === 'hand') {
+      // Find the first empty hand slot for the target player
+      const targetPlayerHand = GameState.players['player' + targetSlot.playerId]?.hand;
+      if (!targetPlayerHand) {
+          console.error(`Move failed: Target player hand not found for player ${targetSlot.playerId}`);
+          // Attempt to rollback removal? Complex. For now, fail the move.
+          // TODO: Implement rollback logic if necessary.
+          return false; 
+      }
 
-  // --- Handle Origin Slot ---
-  let cardFoundInOrigin = false;
-  if (originIsHand) {
-      const hand = originPlayer.hand;
-      const cardIndex = hand.indexOf(cardId);
-      if (cardIndex > -1) {
-          hand.splice(cardIndex, 1); // Remove card from hand array
-          cardFoundInOrigin = true;
+      // Find the *specific* empty hand slot targeted by the drop event (targetSlotId)
+      const targetBoardSlot = GameState.boardSlots[targetSlotId];
+      if (targetBoardSlot && targetBoardSlot.cardId === null) {
+          console.log(`[state.js->moveCard] BEFORE Target Hand Slot Update: Slot ${targetSlotId}.cardId is ${targetBoardSlot.cardId}, attempting to set to ${manifestKey}`);
+          targetBoardSlot.cardId = manifestKey; // Assign card to the specific board slot
+          console.log(`[state.js->moveCard] AFTER Target Hand Slot Update: Slot ${targetSlotId}.cardId is NOW ${targetBoardSlot.cardId}`);
+          console.log(`[state.js->moveCard] BEFORE Hand Push: Target Player ${targetSlot.playerId} Hand is [${targetPlayerHand.join(', ')}], attempting to push ${manifestKey}`);
+          targetPlayerHand.push(manifestKey); // Add to the player's hand array (source of truth)
+          console.log(`[state.js->moveCard] AFTER Hand Push: Target Player ${targetSlot.playerId} Hand is NOW [${targetPlayerHand.join(', ')}`);
+          cardAdded = true;
+          console.log(`[state.js->moveCard] Card ${manifestKey} added to Player ${targetSlot.playerId} hand slot ${targetSlotId}.`);
       } else {
-          console.error(`Move failed: Card ${cardId} not found in origin hand slot ${originSlotId} (Player ${originSlot.playerId}). Hand:`, hand);
-          return; // Card isn't in the expected hand
+          console.warn(`Move failed: Target hand slot ${targetSlotId} is already occupied or invalid.`);
+          // Attempt rollback?
+          return false;
       }
-  } else { // Assume origin is a slot with a cardId property
-      if (originSlot.cardId === cardId) {
-          originSlot.cardId = null; // Remove card from origin slot
-          cardFoundInOrigin = true;
+
+    } else if (targetSlot.type === 'deckDiscard') {
+      const discardPile = (targetSlot.deckType === 'main' ? GameState.mainDeck : GameState.altDeck)?.discardPile;
+      const discardBoardSlot = GameState.boardSlots[targetSlotId];
+      if (discardPile) {
+          console.log(`[state.js->moveCard] BEFORE Discard Push: ${targetSlot.deckType} Discard is [${discardPile.join(', ')}], attempting to push ${manifestKey}`);
+          discardPile.push(manifestKey); // Add to the end of the discard pile
+          console.log(`[state.js->moveCard] AFTER Discard Push: ${targetSlot.deckType} Discard is NOW [${discardPile.join(', ')}]`);
+          cardAdded = true;
+          console.log(`[state.js->moveCard] Card ${manifestKey} added to ${targetSlot.deckType} discard pile.`);
+          // Update the board slot's cardId to reflect the new top card
+          if (discardBoardSlot) {
+               console.log(`[state.js->moveCard] BEFORE Target Discard Slot Update: Slot ${targetSlotId}.cardId is ${discardBoardSlot.cardId}`);
+               discardBoardSlot.cardId = manifestKey;
+               console.log(`[state.js->moveCard] AFTER Target Discard Slot Update: Slot ${targetSlotId}.cardId is NOW ${discardBoardSlot.cardId}`);
+          }
       } else {
-          console.error(`Move failed: Card ${cardId} not found in origin slot ${originSlotId}. Found: ${originSlot.cardId}`);
-          return; // Card isn't where we expect it
+          console.error(`Move failed: Target discard pile not found for deck type ${targetSlot.deckType}`);
+          // Rollback needed?
+          return false;
       }
+    } else if (singleCardTargetTypes.includes(targetSlot.type)) { // Character, StoryGrid, Mutable
+        if (targetSlot.cardId === null) { // Double check it's still empty
+            console.log(`[state.js->moveCard] BEFORE Target Single Slot Update: Target ${targetSlotId}.cardId is ${targetSlot.cardId}, attempting to set to ${manifestKey}`);
+            targetSlot.cardId = manifestKey; // Assign the card ID to the slot
+            console.log(`[state.js->moveCard] AFTER Target Single Slot Update: Target ${targetSlotId}.cardId is NOW ${targetSlot.cardId}`);
+            cardAdded = true;
+            console.log(`[state.js->moveCard] Card ${manifestKey} added to target ${targetSlot.type} slot ${targetSlotId}.`);
+        } else {
+            // This should have been caught earlier, but defensive check.
+             console.error(`Move failed: Target slot ${targetSlotId} (${targetSlot.type}) became occupied unexpectedly.`);
+             // Rollback needed?
+             return false;
+        }
+    } else {
+      console.error(`Move failed: Invalid or unhandled target slot type "${targetSlot.type}" for slot ${targetSlotId}.`);
+      // Rollback needed?
+      return false;
+    }
+
+    if (!cardAdded) {
+         console.error(`Move failed: Card ${manifestKey} could not be added to target ${targetSlotId} after removal from origin.`);
+        // Rollback needed?
+         return false;
+    }
+
+    // KI-005 Debugging: Log state after move
+    console.log(`[state.js->moveCard] State after successful move:`, {
+        originSlotAfter: JSON.parse(JSON.stringify(GameState.boardSlots[originSlotId])), 
+        targetSlotAfter: JSON.parse(JSON.stringify(GameState.boardSlots[targetSlotId])),
+        // Log relevant hand/discard pile if involved
+        player1Hand: targetSlot.type === 'hand' && targetSlot.playerId === 1 ? GameState.players.player1.hand : (originSlot.type === 'hand' && originSlot.playerId === 1 ? GameState.players.player1.hand : 'N/A'),
+        mainDiscard: targetSlot.type === 'deckDiscard' && targetSlot.deckType === 'main' ? GameState.mainDeck.discardPile : (originSlot.type === 'deckDiscard' && originSlot.deckType === 'main' ? GameState.mainDeck.discardPile : 'N/A')
+        // Add other relevant logs as needed
+    });
+
+
+    console.log(`Successfully moved card ${manifestKey} from ${originSlotId} to ${targetSlotId}`);
+    return true;
   }
-
-  // Ensure card was actually removed before proceeding
-  if (!cardFoundInOrigin) {
-       console.error(`Move failed: Could not verify card removal from origin ${originSlotId}.`);
-       // Potentially revert state changes if necessary, but for now just stop.
-       return;
-  }
-
-  // --- Handle Target Slot ---
-  if (targetIsHand) { // Target is a Player Hand
-      targetPlayer.hand.push(cardId); // Add card to target hand array
-  } else if (targetIsDiscard) { // Target is a Discard Pile
-      const deckType = targetSlot.deckType; // 'main' or 'alt'
-      if (deckType === 'main') {
-          GameState.mainDeck.discardPile.push(cardId);
-      } else if (deckType === 'alt') {
-          GameState.altDeck.discardPile.push(cardId);
-      } else {
-          console.error(`Move failed: Target discard slot ${targetSlotId} has invalid deckType: ${deckType}`);
-          // Attempt to revert origin removal? Or rely on cardFoundInOrigin check?
-          // For now, log error and potentially leave state inconsistent if origin was modified.
-          return; // Stop processing
-      }
-  } else { // Assume target is a slot with a cardId property (Grid, Character, Mutable)
-      if (targetSlot.cardId !== null) {
-          console.warn(`Target slot ${targetSlotId} is already occupied by card ${targetSlot.cardId}. Overwriting.`);
-          // TODO: Implement game logic for occupied slots (e.g., swap, return to hand?)
-      }
-      targetSlot.cardId = cardId; // Place card in target slot
-  }
-
-  // console.log(`Successfully moved card ${cardId} from ${originSlotId} to ${targetSlotId}`);
-
-  // Note: This function only updates the state. Re-rendering needs to be triggered separately.
 } 

@@ -1,24 +1,63 @@
+/**
+ * Soulsworn DeckPile Component
+ * 
+ * Responsible for rendering the draw and discard piles for each deck type.
+ * This component handles:
+ * - Creating and positioning draw pile slots with card back images
+ * - Creating and positioning discard pile slots with top card visible
+ * - Managing the visual representation of deck state
+ * - Handling special cases like empty discard piles
+ * 
+ * The DeckPile component manages two critical game zones:
+ * 1. Draw piles - Where new cards are drawn from during gameplay
+ * 2. Discard piles - Where used/discarded cards are placed
+ * 
+ * Each deck type (main and alt) has its own separate draw and discard piles,
+ * allowing for different card types to be managed independently.
+ * 
+ * @module DeckPile
+ */
+
 import { getState, GameState } from '../state.js';
+// Keep createCardElement temporarily for non-standard card back rendering
 import { createCardElement } from './Card.js';
 // Import utility functions
-import { createSlotElement, positionElement, handleElementError } from '../utils.js';
+import { handleElementError } from '../utils.js'; // Keep for initial checks
+// Import new render utility functions
+import { renderSlotWithCard, renderCardElement, validateRenderData } from '../utils/renderUtils.js';
 
 /**
  * Renders the draw and discard slots/piles for a specific deck type (main or alt).
  *
- * Fetches slot definitions and coordinates from GameState.
- * Creates and positions the draw and discard slot elements using utility functions.
- * Renders a card back image inside the draw slot (if specified in GameState).
- * Renders the top card image inside the discard slot if the discard pile is not empty.
- * Handles potential errors gracefully.
+ * This function:
+ * 1. Determines the slot IDs based on the deck type
+ * 2. Creates and positions the draw slot with a card back image
+ * 3. Creates and positions the discard slot with the top card (if available)
+ * 4. Sets appropriate styling and z-index values for proper layering
+ * 5. Handles error cases for missing data or failed card creation
  *
  * @param {string} deckType - The type of deck pile to render ('main' or 'alt').
+ * @returns {void} - No return value; renders directly to the DOM.
+ * @throws {Error} - Handled internally via handleElementError.
+ * 
+ * @example
+ * // Render the main deck pile (items and spells)
+ * renderDeckPile('main');
+ * 
+ * @example
+ * // Render both deck types
+ * renderDeckPile('main');
+ * renderDeckPile('alt');
+ * 
+ * @example
+ * // Typical usage after discarding a card
+ * moveCard(cardId, originSlotId, 'DISCARD');
+ * renderGameBoard(); // Will call renderDeckPile internally
  */
 export function renderDeckPile(deckType) {
     const gameContainer = document.getElementById('game-container');
-    if (!gameContainer) {
-        // Use standardized error handling
-        return handleElementError("Game container element (#game-container) not found!");
+    if (!validateRenderData(gameContainer, "Game container element (#game-container) not found!")) {
+        return; // Exit if container not found
     }
 
     // Determine slot IDs based on deck type
@@ -31,94 +70,123 @@ export function renderDeckPile(deckType) {
     const discardCoords = GameState.uiCoordinates[discardSlotId];
 
     // Validate necessary data
-    if (!drawSlotData || !discardSlotData) {
-        return handleElementError(`Deck slot data not found for deck type: ${deckType}`);
+    if (!validateRenderData(drawSlotData, `Draw slot data not found for ${deckType} deck.`) ||
+        !validateRenderData(discardSlotData, `Discard slot data not found for ${deckType} deck.`) ||
+        !validateRenderData(drawCoords, `Draw coordinates not found for ${deckType} deck.`) ||
+        !validateRenderData(discardCoords, `Discard coordinates not found for ${deckType} deck.`)) {
+        return; // Exit if essential data is missing
     }
-    if (!drawCoords || !discardCoords) {
-        return handleElementError(`Deck slot coordinates not found for deck type: ${deckType}`);
-    }
 
-    // --- Render Draw Pile --- //
+    // --- Render Draw Pile Slot --- //
+    const drawSlotElement = renderSlotWithCard(
+        drawSlotId,
+        'deckDraw',
+        null,       // playerId
+        drawCoords,
+        null,       // cardData (render empty slot first)
+        5,          // slotZIndex
+        10          // cardZIndex (placeholder)
+    );
 
-    // Use utility function to create the draw slot element (playerId is null)
-    const drawSlotElement = createSlotElement(drawSlotId, 'deckDraw', null, drawCoords);
-    drawSlotElement.dataset.deckType = deckType; // Add specific deck type
+    if (drawSlotElement) {
+        drawSlotElement.dataset.deckType = deckType;
+        // Set size based on coordinates
+        drawSlotElement.style.width = `${drawCoords.W}px`;
+        drawSlotElement.style.height = `${drawCoords.H}px`;
+        gameContainer.appendChild(drawSlotElement);
 
-    // Use utility function for positioning
-    positionElement(drawSlotElement, drawCoords);
-    // Set size based on coordinates
-    drawSlotElement.style.width = `${drawCoords.W}px`;
-    drawSlotElement.style.height = `${drawCoords.H}px`;
-    drawSlotElement.style.zIndex = '5'; // Slots below cards
-
-    // Render card back image inside the draw pile slot
-    // Assuming drawSlotData.cardId holds the key for the card back in allCards
-    const cardBackKey = drawSlotData.cardId; // e.g., 'card_back'
-    if (cardBackKey && GameState.allCards[cardBackKey]) {
-        const cardBackData = GameState.allCards[cardBackKey];
-        // Create card element for the back image. Pass null for manifestKey as it's not a draggable game piece.
-        const cardBackElement = createCardElement(cardBackData, null, drawSlotId);
-
-        if (cardBackElement && cardBackElement.tagName === 'IMG') {
-            // Position card back within the slot (usually 0,0 relative or handled by CSS)
-            cardBackElement.style.position = 'relative'; // Let CSS handle alignment within slot
-            cardBackElement.style.width = '100%'; // Fill slot
-            cardBackElement.style.height = '100%';
-            drawSlotElement.innerHTML = ''; // Clear any placeholder text
-            drawSlotElement.appendChild(cardBackElement);
-        } else if (cardBackElement) {
-            drawSlotElement.appendChild(cardBackElement); // Append error placeholder
-        } else {
-            handleElementError(`Failed to create card back element for key: ${cardBackKey}`);
-            drawSlotElement.textContent = 'Draw'; // Fallback text
-        }
-    } else {
-        drawSlotElement.textContent = 'Draw'; // Placeholder text if no card back specified
-    }
-    gameContainer.appendChild(drawSlotElement);
-
-    // --- Render Discard Pile --- //
-
-    // Use utility function to create the discard slot element (playerId is null)
-    const discardSlotElement = createSlotElement(discardSlotId, 'deckDiscard', null, discardCoords);
-    discardSlotElement.dataset.deckType = deckType; // Add specific deck type
-
-    // Use utility function for positioning
-    positionElement(discardSlotElement, discardCoords);
-    // Set size based on coordinates
-    discardSlotElement.style.width = `${discardCoords.W}px`;
-    discardSlotElement.style.height = `${discardCoords.H}px`;
-    discardSlotElement.style.zIndex = '5'; // Slots below cards
-
-    // Render top discard card if available
-    const discardPileArray = deckType === 'main' ? GameState.mainDeck.discardPile : GameState.altDeck.discardPile;
-    if (discardPileArray && discardPileArray.length > 0) {
-        const topCardManifestKey = discardPileArray[discardPileArray.length - 1];
-        const topCardData = GameState.allCards[topCardManifestKey];
-
-        if (topCardData) {
-            // Create the card element for the top discard card
-            const topCardElement = createCardElement(topCardData, topCardManifestKey, discardSlotId);
-
-            if (topCardElement && topCardElement.tagName === 'IMG') {
-                 // Position card within the slot (usually 0,0 relative or handled by CSS)
-                topCardElement.style.position = 'relative';
-                topCardElement.style.width = '100%';
-                topCardElement.style.height = '100%';
-                discardSlotElement.innerHTML = ''; // Clear placeholder/previous card
-                discardSlotElement.appendChild(topCardElement);
-            } else if (topCardElement) {
-                discardSlotElement.appendChild(topCardElement); // Append error placeholder
+        // --- Render Card Back inside Draw Pile Slot (Non-standard rendering) --- //
+        const cardBackKey = drawSlotData.cardId; // e.g., 'cardBack'
+        if (cardBackKey) {
+            const cardBackData = GameState.allCards[cardBackKey];
+            if (validateRenderData(cardBackData, `Card back data not found for key: ${cardBackKey}`)) {
+                // Add console.log to debug card back data
+                console.log('Card back data:', cardBackKey, cardBackData);
+                
+                try {
+                    // Create a simple IMG element instead of using createCardElement
+                    const cardBackElement = document.createElement('img');
+                    cardBackElement.src = cardBackData.imageUrl;
+                    cardBackElement.alt = 'Card Back';
+                    cardBackElement.title = 'Card Back';
+                    cardBackElement.classList.add('card-back-image');
+                    
+                    // Style and append inside the slot element
+                    cardBackElement.style.position = 'relative';
+                    cardBackElement.style.width = '100%';
+                    cardBackElement.style.height = '100%';
+                    drawSlotElement.innerHTML = ''; // Clear placeholder text/previous
+                    drawSlotElement.appendChild(cardBackElement);
+                } catch (error) {
+                    console.error('Error creating card back element:', error);
+                    drawSlotElement.textContent = 'Draw'; // Fallback text
+                }
             } else {
-                 handleElementError(`Failed to create top card element for key: ${topCardManifestKey}`);
-                 discardSlotElement.textContent = 'Discard'; // Fallback text
+                drawSlotElement.textContent = 'Draw'; // Fallback text
             }
         } else {
-            handleElementError(`Card data not found for top discard card key: ${topCardManifestKey}`);
-            discardSlotElement.textContent = 'Discard'; // Fallback text
+            drawSlotElement.textContent = 'Draw'; // Placeholder text if no card back specified
         }
     } else {
-        discardSlotElement.textContent = 'Discard'; // Placeholder text if discard pile is empty
+        console.error(`Failed to render draw slot ${drawSlotId}`);
     }
-    gameContainer.appendChild(discardSlotElement);
+
+    // --- Render Discard Pile Slot --- //
+    const discardSlotElement = renderSlotWithCard(
+        discardSlotId,
+        'deckDiscard',
+        null,           // playerId
+        discardCoords,
+        null,           // cardData (render empty slot first)
+        5,              // slotZIndex
+        10              // cardZIndex (placeholder)
+    );
+
+    if (discardSlotElement) {
+        discardSlotElement.dataset.deckType = deckType;
+        // Set size based on coordinates
+        discardSlotElement.style.width = `${discardCoords.W}px`;
+        discardSlotElement.style.height = `${discardCoords.H}px`;
+        gameContainer.appendChild(discardSlotElement);
+
+        // --- Render Top Discard Card (Absolutely Positioned - KI-003 Fix) --- //
+        const discardPileArray = deckType === 'main' ? GameState.mainDeck.discardPile : GameState.altDeck.discardPile;
+        if (discardPileArray && discardPileArray.length > 0) {
+            const topCardManifestKey = discardPileArray[discardPileArray.length - 1];
+            const topCardData = GameState.allCards[topCardManifestKey];
+
+            if (validateRenderData(topCardData, `Card data not found for top discard card key: ${topCardManifestKey}`)) {
+                // Add manifestKey to cardData for drag operations
+                topCardData.manifestKey = topCardManifestKey;
+                
+                // Use renderCardElement to create/position absolutely on gameContainer
+                const topCardElement = renderCardElement(
+                    topCardData,
+                    topCardManifestKey,  // Pass the manifestKey as second parameter
+                    discardSlotId,
+                    discardCoords,
+                    10 // cardZIndex
+                );
+
+                if (topCardElement) {
+                    // Append the absolutely positioned card to the main container
+                    gameContainer.appendChild(topCardElement);
+                } else {
+                    // Error logged by renderCardElement
+                    console.error(`Failed to render top discard card ${topCardManifestKey}`);
+                    // Optionally add fallback text to the *slot* element
+                    discardSlotElement.textContent = 'Discard Err';
+                }
+            } else {
+                // Card key is invalid, but discard pile isn't empty
+                discardSlotElement.textContent = 'Discard (?)'; // Indicate issue
+            }
+        } else {
+             // Discard pile is empty, slot element already rendered
+             // Optionally add placeholder text
+             // discardSlotElement.textContent = 'Discard';
+        }
+    } else {
+        console.error(`Failed to render discard slot ${discardSlotId}`);
+    }
 }
