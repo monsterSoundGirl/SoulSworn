@@ -14,7 +14,7 @@
  * @module Main
  */
 
-import { initializeState, getState, drawCard, GameState, moveCard } from './state.js';
+import { initializeState, getState, drawCard, GameState, moveCard, moveCardNew } from './state.js';
 // Import other modules (UI components, logic, services) as they are created
 import { renderGameBoard } from './components/GameBoard.js'; // Import the main board renderer
 
@@ -171,8 +171,9 @@ function setupEventListeners() {
     if (cardId && originSlotId && targetSlotId) {
       // console.log(`Card ${cardId} from ${originSlotId} dropped onto slot ${targetSlotId}`);
 
-      // Update the game state
-      const moveSuccessful = moveCard(cardId, originSlotId, targetSlotId); // Assuming moveCard now returns boolean
+      // Update the game state - USING THE NEW REFACTORED FUNCTION
+      console.log(`[main.js->drop] Calling moveCardNew(${originSlotId}, ${targetSlotId})`);
+      const moveSuccessful = moveCardNew(originSlotId, targetSlotId); // Use the new function
 
       if (moveSuccessful) {
         // Re-render the game board *only if* the move was successful

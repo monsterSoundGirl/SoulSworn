@@ -97,44 +97,30 @@ export function renderGameBoard() {
 
     // --- Render Mutable Slots using Render Utils --- //
     console.log("DEBUG: Rendering mutable slots");
-    const mutableSlotIds = Object.keys(GameState.boardSlots).filter(slotId =>
-        GameState.boardSlots[slotId]?.type === 'mutable'
-    );
-    console.log(`DEBUG: Found ${mutableSlotIds.length} mutable slots`);
+    // Iterate through the NEW cardSlots, but use OLD boardSlots temporarily to identify type
+    Object.keys(GameState.cardSlots).forEach(slotId => {
+        // Use old structure just to identify the type
+        const slotTypeInfo = GameState.boardSlots[slotId]; 
+        if (slotTypeInfo?.type !== 'mutable') {
+            return; // Skip non-mutable slots
+        }
 
-    mutableSlotIds.forEach(slotId => {
-        const slotData = GameState.boardSlots[slotId];
+        // Get coordinates (still needed)
         const coords = GameState.uiCoordinates[slotId];
-
-        // Validate data and coordinates first
-        if (!validateRenderData(slotData, `Mutable slot data not found for ID: ${slotId}`) ||
-            !validateRenderData(coords, `Mutable slot coordinates not found for ID: ${slotId}`)) {
-            return; // Skip this iteration
+        if (!validateRenderData(coords, `Mutable slot coordinates not found for ID: ${slotId}`)) {
+            return; // Skip if no coords
         }
 
-        // Retrieve card data if assigned
-        const cardManifestKey = slotData.cardId;
-        let cardData = null;
-        if (cardManifestKey) {
-            cardData = GameState.allCards[cardManifestKey];
-            if (cardData) {
-                // Add manifestKey to cardData for drag operations
-                cardData.manifestKey = cardManifestKey;
-            }
-            if (!validateRenderData(cardData, `Card data not found for manifest key: ${cardManifestKey} in mutable slot ${slotId}`)) {
-                cardData = null; // Treat as empty if invalid
-                // Optionally clear invalid key from state
-                // GameState.boardSlots[slotId].cardId = null;
-            }
-        }
+        // Get the card OBJECT directly from the NEW state structure
+        const cardObject = GameState.cardSlots[slotId]; // This is either null or CardObject_New
 
-        // Render the slot with or without the card using the utility function
+        // Render the slot with the card object (or null)
         const mutableSlotElement = renderSlotWithCard(
             slotId,
             'mutable',
-            null,       // playerId
+            null,       // playerId (mutable slots don't have a player)
             coords,
-            cardData,   // Pass cardData or null
+            cardObject, // Pass the card object directly (contains id, name, imageUrl, type, faceUp)
             5,          // slotZIndex
             10          // cardZIndex
         );

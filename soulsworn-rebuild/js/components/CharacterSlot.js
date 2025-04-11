@@ -62,30 +62,23 @@ export function renderCharacterSlot(playerId) {
         return; // Exit if slot ID is missing
     }
 
-    const slotData = GameState.boardSlots[characterSlotId];
-    const coords = GameState.uiCoordinates[characterSlotId];
+    // Retrieve card data directly from the new cardSlots state using the characterSlotId
+    const cardData = GameState.cardSlots[characterSlotId]; 
 
-    // Use validateRenderData for slotData and coords
-    if (!validateRenderData(slotData, `Character slot data not found for ID: ${characterSlotId}`) ||
-        !validateRenderData(coords, `Character slot coordinates not found for ID: ${characterSlotId}`)) {
-        return; // Exit if essential data is missing
+    // Still need coordinates
+    const coords = GameState.uiCoordinates[characterSlotId];
+    if (!validateRenderData(coords, `Character slot coordinates not found for ID: ${characterSlotId}`)) {
+        return; // Exit if coords are missing
     }
 
-    // Retrieve card data if a card is assigned
-    const cardManifestKey = slotData.cardId; // This should be the manifest key
-    let cardData = null;
-    if (cardManifestKey) {
-        cardData = GameState.allCards[cardManifestKey];
-        if (cardData) {
-            // Add manifestKey to cardData for drag operations
-            cardData.manifestKey = cardManifestKey;
-        }
-        if (!validateRenderData(cardData, `Card data not found for manifest key: ${cardManifestKey} in character slot ${characterSlotId}`)) {
-            // Log error, but proceed to render the empty slot
-            cardData = null; // Ensure we pass null if card data is invalid
-            // Optionally clear the invalid key from state (consider if this is desired behavior)
-            // GameState.boardSlots[characterSlotId].cardId = null;
-        }
+    // Log the card data found (or null)
+    if (cardData) {
+         console.log(`DEBUG: Card for slot ${characterSlotId}, cardData from cardSlots:`, cardData);
+         if (!cardData.id) {
+             console.warn(`DEBUG: Card object in cardSlots.${characterSlotId} is missing 'id' property.`);
+         }
+    } else {
+        console.log(`DEBUG: No card for slot ${characterSlotId} (empty slot in cardSlots)`);
     }
 
     // Use the new utility function to render the slot and potentially the card

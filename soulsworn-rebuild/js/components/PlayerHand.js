@@ -59,14 +59,13 @@ export function renderPlayerHand(playerId) {
         console.error(`DEBUG: Player ${playerKey} data missing`);
         return; // Exit if player data missing
     }
-    const handCardManifestKeys = player.hand || []; // Ensure it's an array
-    console.log(`DEBUG: ${playerKey} hand cards:`, handCardManifestKeys);
 
-    // Find all hand slot IDs for this player defined in boardSlots
-    const playerHandSlotIds = Object.keys(GameState.boardSlots).filter(slotId =>
-        GameState.boardSlots[slotId]?.type === 'hand' && GameState.boardSlots[slotId]?.playerId === player.id
+    // Find all hand slot IDs for this player by filtering GameState.cardSlots
+    const playerHandSlotIdPrefix = `PLAYER${playerId}_HAND`;
+    const playerHandSlotIds = Object.keys(GameState.cardSlots).filter(slotId =>
+        slotId.startsWith(playerHandSlotIdPrefix)
     );
-    console.log(`DEBUG: Found ${playerHandSlotIds.length} hand slots for ${playerKey}:`, playerHandSlotIds);
+    console.log(`DEBUG: Found ${playerHandSlotIds.length} hand slots for ${playerKey} in cardSlots:`, playerHandSlotIds);
     
     // Sort them numerically (e.g., PLAYER1_HAND1, PLAYER1_HAND2)
     playerHandSlotIds.sort((a, b) => {
@@ -77,7 +76,7 @@ export function renderPlayerHand(playerId) {
 
     // Iterate through all defined hand slots for the player
     playerHandSlotIds.forEach((slotId, index) => {
-        console.log(`DEBUG: Rendering hand slot ${slotId} (index ${index})`);
+        console.log(`DEBUG: Rendering hand slot ${slotId}`);
         const coords = GameState.uiCoordinates[slotId];
         if (!validateRenderData(coords, `Coordinates not found for hand slot: ${slotId}`)) {
             console.error(`DEBUG: Coordinates missing for slot ${slotId}`);
@@ -85,34 +84,30 @@ export function renderPlayerHand(playerId) {
         }
         console.log(`DEBUG: Coords for ${slotId}:`, coords);
 
-        let cardData = null;
-        let manifestKey = null;
-        // Check if there's a card for this slot index
-        if (index < handCardManifestKeys.length) {
-            manifestKey = handCardManifestKeys[index];
-            cardData = GameState.allCards[manifestKey];
-            // Add manifestKey to cardData for drag operations
-            if (cardData) {
-                cardData.manifestKey = manifestKey;
-            }
-            console.log(`DEBUG: Card for slot ${slotId}, manifestKey:`, manifestKey, "cardData:", cardData);
-            if (!validateRenderData(cardData, `Card data not found for manifest key: ${manifestKey} in hand slot ${slotId}`)) {
-                console.error(`DEBUG: Invalid card data for ${manifestKey}`);
-                cardData = null; // Treat as empty if card data is invalid
-                manifestKey = null;
-            }
+        // Directly get the card object (or null) from the new cardSlots state
+        const cardData = GameState.cardSlots[slotId]; 
+        
+        // Log the card data found (or null)
+        if (cardData) {
+             console.log(`DEBUG: Card for slot ${slotId}, cardData from cardSlots:`, cardData);
+             // Ensure manifestKey is present if needed by renderSlotWithCard or downstream drag logic
+             // (Assuming cardObjects in cardSlots already have an 'id' property for the manifestKey)
+             if (!cardData.id) {
+                 console.warn(`DEBUG: Card object in cardSlots.${slotId} is missing 'id' property.`);
+                 // Potentially handle this case, maybe log error and skip or try to find id?
+             }
         } else {
-            console.log(`DEBUG: No card for slot ${slotId} (empty slot)`);
+            console.log(`DEBUG: No card for slot ${slotId} (empty slot in cardSlots)`);
         }
 
-        // Render the slot, passing cardData (which is null if no card or invalid card data)
+        // Render the slot, passing the card object (or null) obtained from cardSlots
         console.log(`DEBUG: Calling renderSlotWithCard for ${slotId}`);
         const handSlotElement = renderSlotWithCard(
             slotId,
             'hand',
             playerKey,
             coords,
-            cardData, // Pass the card data object or null
+            cardData, // Pass the card data object (or null) directly from cardSlots
             5,        // slotZIndex
             10        // cardZIndex
         );

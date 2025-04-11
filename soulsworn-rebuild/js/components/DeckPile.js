@@ -64,17 +64,13 @@ export function renderDeckPile(deckType) {
     const drawSlotId = deckType === 'main' ? 'DECK' : 'ALTDECK';
     const discardSlotId = deckType === 'main' ? 'DISCARD' : 'ALTDISCARD';
 
-    const drawSlotData = GameState.boardSlots[drawSlotId];
-    const discardSlotData = GameState.boardSlots[discardSlotId];
     const drawCoords = GameState.uiCoordinates[drawSlotId];
     const discardCoords = GameState.uiCoordinates[discardSlotId];
 
-    // Validate necessary data
-    if (!validateRenderData(drawSlotData, `Draw slot data not found for ${deckType} deck.`) ||
-        !validateRenderData(discardSlotData, `Discard slot data not found for ${deckType} deck.`) ||
-        !validateRenderData(drawCoords, `Draw coordinates not found for ${deckType} deck.`) ||
+    // Validate necessary coordinate data
+    if (!validateRenderData(drawCoords, `Draw coordinates not found for ${deckType} deck.`) ||
         !validateRenderData(discardCoords, `Discard coordinates not found for ${deckType} deck.`)) {
-        return; // Exit if essential data is missing
+        return; // Exit if essential coordinate data is missing
     }
 
     // --- Render Draw Pile Slot --- //
@@ -96,32 +92,33 @@ export function renderDeckPile(deckType) {
         gameContainer.appendChild(drawSlotElement);
 
         // --- Render Card Back inside Draw Pile Slot (Non-standard rendering) --- //
-        const cardBackKey = drawSlotData.cardId; // e.g., 'cardBack'
-        if (cardBackKey) {
-            const cardBackData = GameState.allCards[cardBackKey];
-            if (validateRenderData(cardBackData, `Card back data not found for key: ${cardBackKey}`)) {
-                // Add console.log to debug card back data
-                console.log('Card back data:', cardBackKey, cardBackData);
+        // Access the new draw pile array
+        const drawPileArray = deckType === 'main' ? GameState.mainDeck : GameState.altDeck;
+        
+        if (drawPileArray && drawPileArray.length > 0) {
+            // TODO: Confirm the correct path for the card back image.
+            // This might need to be loaded from config or defined as a constant.
+            const cardBackImageUrl = 'assets/jpg/cards/cardBack.jpg'; 
+            
+            // Add console.log to debug card back rendering
+            console.log(`Rendering card back for ${deckType} deck`);
                 
-                try {
-                    // Create a simple IMG element instead of using createCardElement
-                    const cardBackElement = document.createElement('img');
-                    cardBackElement.src = cardBackData.imageUrl;
-                    cardBackElement.alt = 'Card Back';
-                    cardBackElement.title = 'Card Back';
-                    cardBackElement.classList.add('card-back-image');
-                    
-                    // Style and append inside the slot element
-                    cardBackElement.style.position = 'relative';
-                    cardBackElement.style.width = '100%';
-                    cardBackElement.style.height = '100%';
-                    drawSlotElement.innerHTML = ''; // Clear placeholder text/previous
-                    drawSlotElement.appendChild(cardBackElement);
-                } catch (error) {
-                    console.error('Error creating card back element:', error);
-                    drawSlotElement.textContent = 'Draw'; // Fallback text
-                }
-            } else {
+            try {
+                // Create a simple IMG element using the determined URL
+                const cardBackElement = document.createElement('img');
+                cardBackElement.src = cardBackImageUrl;
+                cardBackElement.alt = 'Card Back';
+                cardBackElement.title = 'Card Back';
+                cardBackElement.classList.add('card-back-image');
+                
+                // Style and append inside the slot element
+                cardBackElement.style.position = 'relative';
+                cardBackElement.style.width = '100%';
+                cardBackElement.style.height = '100%';
+                drawSlotElement.innerHTML = ''; // Clear placeholder text/previous
+                drawSlotElement.appendChild(cardBackElement);
+            } catch (error) {
+                console.error('Error creating card back element:', error);
                 drawSlotElement.textContent = 'Draw'; // Fallback text
             }
         } else {
@@ -149,20 +146,21 @@ export function renderDeckPile(deckType) {
         discardSlotElement.style.height = `${discardCoords.H}px`;
         gameContainer.appendChild(discardSlotElement);
 
-        // --- Render Top Discard Card (Absolutely Positioned - KI-003 Fix) --- //
-        const discardPileArray = deckType === 'main' ? GameState.mainDeck.discardPile : GameState.altDeck.discardPile;
+        // --- Render Top Discard Card (Absolutely Positioned) --- //
+        // Access the new discard pile array containing card objects
+        const discardPileArray = deckType === 'main' ? GameState.mainDiscard : GameState.altDiscard;
+        
         if (discardPileArray && discardPileArray.length > 0) {
-            const topCardManifestKey = discardPileArray[discardPileArray.length - 1];
-            const topCardData = GameState.allCards[topCardManifestKey];
+            // Get the top card object directly from the array
+            const topCardData = discardPileArray[discardPileArray.length - 1];
 
-            if (validateRenderData(topCardData, `Card data not found for top discard card key: ${topCardManifestKey}`)) {
-                // Add manifestKey to cardData for drag operations
-                topCardData.manifestKey = topCardManifestKey;
+            if (validateRenderData(topCardData, `Invalid card data found for top discard card in ${deckType} pile.`) && topCardData.id) {
+                console.log(`DEBUG: Rendering top discard card for ${deckType}:`, topCardData);
                 
                 // Use renderCardElement to create/position absolutely on gameContainer
                 const topCardElement = renderCardElement(
-                    topCardData,
-                    topCardManifestKey,  // Pass the manifestKey as second parameter
+                    topCardData,            // Pass the full card object
+                    topCardData.id,         // Pass the manifestKey (id) from the object
                     discardSlotId,
                     discardCoords,
                     10 // cardZIndex
@@ -173,7 +171,7 @@ export function renderDeckPile(deckType) {
                     gameContainer.appendChild(topCardElement);
                 } else {
                     // Error logged by renderCardElement
-                    console.error(`Failed to render top discard card ${topCardManifestKey}`);
+                    console.error(`Failed to render top discard card ${topCardData.id}`);
                     // Optionally add fallback text to the *slot* element
                     discardSlotElement.textContent = 'Discard Err';
                 }

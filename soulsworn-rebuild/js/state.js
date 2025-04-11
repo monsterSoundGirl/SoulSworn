@@ -16,19 +16,20 @@
 export const GameState = {
   allCards: {}, // Object: { [cardId]: Card } - Filled by scanning assets later
   uiCoordinates: null, // Object: { [LABEL]: { W, H, X, Y, LABEL } } - Loaded from UIcoordinates.json
+  
+  // NEW REFACTORED STATE STRUCTURE (Phase 1)
+  cardSlots: { 
+    // Example: "PLAYER1_HAND1": {id: "spell_7", name: "Mirror Snap", ...} or null
+    // This will be populated during initialization/migration
+  },
+  mainDeck: [], // Array of Card objects
+  mainDiscard: [], // Array of Card objects
+  altDeck: [], // Array of Card objects
+  altDiscard: [], // Array of Card objects
+  // END NEW REFACTORED STATE STRUCTURE
+
+  // --- Existing State (To be gradually replaced) ---
   players: [], // Array of Player objects
-  mainDeck: {
-    type: 'main',
-    assignedCardTypes: ['item', 'spell'],
-    drawPile: [], // Array of Card ids
-    discardPile: [], // Array of Card ids
-  },
-  altDeck: {
-    type: 'alt',
-    assignedCardTypes: ['location', 'monster'],
-    drawPile: [], // Array of Card ids
-    discardPile: [], // Array of Card ids
-  },
   boardSlots: { // Object: { [slotId/LABEL]: BoardSlot } - All card locations - IDs MUST match UIcoordinates.json LABELs
     // Player 1 Hand Slots (Assuming JSON LABELs: PLAYER1_HAND1 to PLAYER1_HAND5)
     'PLAYER1_HAND1': { id: 'PLAYER1_HAND1', type: 'hand', playerId: 1, cardId: null },
@@ -159,6 +160,15 @@ export const GameState = {
 // --- Data Structure Definitions (for reference) ---
 
 /**
+ * @typedef {Object} CardObject_New
+ * @property {string} id - Unique identifier (manifestKey, e.g., "spell_7")
+ * @property {string} name - Display name (e.g., "Mirror Snap")
+ * @property {string} imageUrl - Path to image
+ * @property {string} type - Card type
+ * @property {boolean} faceUp - Orientation
+ */
+
+/**
  * @typedef {Object} Card
  * @property {string} id - Unique identifier with descriptive name (e.g., 'boneReaper')
  * @property {string} type - Card type category ('item', 'spell', 'location', 'monster', etc.)
@@ -190,6 +200,178 @@ export const GameState = {
  */
 
 // --- Helper Functions ---
+
+/**
+ * Creates a standard card object from the manifest data.
+ * @param {string} manifestKey - The unique key from the card manifest (e.g., 'item_1')
+ * @returns {CardObject_New | null} The card object or null if manifestKey not found.
+ */
+function createCardObject(manifestKey) {
+  const cardData = GameState.allCards[manifestKey];
+  if (!cardData) {
+    console.error(`createCardObject: Card data not found for key ${manifestKey}`);
+    return null;
+  }
+  // Assume card manifest has id, name, imageUrl, type
+  // Default faceUp to true, can be adjusted by placement logic if needed (e.g., for decks)
+  return {
+    id: manifestKey, 
+    name: cardData.id || manifestKey, // Use manifest id as name if available, else key
+    imageUrl: cardData.imageUrl,
+    type: cardData.type,
+    faceUp: true 
+  };
+}
+
+/**
+ * Checks if a given location ID refers to an array-based location (deck/discard).
+ * @param {string} locationId - The ID to check (e.g., 'mainDeck', 'PLAYER1_HAND1')
+ * @returns {boolean} True if it's an array location.
+ */
+function isArrayLocation(locationId) {
+  return ['mainDeck', 'mainDiscard', 'altDeck', 'altDiscard'].includes(locationId);
+}
+
+/**
+ * Retrieves the card object from a given location ID (slot or array).
+ * Does not remove the card.
+ * @param {string} locationId - The ID of the slot or array (e.g., 'GRID1', 'mainDeck')
+ * @returns {CardObject_New | null} The card object, or null if empty/not found.
+ */
+function getCardFromLocation(locationId) {
+  if (isArrayLocation(locationId)) {
+    const deck = GameState[locationId];
+    if (deck && deck.length > 0) {
+      // Return the last card (top of deck/discard)
+      return deck[deck.length - 1];
+    }
+  } else {
+    // Check the refactored cardSlots object
+    return GameState.cardSlots[locationId] || null;
+  }
+  return null;
+}
+
+/**
+ * Removes a card object from a given location ID (slot or array).
+ * @param {string} locationId - The ID of the slot or array (e.g., 'GRID1', 'mainDeck')
+ * @returns {CardObject_New | null} The removed card object, or null if empty/not found.
+ */
+function removeCardFromLocation(locationId) {
+  if (isArrayLocation(locationId)) {
+    const deck = GameState[locationId];
+    if (deck && deck.length > 0) {
+      return deck.pop(); // Remove and return the last card
+    }
+  } else {
+    const card = GameState.cardSlots[locationId];
+    if (card) {
+      GameState.cardSlots[locationId] = null; // Clear the slot
+      return card;
+    }
+  }
+  console.warn(`removeCardFromLocation: No card found at location ${locationId}`);
+  return null;
+}
+
+/**
+ * Places a card object at a target location ID (slot or array).
+ * @param {CardObject_New} cardObject - The card object to place.
+ * @param {string} targetId - The ID of the target slot or array.
+ * @returns {boolean} True if placement was successful, false otherwise (e.g., slot occupied).
+ */
+function placeCardAt(cardObject, targetId) {
+  if (!cardObject) {
+    console.error(`placeCardAt: Cannot place null cardObject at ${targetId}`);
+    return false;
+  }
+  if (isArrayLocation(targetId)) {
+    const deck = GameState[targetId];
+    if (deck) {
+      // Determine faceUp state based on target deck/discard
+      cardObject.faceUp = targetId.includes('Discard'); // Face up in discard, face down in draw
+      deck.push(cardObject);
+      return true;
+    } else {
+       console.error(`placeCardAt: Target array location ${targetId} not found in GameState.`);
+       return false;
+    }
+  } else {
+    // Check if target slot exists and is empty
+    if (GameState.cardSlots.hasOwnProperty(targetId)) {
+      if (GameState.cardSlots[targetId] === null) {
+        cardObject.faceUp = true; // Cards in slots are generally face up
+        GameState.cardSlots[targetId] = cardObject;
+        return true;
+      } else {
+        console.warn(`placeCardAt: Target slot ${targetId} is already occupied by card ${GameState.cardSlots[targetId].id}.`);
+        return false; // Slot occupied
+      }
+    } else {
+        console.error(`placeCardAt: Target slot location ${targetId} does not exist in GameState.cardSlots.`);
+        return false; // Slot doesn't exist
+    }
+  }
+}
+
+/**
+ * The refactored card movement function using the new state structure.
+ * @param {string} sourceId - The ID of the source slot or array.
+ * @param {string} targetId - The ID of the target slot or array.
+ * @returns {boolean} True if the move was successful.
+ */
+function moveCardNew(sourceId, targetId) {
+  console.log(`[moveCardNew] Attempting move from ${sourceId} to ${targetId}`);
+  const card = removeCardFromLocation(sourceId);
+
+  if (!card) {
+    console.error(`[moveCardNew] Failed: Could not remove card from source ${sourceId}.`);
+    return false;
+  }
+
+  console.log(`[moveCardNew] Successfully removed card ${card.id} from ${sourceId}.`);
+
+  const success = placeCardAt(card, targetId);
+
+  if (!success) {
+    console.error(`[moveCardNew] Failed: Could not place card ${card.id} at target ${targetId}. Attempting rollback.`);
+    // Attempt to place the card back at the origin
+    const rollbackSuccess = placeCardAt(card, sourceId);
+    if (!rollbackSuccess) {
+      console.error(`[moveCardNew] CRITICAL FAILURE: Rollback failed for card ${card.id} to source ${sourceId}. State might be inconsistent.`);
+      // Potentially throw an error or implement more robust recovery
+    }
+    return false;
+  }
+
+  console.log(`[moveCardNew] Successfully moved card ${card.id} from ${sourceId} to ${targetId}`);
+  // TODO: Call syncNewToOldState() here during transition phase
+  // syncNewToOldState(); 
+  return true;
+}
+
+// --- Adapter/Synchronization Functions (Placeholders) ---
+
+/**
+ * Updates the new GameState.cardSlots based on the current state 
+ * in GameState.boardSlots and GameState.players[x].hand.
+ * To be called during initialization and potentially after old state modifications.
+ */
+function syncOldToNewState() {
+  // TODO: Implement logic to iterate through boardSlots/hands and populate cardSlots
+  // Needs createCardObject to function.
+  console.warn('syncOldToNewState not implemented');
+}
+
+/**
+ * Updates the old state (GameState.boardSlots, GameState.players[x].hand) 
+ * based on the new GameState.cardSlots.
+ * To be called after new state modifications during the transition period.
+ */
+function syncNewToOldState() {
+  // TODO: Implement logic to iterate through cardSlots and update boardSlots/hands
+  console.warn('syncNewToOldState not implemented');
+}
 
 /**
  * Shuffles an array in-place using the Fisher-Yates (Knuth) algorithm
@@ -265,35 +447,76 @@ export async function initializeState() {
     }
     // console.log(`Initialized ${Object.keys(GameState.boardSlots).length} board slots, coordinates verified.`);
 
-    // Initialize decks (Phase 3)
-    GameState.mainDeck.drawPile = []; // Ensure piles are empty before populating
-    GameState.altDeck.drawPile = [];
+    // --- REFACTORING: Initialize new cardSlots structure ---
+    GameState.cardSlots = {}; // Ensure it's empty
+    for (const slotId in GameState.boardSlots) {
+        GameState.cardSlots[slotId] = null; // Initialize all slots in the new structure as empty
+    }
+    console.log(`[Refactor] Initialized new GameState.cardSlots with ${Object.keys(GameState.cardSlots).length} null entries.`);
+    // --- END REFACTORING ---
+
+    // --- DECK INITIALIZATION ---
+
+    // -- Existing Logic (Populate OLD deck structures with IDs) --
+    // Keep this temporarily for compatibility with drawCard/moveCard
+    const oldMainDeckDrawPile = [];
+    const oldAltDeckDrawPile = [];
 
     for (const cardId in GameState.allCards) {
         const card = GameState.allCards[cardId];
-        // Skip the placeholder cardBack
+        if (cardId === 'cardBack') continue; // Skip placeholder
+
+        if (GameState.assignedCardTypes.main.includes(card.type)) {
+            oldMainDeckDrawPile.push(cardId);
+        } else if (GameState.assignedCardTypes.alt.includes(card.type)) {
+            oldAltDeckDrawPile.push(cardId);
+        }
+    }
+    shuffleArray(oldMainDeckDrawPile);
+    shuffleArray(oldAltDeckDrawPile);
+    // Assign to the old structure (if it still existed) - This part is effectively removed by the structure change, 
+    // but we keep the shuffled ID arrays for drawCard reference if needed.
+    // GameState.mainDeck.drawPile = oldMainDeckDrawPile;
+    // GameState.altDeck.drawPile = oldAltDeckDrawPile;
+    console.log(`[Compatibility] Prepared old deck IDs: Main ${oldMainDeckDrawPile.length}, Alt ${oldAltDeckDrawPile.length}`);
+    // -- End Existing Logic --
+
+    // -- New Logic (Populate NEW deck arrays with Card Objects) --
+    GameState.mainDeck = []; // Ensure new arrays are empty
+    GameState.altDeck = [];
+    GameState.mainDiscard = [];
+    GameState.altDiscard = [];
+
+    for (const cardId in GameState.allCards) {
         if (cardId === 'cardBack') continue;
 
-        if (GameState.mainDeck.assignedCardTypes.includes(card.type)) {
-            GameState.mainDeck.drawPile.push(cardId);
-        } else if (GameState.altDeck.assignedCardTypes.includes(card.type)) {
-            GameState.altDeck.drawPile.push(cardId);
+        const cardObject = createCardObject(cardId);
+        if (cardObject) {
+            cardObject.faceUp = false; // Cards in draw piles start face down
+            const card = GameState.allCards[cardId]; // Get type from original data
+
+            if (GameState.assignedCardTypes.main.includes(card.type)) {
+                GameState.mainDeck.push(cardObject);
+            } else if (GameState.assignedCardTypes.alt.includes(card.type)) {
+                GameState.altDeck.push(cardObject);
+            }
+            // Else: Card type not assigned to a deck (e.g., character), not added.
+        } else {
+            console.warn(`[Refactor] Failed to create card object for ${cardId} during deck initialization.`);
         }
-        // Cards not matching either deck (e.g., 'character', 'objective') are currently ignored
     }
-    // console.log(`Populated main deck with ${GameState.mainDeck.drawPile.length} cards.`);
-    // console.log(`Populated alt deck with ${GameState.altDeck.drawPile.length} cards.`);
 
-    // Shuffle decks
-    shuffleArray(GameState.mainDeck.drawPile);
-    shuffleArray(GameState.altDeck.drawPile);
-    // console.log("Main and Alt decks shuffled.");
+    // Shuffle the new deck arrays containing card objects
+    shuffleArray(GameState.mainDeck);
+    shuffleArray(GameState.altDeck);
+    console.log(`[Refactor] Initialized and shuffled new decks: Main ${GameState.mainDeck.length} objects, Alt ${GameState.altDeck.length} objects.`);
+    // -- End New Logic --
 
-    // Log shuffled decks for verification (optional, can be removed later)
-    // console.log("Shuffled Main Deck:", [...GameState.mainDeck.drawPile]); // Log a copy to see order
-    // console.log("Shuffled Alt Deck:", [...GameState.altDeck.drawPile]);   // Log a copy to see order
+    // --- END DECK INITIALIZATION ---
 
-    // TODO: 4. Initialize players (Phase 5)
+
+    // TODO: 4. Initialize players (Phase 5) - Need to decide how hands integrate with new/old state
+    // For now, players object still uses IDs in hand array, compatible with old drawCard.
 
   } catch (error) {
     console.error("Error initializing game state:", error);
@@ -351,8 +574,8 @@ export function drawCard(playerId, numberOfCards, drawPileType = 'main') {
   // console.log(`Player ${player.id} drawing ${numberOfCards} cards from ${drawPileType} deck.`);
 
   for (let i = 0; i < numberOfCards; i++) {
-    if (deck.drawPile.length > 0) {
-      const cardId = deck.drawPile.pop(); // Remove card ID from the correct deck's draw pile
+    if (deck.length > 0) {
+      const cardId = deck.pop().id; // Remove card ID from the correct deck's draw pile
       hand.push(cardId); // Add card ID to the player's hand array
       // console.log(`  Drew card: ${cardId}`);
     } else {

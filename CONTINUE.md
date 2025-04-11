@@ -99,44 +99,57 @@ The model MUST wait for explicit confirmation ("proceed", "continue", "yes", etc
   - Developed transition strategy to minimize disruption.
 
 ## Current Implementation Status
-- **Core Functionality:** Drag-and-drop is implemented but experiencing state inconsistency issues (KI-005).
-- **Testing Status:** 
-  - Testing is currently blocked by both state management issues and server connection problems.
-  - Enhanced logging has been added to debug state updates.
-  - Swap logic for occupied `storyGrid` slots has been implemented but not fully tested.
-- **Documentation Status:** Comprehensive documentation has been added to all files.
-- **New Approach:** Decision made to refactor the state management system to a simplified model treating all card locations uniformly.
+- **Core Functionality:** Drag-and-drop is implemented but experiencing state inconsistency issues (KI-005), which are being addressed by the refactoring.
+- **State Refactoring Progress:**
+    - **Phase 1 (State Structure):** Completed - Added `cardSlots` object and top-level deck/discard arrays (`mainDeck`, `mainDiscard`, etc.) with card *objects* to `GameState`.
+    - **Phase 2 (Core Functions):** Completed - Implemented `createCardObject`, `isArrayLocation`, `getCardFromLocation`, `removeCardFromLocation`, `placeCardAt`, and the new `moveCardNew` function in `state.js`.
+    - **Phase 3 (Integration):** In Progress -
+        - `initializeState` updated to populate new state structures alongside old ones.
+        - `main.js` drop handler updated to call `moveCardNew`.
+        - `drawCard` partially updated (draws from new deck, puts ID in old hand array).
+    - **Phase 4 (Rendering Update):** NEARLY COMPLETE - `renderPlayerHand`, `renderCharacterSlot`, `renderStoryGrid`, and `renderDeckPile` updated to read from new state structures (`cardSlots`, `mainDeck`, `mainDiscard`, etc.). `renderGameBoard` mutable slots previously updated. Final verification of `renderGameBoard` and resolving card back image path in `DeckPile.js` remain.
+- **Testing Status:**
+  - Testing is blocked pending completion and verification of the rendering update (Phase 4). UI should now largely reflect state changes, but this needs verification.
+  - Enhanced logging remains in place.
+- **Documentation Status:** Core documentation updated prior to this session. `state.js` includes new function placeholders/implementations.
+- **New Approach:** Actively implementing the simplified state management model. Old state structures (`boardSlots`, `players.playerX.hand`, nested deck objects) are still present for transition but are being phased out.
 
 # NEXT TASKS
 
 ## Implement Card State Refactoring - **CURRENT TASK**
 - **Priority:** Critical - Blocking
-- **Estimate:** 2-3 sessions
+- **Estimate:** 1-2 sessions remaining
 - **Dependencies:** None
 - **Tasks:**
-  1. **Phase 1: State Structure Refactoring**
-     - Add new `cardSlots` object to GameState
-     - Create helper functions for card object manipulation
-     - Implement adapter functions to maintain compatibility
-  
-  2. **Phase 2: Core Function Implementation**
-     - Create new card movement functions (`moveCardNew`, etc.)
-     - Implement deck/discard array handling
-     - Add validation and error handling
-  
-  3. **Phase 3: Integration with Existing Code**
-     - Update state initialization
-     - Modify drag-and-drop handlers
-     - Update other event handlers
-  
-  4. **Phase 4: Rendering Update**
-     - Update rendering functions to use new structure
-     - Ensure UI correctly reflects state
-  
-  5. **Phase 5: Testing & Stabilization**
+  1. **Phase 1: State Structure Refactoring** - **DONE**
+     - Add new `cardSlots` object to GameState - **DONE**
+     - Create helper functions for card object manipulation - **DONE**
+     - Implement adapter functions to maintain compatibility - **DEFERRED (Implement if needed)**
+
+  2. **Phase 2: Core Function Implementation** - **DONE**
+     - Create new card movement functions (`moveCardNew`, etc.) - **DONE**
+     - Implement deck/discard array handling - **DONE**
+     - Add validation and error handling - **DONE**
+
+  3. **Phase 3: Integration with Existing Code** - **IN PROGRESS**
+     - Update state initialization - **DONE**
+     - Modify drag-and-drop handlers - **DONE**
+     - Update other event handlers (e.g., `drawCard`) - **PARTIALLY DONE** (Needs full migration)
+
+  4. **Phase 4: Rendering Update** - **NEARLY COMPLETE**
+     - Update rendering functions to use new structure (`cardSlots`, new deck arrays) - **DONE** (`renderPlayerHand`, `renderCharacterSlot`, `renderStoryGrid`, `renderDeckPile`, `renderGameBoard` mutable slots)
+     - Ensure UI correctly reflects state - **PENDING VERIFICATION** (Requires testing after final checks)
+     - **Remaining Tasks:** Verify `renderGameBoard`, resolve `TODO` for card back image path in `DeckPile.js`.
+
+  5. **Phase 5: Testing & Stabilization** - **PENDING**
      - Test all card movement scenarios
      - Debug any issues
      - Document the changes
+
+  6. **Phase 6: Cleanup** - **PENDING**
+     - Remove old state structures (`boardSlots`, `players[x].hand` arrays)
+     - Remove old `moveCard` function
+     - Remove adapter functions (if created)
 
 ## Debug HTTP Server Connection Error - **DEFERRED**
 - **Priority:** High
@@ -266,6 +279,25 @@ Please refer to `card_state_refactor_plan.md` for more detailed information abou
      - Maintain both old and new structures during the transition.
      - Add detailed logging to track state changes.
      - Test carefully at each step.
+
+## Handoff (Gemini -> Next Agent - 2025-04-12 HH:MM)
+- **Session Type:** Coding
+- **Summary of Current Gemini Session:**
+    - Reviewed documentation headers (`function_registry.md`, `card_state_refactor_plan.md`, `change_log.md`, `debug_notes.md`).
+    - Analyzed and updated `renderPlayerHand` in `PlayerHand.js` to use `GameState.cardSlots`.
+    - Analyzed and updated `renderCharacterSlot` in `CharacterSlot.js` to use `GameState.cardSlots`.
+    - Analyzed and updated `renderStoryGrid` in `StoryGrid.js` to use `GameState.cardSlots`.
+    - Analyzed and updated `renderDeckPile` in `DeckPile.js` to use `GameState.mainDeck`/`altDeck`/`mainDiscard`/`altDiscard` arrays (containing card objects). Added TODO for card back image path.
+- **Current Status:**
+    - State logic uses the new refactored structure (`moveCardNew`).
+    - Rendering is now largely updated to use the new state structures (`cardSlots`, deck/discard arrays). Most components (`renderPlayerHand`, `renderCharacterSlot`, `renderStoryGrid`, `renderDeckPile`) read from the new state. `renderGameBoard` requires final verification.
+    - UI *should* now visually reflect state changes accurately, but requires testing (Phase 5).
+    - **Phase 4 (Rendering Update)** is nearly complete, pending final `renderGameBoard` check and card back image path resolution.
+- **Immediate Next Step:**
+    1.  **Verify `renderGameBoard`:** Quickly check `GameBoard.js` to ensure no further Phase 4 changes are needed.
+    2.  **Resolve Card Back Image:** Determine and implement the correct image path for card backs in `DeckPile.js` (address the `// TODO:`).
+    3.  **Continue Phase 3 (Integration):** Fully update `drawCard` function in `state.js` to place card *objects* into the correct `cardSlots` locations (currently only places IDs in old hand array).
+    4.  **Begin Phase 5 (Testing & Stabilization):** Start testing drag/drop and other interactions now that rendering is aligned with the new state.
 
 ## Expected Next Handoff (Gemini -> Claude - Evaluation)
 - **Session Type:** Coding -> Evaluation

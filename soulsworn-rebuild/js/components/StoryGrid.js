@@ -49,35 +49,32 @@ export function renderStoryGrid() {
         return; // Exit if container not found
     }
 
-    // Get all board slots of type 'storyGrid'
-    const gridSlotIds = Object.keys(GameState.boardSlots).filter(slotId =>
-        GameState.boardSlots[slotId]?.type === 'storyGrid'
+    // Get all story grid slot IDs by filtering the new cardSlots state
+    const gridSlotIds = Object.keys(GameState.cardSlots).filter(slotId =>
+        slotId.startsWith('GRID') // Assuming grid slots are prefixed with 'GRID'
     );
+    console.log(`DEBUG: Found ${gridSlotIds.length} story grid slots in cardSlots:`, gridSlotIds);
 
     gridSlotIds.forEach(slotId => {
-        const slotData = GameState.boardSlots[slotId];
         const coords = GameState.uiCoordinates[slotId];
 
-        // Basic validation for existence before proceeding
-        if (!validateRenderData(slotData, `Story grid slot data not found for ID: ${slotId}`) ||
-            !validateRenderData(coords, `Story grid coordinates not found for ID: ${slotId}`)) {
+        // Basic validation for coordinates
+        if (!validateRenderData(coords, `Story grid coordinates not found for ID: ${slotId}`)) {
+            console.error(`DEBUG: Coordinates missing for grid slot ${slotId}`);
             return; // Skip this iteration
         }
 
-        // Retrieve card data if a card is assigned
-        const cardManifestKey = slotData.cardId;
-        let cardData = null;
-        if (cardManifestKey) {
-            cardData = GameState.allCards[cardManifestKey];
-            if (cardData) {
-                // Add manifestKey to cardData for drag operations
-                cardData.manifestKey = cardManifestKey;
+        // Retrieve card data directly from the new cardSlots state
+        const cardData = GameState.cardSlots[slotId];
+
+        // Log the card data found (or null)
+        if (cardData) {
+            console.log(`DEBUG: Card for slot ${slotId}, cardData from cardSlots:`, cardData);
+            if (!cardData.id) {
+                console.warn(`DEBUG: Card object in cardSlots.${slotId} is missing 'id' property.`);
             }
-            if (!validateRenderData(cardData, `Card data not found for manifest key: ${cardManifestKey} in story grid slot ${slotId}`)) {
-                cardData = null; // Treat as empty if card data invalid
-                // Optionally clear invalid key from state
-                // GameState.boardSlots[slotId].cardId = null;
-            }
+        } else {
+            console.log(`DEBUG: No card for slot ${slotId} (empty slot in cardSlots)`);
         }
 
         // Use the new utility function to render the slot and potentially the card
