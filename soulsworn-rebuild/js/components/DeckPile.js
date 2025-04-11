@@ -96,7 +96,6 @@ export function renderDeckPile(deckType) {
         const drawPileArray = deckType === 'main' ? GameState.mainDeck : GameState.altDeck;
         
         if (drawPileArray && drawPileArray.length > 0) {
-            // TODO: Confirm the correct path for the card back image.
             // This might need to be loaded from config or defined as a constant.
             const cardBackImageUrl = 'assets/jpg/cards/cardBack.jpg'; 
             

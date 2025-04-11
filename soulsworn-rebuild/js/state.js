@@ -320,7 +320,7 @@ function placeCardAt(cardObject, targetId) {
  * @param {string} targetId - The ID of the target slot or array.
  * @returns {boolean} True if the move was successful.
  */
-function moveCardNew(sourceId, targetId) {
+export function moveCardNew(sourceId, targetId) {
   console.log(`[moveCardNew] Attempting move from ${sourceId} to ${targetId}`);
   const card = removeCardFromLocation(sourceId);
 
@@ -557,33 +557,62 @@ export function getState() {
  * @returns {void}
  */
 export function drawCard(playerId, numberOfCards, drawPileType = 'main') {
-  const player = GameState.players[playerId]; // Get the correct player object ('player1' or 'player2')
+  const player = GameState.players[playerId]; // Get the correct player object to find player.id
   if (!player) {
-    console.error(`Invalid playerId: ${playerId}`);
+    console.error(`[drawCard] Invalid playerId: ${playerId}`);
     return;
   }
+  const playerNum = player.id; // Assuming player.id is numeric (1, 2, 3, 4)
 
-  const deck = drawPileType === 'main' ? GameState.mainDeck : GameState.altDeck;
-  const hand = player.hand; // Player's hand is an array of card IDs
+  const sourceDeckId = drawPileType === 'main' ? 'mainDeck' : 'altDeck';
+  console.log(`[drawCard] Player ${playerNum} attempting to draw ${numberOfCards} cards from ${sourceDeckId}.`);
 
-  if (!deck) {
-     console.error(`Invalid draw pile type "${drawPileType}"`);
-     return;
-  }
-
-  // console.log(`Player ${player.id} drawing ${numberOfCards} cards from ${drawPileType} deck.`);
-
+  let cardsDrawn = 0;
   for (let i = 0; i < numberOfCards; i++) {
-    if (deck.length > 0) {
-      const cardId = deck.pop().id; // Remove card ID from the correct deck's draw pile
-      hand.push(cardId); // Add card ID to the player's hand array
-      // console.log(`  Drew card: ${cardId}`);
+    // Find an empty hand slot for this player
+    let targetSlotId = null;
+    // Use GameState.initialHandSize (assuming it's 5 as per previous context)
+    const handSize = GameState.initialHandSize || 5; // Fallback to 5 if not defined
+    for (let handIndex = 1; handIndex <= handSize; handIndex++) { 
+        const potentialSlotId = `PLAYER${playerNum}_HAND${handIndex}`;
+        // Check if the slot exists and is empty in the new structure
+        if (GameState.cardSlots.hasOwnProperty(potentialSlotId) && GameState.cardSlots[potentialSlotId] === null) {
+            targetSlotId = potentialSlotId;
+            break; // Found an empty slot
+        }
+    }
+
+    if (!targetSlotId) {
+        console.warn(`[drawCard] Player ${playerNum} has no empty hand slots (Hand Size: ${handSize}). Cannot draw more cards.`);
+        break; // Hand full
+    }
+
+    // Remove card object from deck using helper
+    const cardObject = removeCardFromLocation(sourceDeckId);
+
+    if (!cardObject) {
+        console.warn(`[drawCard] Player ${playerNum}'s ${drawPileType} draw pile (${sourceDeckId}) is empty. Cannot draw more cards.`);
+        break; // Deck empty
+    }
+
+    // Place card object in the found empty hand slot using helper
+    const success = placeCardAt(cardObject, targetSlotId);
+    if (success) {
+        console.log(`[drawCard] Player ${playerNum} drew card ${cardObject.id} to slot ${targetSlotId}`);
+        cardsDrawn++;
     } else {
-      console.warn(`Player ${player.id}'s ${drawPileType} draw pile is empty. Cannot draw more cards.`);
-      break; // Stop drawing if the deck is empty
+        // This should ideally not happen if targetSlotId was confirmed empty, but handle defensively
+        console.error(`[drawCard] Failed to place card ${cardObject.id} into supposedly empty slot ${targetSlotId}. Attempting rollback.`);
+        // Rollback: try to put card back on top of deck
+        const rollbackSuccess = placeCardAt(cardObject, sourceDeckId); // Add back to source deck
+         if (!rollbackSuccess) {
+             console.error(`[drawCard] CRITICAL FAILURE: Rollback failed for card ${cardObject.id} to source ${sourceDeckId}. State might be inconsistent.`);
+         }
+        break; // Stop drawing on placement error
     }
   }
-   // console.log(`Player ${player.id} hand after draw:`, hand);
+  console.log(`[drawCard] Player ${playerNum} finished drawing ${cardsDrawn} cards.`);
+  // No modification of the old player.hand array is needed.
 }
 
 /**
