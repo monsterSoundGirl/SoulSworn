@@ -33,6 +33,21 @@ This file tracks all significant changes made to the codebase, providing a chron
 
 # CHANGE HISTORY
 
+## [2025-04-12 HH:MM] - Fixed Missing manifestKey Issue in Card Objects
+- **Author:** Claude
+- **Files:** 
+  - soulsworn-rebuild/js/components/PlayerHand.js
+  - soulsworn-rebuild/js/utils/renderUtils.js
+  - soulsworn-rebuild/js/state.js
+- **Changes:** 
+  1. Added fallback mechanism in `PlayerHand.js` to ensure any card object has a `manifestKey` property based on its `id` property
+  2. Enhanced `renderSlotWithCard` in `renderUtils.js` to provide a fallback that sets `manifestKey = id` if `manifestKey` is missing
+  3. Added a defensive check in the `drawCard` function in `state.js` to ensure card objects have a `manifestKey` property before placement
+  4. Added debugging output in `createCardObject` to verify property is being correctly set
+- **Issue:** KI-006 (Missing manifestKey Property in Card Objects)
+- **Functions Affected:** `renderPlayerHand()`, `renderSlotWithCard()`, `drawCard()`, `createCardObject()`
+- **Reason:** Card objects in `GameState.cardSlots` were missing the `manifestKey` property which is essential for drag-and-drop functionality. These defensive checks ensure the property is always available regardless of how the card object was created or where it's used in the rendering pipeline.
+
 ## [YYYY-MM-DD HH:MM] - Fixed Card Rendering Position
 - **Author:** Gemini
 - **Files:** soulsworn-rebuild/js/utils/renderUtils.js

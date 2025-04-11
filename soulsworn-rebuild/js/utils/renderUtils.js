@@ -174,7 +174,14 @@ function renderSlotWithCard(slotId, slotType, playerId, coords, cardData, slotZI
     if (cardData) {
         // Extract manifestKey from indexed data in state arrays - this is critical for drag-and-drop
         // GameState.allCards is indexed by manifestKeys, so we need to get the manifestKey from somewhere else
-        const manifestKey = cardData.manifestKey; // This should be provided by the caller
+        let manifestKey = cardData.manifestKey; // This should be provided by the caller
+        
+        // Fallback: If manifestKey is missing but we have an id, use the id as the manifestKey
+        if (!manifestKey && cardData.id) {
+            manifestKey = cardData.id;
+            console.log(`renderSlotWithCard: Adding missing manifestKey=${manifestKey} to card in slot ${slotId}`);
+            cardData.manifestKey = manifestKey; // Update the object for future reference
+        }
         
         if (!manifestKey) {
             console.error(`renderSlotWithCard: Missing manifestKey for card ${cardData.id} in slot ${slotId}. Card will not be draggable.`);

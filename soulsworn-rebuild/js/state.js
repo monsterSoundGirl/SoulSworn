@@ -214,13 +214,17 @@ function createCardObject(manifestKey) {
   }
   // Assume card manifest has id, name, imageUrl, type
   // Default faceUp to true, can be adjusted by placement logic if needed (e.g., for decks)
-  return {
+  const cardObject = {
     id: manifestKey, 
+    manifestKey: manifestKey, // Add manifestKey property to enable drag operations
     name: cardData.id || manifestKey, // Use manifest id as name if available, else key
     imageUrl: cardData.imageUrl,
     type: cardData.type,
     faceUp: true 
   };
+  
+  console.log(`[createCardObject] Created card object for ${manifestKey} with manifestKey property:`, cardObject);
+  return cardObject;
 }
 
 /**
@@ -593,6 +597,12 @@ export function drawCard(playerId, numberOfCards, drawPileType = 'main') {
     if (!cardObject) {
         console.warn(`[drawCard] Player ${playerNum}'s ${drawPileType} draw pile (${sourceDeckId}) is empty. Cannot draw more cards.`);
         break; // Deck empty
+    }
+    
+    // Ensure cardObject has manifestKey property (defensive check)
+    if (!cardObject.manifestKey && cardObject.id) {
+        console.log(`[drawCard] Adding missing manifestKey=${cardObject.id} to card object`);
+        cardObject.manifestKey = cardObject.id;
     }
 
     // Place card object in the found empty hand slot using helper

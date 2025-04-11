@@ -1,0 +1,94 @@
+/* Board layout styling for the SoulSworn UI */
+
+/* Game container is handled in main.css */
+
+/* Areas styling */
+.player-area, .shared-area, .deck-area {
+  position: absolute;
+  border: 1px dashed #777;
+  padding: 5px;
+  box-sizing: border-box;
+}
+
+.player-area {
+  background-color: rgba(68, 68, 68, 0.3);
+}
+
+.shared-area {
+  background-color: rgba(58, 58, 58, 0.3);
+}
+
+.deck-area {
+  background-color: rgba(74, 74, 74, 0.3);
+}
+
+/* Story grid area */
+.story-grid-container {
+  position: absolute;
+  border: 1px solid #aaa;
+  padding: 10px;
+  background-color: rgba(85, 85, 85, 0.3);
+  box-sizing: border-box;
+  top: 200px;
+  left: 400px;
+  width: 880px;
+  height: 620px;
+}
+
+/* Placeholder UI Element Styling */
+.placeholder-ui {
+  position: absolute;
+  border: 1px dashed cyan;
+  background-color: rgba(0, 255, 255, 0.1);
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 12px;
+  color: cyan;
+}
+
+/* Add ::after pseudo-element to display text content */
+.placeholder-ui::after {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* == Absolute Positioning for UI Placeholders == */
+#menu-placeholder { top: 24px; left: 24px; width: 184px; height: 160px; }
+#menu-placeholder::after { content: "MENU"; }
+
+#inspector-placeholder { top: 240px; left: 24px; width: 376px; height: 600px; }
+#inspector-placeholder::after { content: "INSPECTOR"; }
+
+#d20-placeholder { top: 448px; left: 1504px; width: 184px; height: 184px; }
+#d20-placeholder::after { content: "D20"; }
+
+#logo-placeholder { top: 904px; left: 24px; width: 184px; height: 160px; }
+#logo-placeholder::after { content: "LOGO"; }
+
+#turn-timer-placeholder { top: 904px; left: 1504px; width: 184px; height: 160px; }
+#turn-timer-placeholder::after { content: "TURN-TIMER"; }
+
+/* Add classes for dynamic elements */
+.player-hand-slot, .character-slot, .story-grid-slot, .deck-slot, .mutable-slot {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1px solid #555;
+}
+
+.player-hand-slot::after, .character-slot::after, .story-grid-slot::after, .deck-slot::after, .mutable-slot::after {
+  content: attr(data-slot-id);
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  font-size: 8px;
+  color: #aaa;
+}
+
+/* Slot type visual indicators */
+.player-hand-slot { background-color: rgba(100, 149, 237, 0.3); }
+.character-slot { background-color: rgba(255, 165, 0, 0.3); }
+.story-grid-slot { background-color: rgba(144, 238, 144, 0.3); }
+.deck-slot { background-color: rgba(218, 112, 214, 0.3); }
+.mutable-slot { background-color: rgba(255, 255, 255, 0.3); } 

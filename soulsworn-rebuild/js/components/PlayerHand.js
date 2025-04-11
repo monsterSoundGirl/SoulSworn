@@ -91,10 +91,10 @@ export function renderPlayerHand(playerId) {
         if (cardData) {
              console.log(`DEBUG: Card for slot ${slotId}, cardData from cardSlots:`, cardData);
              // Ensure manifestKey is present if needed by renderSlotWithCard or downstream drag logic
-             // (Assuming cardObjects in cardSlots already have an 'id' property for the manifestKey)
-             if (!cardData.id) {
-                 console.warn(`DEBUG: Card object in cardSlots.${slotId} is missing 'id' property.`);
-                 // Potentially handle this case, maybe log error and skip or try to find id?
+             // Fix: If card object has id but no manifestKey, add the manifestKey 
+             if (!cardData.manifestKey && cardData.id) {
+                 console.log(`DEBUG: Adding missing manifestKey=${cardData.id} to card in slot ${slotId}`);
+                 cardData.manifestKey = cardData.id; // Use the id as manifestKey if missing
              }
         } else {
             console.log(`DEBUG: No card for slot ${slotId} (empty slot in cardSlots)`);

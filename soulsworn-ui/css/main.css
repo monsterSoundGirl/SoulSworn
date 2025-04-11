@@ -1,0 +1,47 @@
+/* Basic Reset / Setup */
+body {
+  font-family: sans-serif;
+  margin: 20px;
+  background-color: #f4f4f4;
+}
+
+#game-container {
+  position: relative;
+  width: 1688px;
+  height: 1064px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background-color: #fff;
+  margin: 20px auto;
+  overflow: hidden;
+  border: 1px solid #555;
+}
+
+h1, h2 {
+  color: #333;
+  text-align: center;
+}
+
+/* Card Styling */
+.card-slot {
+  width: 80px;
+  height: 144px;
+  border: 1px solid #888;
+  background-color: rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 10px;
+  color: #ccc;
+  box-sizing: border-box;
+  position: absolute;
+}
+
+.card-slot::after {
+  content: attr(data-slot-id);
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  font-size: 8px;
+  color: #aaa;
+} 

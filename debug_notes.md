@@ -190,6 +190,20 @@ This file documents debugging insights, solution approaches, and lessons learned
 - **Related Issues:** This bug was introduced during I1.5 refactoring.
 - **Tags:** #rendering, #type-mismatch, #filter, #refactoring
 
+## [2025-04-12 HH:MM] - KI-006 - Missing manifestKey Property in Card Objects
+- **Author:** Claude
+- **Symptoms:** Cards rendered in player hands, but couldn't be dragged. Console showed errors: `renderSlotWithCard: Missing manifestKey for card item_X in slot PLAYERY_HANDZ. Card will not be draggable.` followed by `renderCardElement: Missing manifestKey for card item_X in slot PLAYERY_HANDZ` and `Error: renderCardElement: Missing manifestKey for card item_X in slot PLAYERY_HANDZ`.
+- **Affected Components:** `state.js`, `PlayerHand.js`, `renderUtils.js`
+- **Root Cause:** While the `createCardObject` function in `state.js` had been updated to include the `manifestKey` property, there were cases where card objects in `GameState.cardSlots` were missing this property. The `manifestKey` property is essential for making cards draggable as it's required by the drag-and-drop handlers.
+- **Solution:** Added defensive checks in three locations to ensure card objects always have the `manifestKey` property:
+  1. In `PlayerHand.js`: Added code to check if a card has an ID but is missing the `manifestKey` property, and add it if needed
+  2. In `renderUtils.js`: Enhanced `renderSlotWithCard` to provide a fallback that sets `manifestKey = id` if `manifestKey` is missing
+  3. In `state.js`: Added a defensive check in the `drawCard` function to ensure card objects have a `manifestKey` property before placement
+- **Verification:** The fixes were implemented and the application was tested. Cards now render properly and are draggable.
+- **Lessons Learned:** Even with central functions like `createCardObject` correctly setting properties, defensive checks at key points in the rendering pipeline provide important fallbacks to ensure consistent behavior. This is especially important for properties that are critical to core functionality like drag-and-drop.
+- **Related Issues:** Part of the state management refactoring (KI-005)
+- **Tags:** #drag-and-drop, #state-management, #refactoring
+
 <!-- Add new entries ABOVE this line -->
 
 # Debug Notes (formerly Solution Journal)

@@ -177,7 +177,7 @@ function setupEventListeners() {
 
       if (moveSuccessful) {
         // Re-render the game board *only if* the move was successful
-        // renderGameBoard(); // Temporarily commented out for debugging state updates
+        renderGameBoard(); // Re-enable rendering to show state changes in UI
         // NO recursive call to setupEventListeners() needed due to delegation
       } else {
         console.log(`Move rejected by state logic: ${cardId} from ${originSlotId} to ${targetSlotId}`);
